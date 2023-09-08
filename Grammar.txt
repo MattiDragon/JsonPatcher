@@ -1,0 +1,21 @@
+statement = expression "." name "=" expression ";"
+          | "{" statement* "}"
+          | "apply" "(" expression ")" statement
+
+expression = call
+
+call = primary (("." name) | ("[" expression "]"))*
+
+primary = implicit_root
+        | root
+        | constant
+        | object
+        | array
+
+implicit_root = WORD
+root = "this"
+constant = STRING | NUMBER | "null" | "true" | "false"
+object = "{" ((name ":" expression ",")* (name ":" expression)?) "}"
+array = "[" ((expression ",")* expression)? "]"
+
+name = (WORD | STRING)

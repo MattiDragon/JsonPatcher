@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "jsonpatch",
+  "version": "${version}",
+  "name": "JsonPatch",
+  "description": "A tool for patching json resource files easily and with great compatibility.",
+  "authors": ["MattiDragon"],
+  "contact": {
+    "repo": "https://github.com/MattiDragon/JsonPatch"
+  },
+  "license": "MIT",
+  "icon": "assets/jsonpatch/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "io.github.mattidragon.jsonpatch.client.JsonPatchClient"
+    ],
+    "main": [
+      "io.github.mattidragon.jsonpatch.JsonPatch"
+    ]
+  },
+  "accessWidener" : "jsonpatch.accesswidener",
+  "mixins": [
+    "jsonpatch.mixins.json",
+    "client.jsonpatch.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.22",
+    "fabric": "*",
+    "minecraft": "1.20.1"
+  }
+}

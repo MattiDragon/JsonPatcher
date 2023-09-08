@@ -1,0 +1,9 @@
+@target minecraft:recipes/arrow.json
+
+apply (key) {
+  '#'.item = "blaze_rod";
+  X.item = "diamond";
+  Y.item = "minecraft:" + "apple";
+}
+
+result.count = result.count * 10 + 3;
