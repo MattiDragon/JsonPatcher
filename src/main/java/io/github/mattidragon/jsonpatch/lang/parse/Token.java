@@ -1,7 +1,5 @@
 package io.github.mattidragon.jsonpatch.lang.parse;
 
-import java.util.Locale;
-
 public sealed interface Token {
     record NumberToken(double value) implements Token {
     }

@@ -1,10 +1,10 @@
 package io.github.mattidragon.jsonpatch.lang.parse.pratt;
 
 import io.github.mattidragon.jsonpatch.lang.ast.expression.*;
+import io.github.mattidragon.jsonpatch.lang.parse.Parser;
 import io.github.mattidragon.jsonpatch.lang.parse.PositionedToken;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.parse.Token;
-import io.github.mattidragon.jsonpatch.lang.parse.Parser;
 
 public interface PostfixParselet {
     Expression parse(Parser parser, Expression left, PositionedToken<?> token);
@@ -97,6 +97,9 @@ public interface PostfixParselet {
                 case STAR_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.MULTIPLY);
                 case SLASH_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.DIVIDE);
                 case PERCENT_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.MODULO);
+                case OR_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.OR);
+                case XOR_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.XOR);
+                case AND_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.AND);
 
                 default -> null;
             };

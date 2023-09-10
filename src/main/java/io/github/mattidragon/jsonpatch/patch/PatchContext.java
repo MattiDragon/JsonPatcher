@@ -15,7 +15,6 @@ import net.minecraft.util.JsonHelper;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 public class PatchContext {

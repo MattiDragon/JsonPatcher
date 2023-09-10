@@ -1,7 +1,6 @@
 package io.github.mattidragon.jsonpatch.lang.ast.expression;
 
 import io.github.mattidragon.jsonpatch.lang.ast.Context;
-import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.ast.Value;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 

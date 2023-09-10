@@ -1,14 +1,13 @@
 package io.github.mattidragon.jsonpatch.lang.parse.pratt;
 
+import io.github.mattidragon.jsonpatch.lang.ast.Value;
+import io.github.mattidragon.jsonpatch.lang.ast.expression.*;
+import io.github.mattidragon.jsonpatch.lang.parse.Parser;
 import io.github.mattidragon.jsonpatch.lang.parse.PositionedToken;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.parse.Token;
-import io.github.mattidragon.jsonpatch.lang.ast.expression.*;
-import io.github.mattidragon.jsonpatch.lang.ast.Value;
-import io.github.mattidragon.jsonpatch.lang.parse.Parser;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public interface PrefixParselet<T extends PositionedToken<?>> {
     Expression parse(Parser parser, T token);

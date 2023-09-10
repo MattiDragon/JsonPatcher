@@ -7,9 +7,7 @@ import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.ast.Value;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
 
 public record BinaryExpression(Expression first, Expression second, Operator op, SourceSpan opPos) implements Expression {
     @Override

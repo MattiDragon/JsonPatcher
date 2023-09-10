@@ -5,8 +5,6 @@ import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.ast.Value;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
-import java.util.function.UnaryOperator;
-
 public record UnaryExpression(Expression input, Operator op, SourceSpan pos) implements Expression {
     @Override
     public Value evaluate(Context context) {

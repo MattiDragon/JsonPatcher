@@ -1,6 +1,5 @@
 package io.github.mattidragon.jsonpatch.patch;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.util.Identifier;

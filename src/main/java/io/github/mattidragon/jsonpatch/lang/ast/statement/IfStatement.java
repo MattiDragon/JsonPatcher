@@ -1,7 +1,6 @@
 package io.github.mattidragon.jsonpatch.lang.ast.statement;
 
 import io.github.mattidragon.jsonpatch.lang.ast.Context;
-import io.github.mattidragon.jsonpatch.lang.ast.Value;
 import io.github.mattidragon.jsonpatch.lang.ast.expression.Expression;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;

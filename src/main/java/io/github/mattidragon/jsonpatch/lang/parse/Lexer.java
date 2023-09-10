@@ -121,7 +121,7 @@ public class Lexer {
                     default -> addParsedToken(Token.SimpleToken.OR, 1);
                 }
             }
-            case '^' -> addParsedToken(Token.SimpleToken.XOR, 1);
+            case '^' -> readEqualsOptionalToken(Token.SimpleToken.XOR, Token.SimpleToken.XOR_ASSIGN);
 
             case '+' -> readEqualsOptionalToken(Token.SimpleToken.PLUS, Token.SimpleToken.PLUS_ASSIGN);
             case '-' -> readEqualsOptionalToken(Token.SimpleToken.MINUS, Token.SimpleToken.MINUS_ASSIGN);
