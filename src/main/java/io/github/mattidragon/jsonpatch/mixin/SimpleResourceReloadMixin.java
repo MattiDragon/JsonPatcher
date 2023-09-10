@@ -1,10 +1,8 @@
 package io.github.mattidragon.jsonpatch.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import io.github.mattidragon.jsonpatch.JsonPatch;
-import io.github.mattidragon.jsonpatch.PatchContext;
+import io.github.mattidragon.jsonpatch.patch.PatchContext;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceReload;
 import net.minecraft.resource.ResourceReloader;
@@ -12,11 +10,8 @@ import net.minecraft.resource.SimpleResourceReload;
 import net.minecraft.util.Unit;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -44,11 +39,8 @@ public class SimpleResourceReloadMixin<S> {
         // Setup context for constructor because some reloaders get resources on the reload thread
         PatchContext.set(context);
 
-        // Load patches in the initial stage on the prepare executor
-        initialStage.set(initialStage1.thenApplyAsync(unit -> {
-            context.load(manager, prepareExecutor1);
-            return unit;
-        }, prepareExecutor1));
+        // Patches have to be loaded here instead of in the initial stage because some reloaders read resources on the main thread (font manager)
+        context.load(manager, prepareExecutor1);
 
         // Patch the prepare executor to apply patches
         prepareExecutor.set(command -> prepareExecutor1.execute(() -> {

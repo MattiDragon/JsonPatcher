@@ -1,13 +1,14 @@
 package io.github.mattidragon.jsonpatch.lang.parse;
 
+import io.github.mattidragon.jsonpatch.lang.PositionedException;
 import io.github.mattidragon.jsonpatch.lang.ast.Program;
 import io.github.mattidragon.jsonpatch.lang.ast.expression.Expression;
-import io.github.mattidragon.jsonpatch.lang.ast.Statement;
-import io.github.mattidragon.jsonpatch.lang.ast.expression.Reference;
+import io.github.mattidragon.jsonpatch.lang.ast.statement.*;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.PostfixParselet;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.Precedence;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.PrefixParselet;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +32,11 @@ public class Parser {
         var token = peek();
         if (token.getToken() == Token.SimpleToken.BEGIN_CURLY) return blockStatement();
         if (token.getToken() == Token.KeywordToken.APPLY) return applyStatement();
-        return assignmentStatement();
+        if (token.getToken() == Token.KeywordToken.IF) return ifStatement();
+        return expressionStatement();
     }
 
-    private Statement.Block blockStatement() {
+    private BlockStatement blockStatement() {
         expect(Token.SimpleToken.BEGIN_CURLY);
         var beginPos = previous().getFrom();
         var statements = new ArrayList<Statement>();
@@ -42,10 +44,10 @@ public class Parser {
             statements.add(statement());
         expect(Token.SimpleToken.END_CURLY);
         var endPos = previous().getTo();
-        return new Statement.Block(statements, new SourceSpan(beginPos, endPos));
+        return new BlockStatement(statements, new SourceSpan(beginPos, endPos));
     }
 
-    private Statement.Apply applyStatement() {
+    private ApplyStatement applyStatement() {
         expect(Token.KeywordToken.APPLY);
         var beginPos = previous().getFrom();
         expect(Token.SimpleToken.BEGIN_PAREN);
@@ -53,17 +55,29 @@ public class Parser {
         expect(Token.SimpleToken.END_PAREN);
         var action = statement();
         var endPos = previous().getTo();
-        return new Statement.Apply(root, action, new SourceSpan(beginPos, endPos));
+        return new ApplyStatement(root, action, new SourceSpan(beginPos, endPos));
     }
 
-    private Statement.Assignment assignmentStatement() {
-        var target = expression();
-        if (!(target instanceof Reference ref)) throw new ParseException("Can't assign to %s".formatted(target), target.getPos());
-        expect(Token.SimpleToken.EQUALS);
-        var pos = previous().getPos();
-        var val = expression();
+    private IfStatement ifStatement() {
+        expect(Token.KeywordToken.IF);
+        var beginPos = previous().getFrom();
+        expect(Token.SimpleToken.BEGIN_PAREN);
+        var condition = expression();
+        expect(Token.SimpleToken.END_PAREN);
+        var action = statement();
+        Statement elseAction = null;
+        if (hasNext() && peek().getToken() == Token.KeywordToken.ELSE) {
+            next();
+            elseAction = statement();
+        }
+        var endPos = previous().getTo();
+        return new IfStatement(condition, action, elseAction, new SourceSpan(beginPos, endPos));
+    }
+
+    private ExpressionStatement expressionStatement() {
+        var expression = expression();
         expect(Token.SimpleToken.SEMICOLON);
-        return new Statement.Assignment(ref, val, pos);
+        return new ExpressionStatement(expression);
     }
 
     public Expression expression() {
@@ -103,17 +117,17 @@ public class Parser {
     }
 
     public PositionedToken<?> next() {
-        if (!hasNext()) throw new IllegalStateException("Reached end of file without EOF token");
+        if (!hasNext()) throw new ParseException("Unexpected end of file", new SourceSpan(previous().getTo(), previous().getTo()));
         return tokens.get(current++);
     }
 
     public PositionedToken<?> previous() {
-        if (current == 0) throw new IllegalStateException("No previous token");
+        if (current == 0) throw new IllegalStateException("No previous token (the parser is broken)");
         return tokens.get(current - 1);
     }
 
     public PositionedToken<?> peek() {
-        if (!hasNext()) throw new IllegalStateException("Unexpected end of file");
+        if (!hasNext()) throw new ParseException("Unexpected end of file", new SourceSpan(previous().getTo(), previous().getTo()));
         return tokens.get(current);
     }
 
@@ -121,12 +135,22 @@ public class Parser {
         return current < tokens.size();
     }
 
-    public static class ParseException extends RuntimeException {
+    public static class ParseException extends PositionedException {
         public final SourceSpan pos;
 
         public ParseException(String message, SourceSpan pos) {
             super(message);
             this.pos = pos;
+        }
+
+        @Override
+        protected String getBaseMessage() {
+            return "Error while parsing patch";
+        }
+
+        @Override
+        protected @Nullable SourceSpan getPos() {
+            return pos;
         }
     }
 }

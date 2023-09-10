@@ -1,4 +1,4 @@
 package io.github.mattidragon.jsonpatch.lang.parse;
 
-public record SourcePos(String sourceFile, int row, int column) {
+public record SourcePos(SourceFile file, int row, int column) {
 }

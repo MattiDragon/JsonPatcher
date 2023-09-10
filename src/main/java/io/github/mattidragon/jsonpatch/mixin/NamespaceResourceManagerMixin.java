@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatch.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import io.github.mattidragon.jsonpatch.PatchContext;
+import io.github.mattidragon.jsonpatch.patch.PatchContext;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.NamespaceResourceManager;
 import net.minecraft.util.Identifier;

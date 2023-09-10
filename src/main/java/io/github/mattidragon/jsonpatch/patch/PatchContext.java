@@ -1,14 +1,12 @@
-package io.github.mattidragon.jsonpatch;
+package io.github.mattidragon.jsonpatch.patch;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
-import io.github.mattidragon.jsonpatch.lang.ast.Program;
-import io.github.mattidragon.jsonpatch.lang.parse.Lexer;
-import io.github.mattidragon.jsonpatch.lang.parse.Parser;
+import io.github.mattidragon.jsonpatch.JsonPatch;
 import io.github.mattidragon.jsonpatch.lang.ast.Context;
-import io.github.mattidragon.jsonpatch.lang.ast.Statement;
+import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.ast.Value;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
@@ -16,6 +14,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -24,7 +23,7 @@ public class PatchContext {
     private static final Gson GSON = new Gson();
 
     private boolean loaded = false;
-    private List<Patch> patches = null;
+    private PatchStorage patches = null;
 
     public PatchContext() {
     }
@@ -53,20 +52,27 @@ public class PatchContext {
 
     public void load(ResourceManager manager, Executor executor) {
         if (loaded) throw new IllegalStateException("Already loaded");
-        patches = PatchLoader.load(executor, manager);
+        patches = new PatchStorage(PatchLoader.load(executor, manager));
         JsonPatch.RELOAD_LOGGER.info("Loaded {} patches", patches.size());
         loaded = true;
     }
 
     private boolean hasPatches(Identifier id) {
-        return patches.stream().map(Patch::target).anyMatch(id::equals);
+        return patches.hasPatches(id);
     }
 
     private void applyPatches(JsonElement json, Identifier id) {
-        for (Patch patch : patches) {
-            if (patch.target().equals(id)) {
+        var errors = new ArrayList<EvaluationException>();
+        for (var patch : patches.getPatches(id)) {
+            try {
                 patch.program().execute(new Context(new Value.ObjectValue(JsonHelper.asObject(json, "patched file"))));
+            } catch (EvaluationException e) {
+                errors.add(e);
             }
+        }
+        if (!errors.isEmpty()) {
+            JsonPatch.MAIN_LOGGER.error("Encountered {} error(s) while patching {}. See logs/jsonpatch.log for details", errors.size(), id);
+            errors.forEach(error -> JsonPatch.RELOAD_LOGGER.error("Error while patching {}", id, error));
         }
     }
 

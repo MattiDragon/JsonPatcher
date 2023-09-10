@@ -1,5 +1,7 @@
 package io.github.mattidragon.jsonpatch.lang.parse;
 
+import java.util.Locale;
+
 public sealed interface Token {
     record NumberToken(double value) implements Token {
     }
@@ -11,20 +13,46 @@ public sealed interface Token {
     }
 
     enum SimpleToken implements Token {
+        ASSIGN,
+
+        NOT_EQUALS,
         EQUALS,
-        DOT,
-        AT_SIGN,
+        LESS_THAN,
+        GREATER_THAN,
+        LESS_THAN_EQUAL,
+        GREATER_THAN_EQUAL,
+
+        STAR_ASSIGN,
+        PLUS_ASSIGN,
+        MINUS_ASSIGN,
+        SLASH_ASSIGN,
+        PERCENT_ASSIGN,
+        AND_ASSIGN,
+        OR_ASSIGN,
+        XOR_ASSIGN,
+
+        AND,
+        OR,
+        XOR,
+
+        DOUBLE_AND,
+        DOUBLE_OR,
+
         BEGIN_CURLY,
         END_CURLY,
         BEGIN_PAREN,
         END_PAREN,
         BEGIN_SQUARE,
         END_SQUARE,
-        SEMICOLON,
-        COLON,
+
+        DOT,
         COMMA,
+        COLON,
+        SEMICOLON,
+
         BANG,
         QUESTION_MARK,
+
         MINUS,
         PLUS,
         STAR,
@@ -38,6 +66,12 @@ public sealed interface Token {
         FALSE,
         NULL,
         APPLY,
-        THIS
+        THIS,
+        IF,
+        ELSE,
+        FOR,
+        IN,
+        VAR,
+        VAL,
     }
 }

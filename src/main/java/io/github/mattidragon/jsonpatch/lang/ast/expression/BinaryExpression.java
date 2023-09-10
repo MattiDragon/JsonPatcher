@@ -7,6 +7,8 @@ import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.ast.Value;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
 public record BinaryExpression(Expression first, Expression second, Operator op, SourceSpan opPos) implements Expression {
@@ -89,24 +91,80 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
             throw new EvaluationException("Can't take %s modulo %s".formatted(first, second), pos);
         };
 
-        Operator EQUALS = (first, second, pos) -> {
+        Operator AND = (first, second, pos) -> {
             if (first instanceof Value.NumberValue number1
                 && second instanceof Value.NumberValue number2) {
-                return Value.BooleanValue.of(number1.value() == number2.value());
+                return new Value.NumberValue((int) number1.value() & (int) number2.value());
+            }
+            if (first instanceof Value.BooleanValue boolean1
+                && second instanceof Value.BooleanValue boolean2) {
+                return Value.BooleanValue.of(boolean1.value() && boolean2.value());
+            }
+            throw new EvaluationException("Can't apply and to %s and %s".formatted(first, second), pos);
+        };
+        Operator OR = (first, second, pos) -> {
+            if (first instanceof Value.NumberValue number1
+                && second instanceof Value.NumberValue number2) {
+                return new Value.NumberValue((int) number1.value() | (int) number2.value());
+            }
+            if (first instanceof Value.BooleanValue boolean1
+                && second instanceof Value.BooleanValue boolean2) {
+                return Value.BooleanValue.of(boolean1.value() || boolean2.value());
+            }
+            throw new EvaluationException("Can't apply or to %s and %s".formatted(first, second), pos);
+        };
+        Operator XOR = (first, second, pos) -> {
+            if (first instanceof Value.NumberValue number1
+                && second instanceof Value.NumberValue number2) {
+                return new Value.NumberValue((int) number1.value() ^ (int) number2.value());
+            }
+            if (first instanceof Value.BooleanValue boolean1
+                && second instanceof Value.BooleanValue boolean2) {
+                return Value.BooleanValue.of(boolean1.value() ^ boolean2.value());
+            }
+            throw new EvaluationException("Can't apply xor to %s and %s".formatted(first, second), pos);
+        };
+
+        Operator EQUALS = (first, second, pos) -> Value.BooleanValue.of(isEqual(first, second));
+        Operator NOT_EQUALS = (first, second, pos) -> Value.BooleanValue.of(!isEqual(first, second));
+        Operator LESS_THAN = numberComparison((first, second) -> first < second);
+        Operator GREATER_THAN = numberComparison((first, second) -> first > second);
+        Operator LESS_THAN_EQUAL = numberComparison((first, second) -> first <= second);
+        Operator GREATER_THAN_EQUAL = numberComparison((first, second) -> first >= second);
+
+        /**
+         * Special operator used for the normal assignment. Returns the second value
+         */
+        Operator ASSIGN = (first, second, pos) -> second;
+
+        private static boolean isEqual(Value first, Value second) {
+            if (first instanceof Value.NumberValue number1
+                && second instanceof Value.NumberValue number2) {
+                return number1.value() == number2.value();
             }
             if (first instanceof Value.StringValue string1
                 && second instanceof Value.StringValue string2) {
-                return Value.BooleanValue.of(string1.value().equals(string2.value()));
+                return string1.value().equals(string2.value());
             }
             if (first instanceof Value.ArrayValue array1
                 && second instanceof Value.ArrayValue array2) {
-                return Value.BooleanValue.of(array1.value().equals(array2.value()));
+                return array1.value().equals(array2.value());
             }
             if (first instanceof Value.ObjectValue object1
                 && second instanceof Value.ObjectValue object2) {
-                return Value.BooleanValue.of(object1.value().equals(object2.value()));
+                return object1.value().equals(object2.value());
             }
-            return Value.BooleanValue.FALSE;
-        };
+            return false;
+        }
+
+        private static Operator numberComparison(BiPredicate<Double, Double> predicate) {
+            return (first, second, pos) -> {
+                if (first instanceof Value.NumberValue number1
+                    && second instanceof Value.NumberValue number2) {
+                    return Value.BooleanValue.of(predicate.test(number1.value(), number2.value()));
+                }
+                throw new EvaluationException("Can't compare %s and %s".formatted(second, first), pos);
+            };
+        }
     }
 }

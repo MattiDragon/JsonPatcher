@@ -1,5 +1,7 @@
 package io.github.mattidragon.jsonpatch.lang.ast;
 
+import io.github.mattidragon.jsonpatch.lang.ast.statement.Statement;
+
 import java.util.List;
 
 public record Program(List<Statement> statements) {

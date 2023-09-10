@@ -38,7 +38,7 @@ public interface PrefixParselet<T extends PositionedToken<?>> {
         if (token.getToken() == Token.SimpleToken.BANG) return NOT.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.TILDE) return BITWISE_NOT.parse(parser, token);
 
-        throw new Parser.ParseException("Unexpected token at start of expression: %s".formatted(token), token.getPos());
+        throw new Parser.ParseException("Unexpected token at start of expression: %s".formatted(token.getToken()), token.getPos());
     }
 
     private static <T extends PositionedToken<?>> PrefixParselet<T> operator(UnaryExpression.Operator operator) {

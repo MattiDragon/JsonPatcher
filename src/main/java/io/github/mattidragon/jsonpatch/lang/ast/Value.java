@@ -17,6 +17,8 @@ public sealed interface Value {
         throw new IllegalStateException("Unsupported json element: " + element);
     }
 
+    boolean asBoolean();
+
     JsonElement toGson();
 
     record ObjectValue(JsonObject value) implements Value {
@@ -27,6 +29,11 @@ public sealed interface Value {
 
         public void set(String key, Value value, @Nullable SourceSpan pos) {
             this.value.add(key, value.toGson());
+        }
+
+        @Override
+        public boolean asBoolean() {
+            return value.size() > 0;
         }
 
         @Override
@@ -41,6 +48,11 @@ public sealed interface Value {
     }
 
     record ArrayValue(JsonArray value) implements Value {
+        @Override
+        public boolean asBoolean() {
+            return !value.isEmpty();
+        }
+
         @Override
         public JsonElement toGson() {
             return value;
@@ -71,6 +83,11 @@ public sealed interface Value {
 
     record StringValue(String value) implements Primitive {
         @Override
+        public boolean asBoolean() {
+            return !value.isEmpty();
+        }
+
+        @Override
         public JsonElement toGson() {
             return new JsonPrimitive(value());
         }
@@ -82,6 +99,11 @@ public sealed interface Value {
     }
 
     record NumberValue(double value) implements Primitive {
+        @Override
+        public boolean asBoolean() {
+            return value != 0;
+        }
+
         @Override
         public JsonElement toGson() {
             return new JsonPrimitive(value());
@@ -105,6 +127,11 @@ public sealed interface Value {
         }
 
         @Override
+        public boolean asBoolean() {
+            return value();
+        }
+
+        @Override
         public JsonElement toGson() {
             return new JsonPrimitive(value());
         }
@@ -117,6 +144,11 @@ public sealed interface Value {
 
     enum NullValue implements Primitive {
         NULL;
+
+        @Override
+        public boolean asBoolean() {
+            return false;
+        }
 
         @Override
         public JsonElement toGson() {

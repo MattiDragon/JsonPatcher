@@ -1,45 +1,35 @@
 package io.github.mattidragon.jsonpatch.lang.parse;
 
+import io.github.mattidragon.jsonpatch.lang.PositionedException;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
 
 public class Lexer {
-    private static final int TAB_WIDTH = 4;
+    public static final int TAB_WIDTH = 4;
+    private final SourceFile file;
     private final String program;
-    private final String filename;
     private final ArrayList<PositionedToken<?>> tokens = new ArrayList<>();
     private final Map<String, Optional<String>> metadata = new HashMap<>();
     private int current = 0;
     private int currentLine = 1;
-    private int currentColumn = 1;
+    private int currentColumn = 0;
 
     public Lexer(String program, String filename) {
         this.program = program;
-        this.filename = filename;
+        this.file = new SourceFile(filename, program);
     }
 
     public Result lex() {
         while (hasNext()) {
             var c = next();
             switch (c) {
-                case '{' -> addParsedToken(Token.SimpleToken.BEGIN_CURLY, 1);
-                case '}' -> addParsedToken(Token.SimpleToken.END_CURLY, 1);
-                case '[' -> addParsedToken(Token.SimpleToken.BEGIN_SQUARE, 1);
-                case ']' -> addParsedToken(Token.SimpleToken.END_SQUARE, 1);
-                case '(' -> addParsedToken(Token.SimpleToken.BEGIN_PAREN, 1);
-                case ')' -> addParsedToken(Token.SimpleToken.END_PAREN, 1);
-                case ';' -> addParsedToken(Token.SimpleToken.SEMICOLON, 1);
-                case ':' -> addParsedToken(Token.SimpleToken.COLON, 1);
-                case ',' -> addParsedToken(Token.SimpleToken.COMMA, 1);
-                case '.' -> addParsedToken(Token.SimpleToken.DOT, 1);
-                case '=' -> addParsedToken(Token.SimpleToken.EQUALS, 1);
-                case '+' -> addParsedToken(Token.SimpleToken.PLUS, 1);
-                case '-' -> addParsedToken(Token.SimpleToken.MINUS, 1);
-                case '*' -> addParsedToken(Token.SimpleToken.STAR, 1);
-                case '/' -> addParsedToken(Token.SimpleToken.SLASH, 1);
-                case '%' -> addParsedToken(Token.SimpleToken.PERCENT, 1);
-                case '~' -> addParsedToken(Token.SimpleToken.TILDE, 1);
-                case '!' -> addParsedToken(Token.SimpleToken.BANG, 1);
-                case '?' -> addParsedToken(Token.SimpleToken.QUESTION_MARK, 1);
+                case '{', '?', '!', '~', '%',
+                        '/', '*', '-', '+', '=',
+                        '.', ',', ':', ';', ')',
+                        '(', ']', '[', '}', '>',
+                        '<', '|', '&', '^'
+                        -> readSimpleToken(c);
 
                 case ' ', '\r', '\n', '\t' -> {}
 
@@ -87,6 +77,74 @@ public class Lexer {
         }
     }
 
+    private void readSimpleToken(char c) {
+        switch (c) {
+            case '{' -> addParsedToken(Token.SimpleToken.BEGIN_CURLY, 1);
+            case '}' -> addParsedToken(Token.SimpleToken.END_CURLY, 1);
+            case '[' -> addParsedToken(Token.SimpleToken.BEGIN_SQUARE, 1);
+            case ']' -> addParsedToken(Token.SimpleToken.END_SQUARE, 1);
+            case '(' -> addParsedToken(Token.SimpleToken.BEGIN_PAREN, 1);
+            case ')' -> addParsedToken(Token.SimpleToken.END_PAREN, 1);
+
+            case ';' -> addParsedToken(Token.SimpleToken.SEMICOLON, 1);
+            case ':' -> addParsedToken(Token.SimpleToken.COLON, 1);
+            case ',' -> addParsedToken(Token.SimpleToken.COMMA, 1);
+            case '.' -> addParsedToken(Token.SimpleToken.DOT, 1);
+
+            case '=' -> readEqualsOptionalToken(Token.SimpleToken.ASSIGN, Token.SimpleToken.EQUALS);
+            case '>' -> readEqualsOptionalToken(Token.SimpleToken.GREATER_THAN, Token.SimpleToken.GREATER_THAN_EQUAL);
+            case '<' -> readEqualsOptionalToken(Token.SimpleToken.LESS_THAN, Token.SimpleToken.LESS_THAN_EQUAL);
+
+            case '&' -> {
+                switch (peek()) {
+                    case '&' -> {
+                        next();
+                        addParsedToken(Token.SimpleToken.DOUBLE_AND, 2);
+                    }
+                    case '=' -> {
+                        next();
+                        addParsedToken(Token.SimpleToken.AND_ASSIGN, 2);
+                    }
+                    default -> addParsedToken(Token.SimpleToken.AND, 1);
+                }
+            }
+            case '|' -> {
+                switch (peek()) {
+                    case '|' -> {
+                        next();
+                        addParsedToken(Token.SimpleToken.DOUBLE_OR, 2);
+                    }
+                    case '=' -> {
+                        next();
+                        addParsedToken(Token.SimpleToken.OR_ASSIGN, 2);
+                    }
+                    default -> addParsedToken(Token.SimpleToken.OR, 1);
+                }
+            }
+            case '^' -> addParsedToken(Token.SimpleToken.XOR, 1);
+
+            case '+' -> readEqualsOptionalToken(Token.SimpleToken.PLUS, Token.SimpleToken.PLUS_ASSIGN);
+            case '-' -> readEqualsOptionalToken(Token.SimpleToken.MINUS, Token.SimpleToken.MINUS_ASSIGN);
+            case '*' -> readEqualsOptionalToken(Token.SimpleToken.STAR, Token.SimpleToken.STAR_ASSIGN);
+            case '/' -> readEqualsOptionalToken(Token.SimpleToken.SLASH, Token.SimpleToken.SLASH_ASSIGN);
+            case '%' -> readEqualsOptionalToken(Token.SimpleToken.PERCENT, Token.SimpleToken.PERCENT_ASSIGN);
+            case '~' -> addParsedToken(Token.SimpleToken.TILDE, 1);
+
+            case '!' -> readEqualsOptionalToken(Token.SimpleToken.BANG, Token.SimpleToken.NOT_EQUALS);
+            case '?' -> addParsedToken(Token.SimpleToken.QUESTION_MARK, 1);
+        }
+    }
+
+    private void readEqualsOptionalToken(Token.SimpleToken withoutEquals, Token.SimpleToken withEquals) {
+        if (peek() == '=') {
+            next();
+            addParsedToken(withEquals, 2);
+        } else {
+            addParsedToken(withoutEquals, 1);
+        }
+    }
+
+
     private void readNumber(char c) {
         var string = new StringBuilder();
         var beginPos = currentColumn - 1;
@@ -118,6 +176,12 @@ public class Lexer {
             case "null" -> Token.KeywordToken.NULL;
             case "apply" -> Token.KeywordToken.APPLY;
             case "this" -> Token.KeywordToken.THIS;
+            case "if" -> Token.KeywordToken.IF;
+            case "else" -> Token.KeywordToken.ELSE;
+            case "for" -> Token.KeywordToken.FOR;
+            case "in" -> Token.KeywordToken.IN;
+            case "var" -> Token.KeywordToken.VAR;
+            case "val" -> Token.KeywordToken.VAL;
             default -> new Token.WordToken(string.toString());
         };
         addParsedToken(token, length);
@@ -172,7 +236,7 @@ public class Lexer {
         var c = program.charAt(current++);
         if (c == '\n') {
             currentLine++;
-            currentColumn = 1;
+            currentColumn = 0;
         } if (c == '\t') {
             currentColumn += TAB_WIDTH;
         } else {
@@ -183,10 +247,9 @@ public class Lexer {
     }
 
     private void addParsedToken(Token token, int length) {
-        tokens.add(PositionedToken.of(
-                new SourcePos(filename, currentLine, currentColumn - length),
-                new SourcePos(filename, currentLine, currentLine),
-                token));
+        var from = new SourcePos(file, currentLine, currentColumn - length);
+        var to = new SourcePos(file, currentLine, currentColumn - 1);
+        tokens.add(PositionedToken.of(new SourceSpan(from, to), token));
     }
     
     private LexException error(String message) {
@@ -194,15 +257,25 @@ public class Lexer {
     }
 
     private LexException error(String message, int offset) {
-        return new LexException(message, new SourcePos(filename, currentLine, currentColumn - offset));
+        return new LexException(message, new SourcePos(file, currentLine, currentColumn - offset));
     }
 
-    public static class LexException extends RuntimeException {
+    public static class LexException extends PositionedException {
         public final SourcePos pos;
         
         private LexException(String message, SourcePos pos) {
             super(message);
             this.pos = pos;
+        }
+
+        @Override
+        protected String getBaseMessage() {
+            return "Error while parsing tokens";
+        }
+
+        @Override
+        protected @Nullable SourceSpan getPos() {
+            return new SourceSpan(pos, pos);
         }
     }
 
