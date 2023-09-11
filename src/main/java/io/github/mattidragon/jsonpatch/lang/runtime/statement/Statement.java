@@ -1,7 +1,7 @@
-package io.github.mattidragon.jsonpatch.lang.ast.statement;
+package io.github.mattidragon.jsonpatch.lang.runtime.statement;
 
-import io.github.mattidragon.jsonpatch.lang.ast.Context;
-import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
+import io.github.mattidragon.jsonpatch.lang.runtime.Context;
+import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
 public interface Statement {

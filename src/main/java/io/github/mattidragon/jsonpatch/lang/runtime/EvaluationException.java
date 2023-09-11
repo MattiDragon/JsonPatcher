@@ -1,4 +1,4 @@
-package io.github.mattidragon.jsonpatch.lang.ast;
+package io.github.mattidragon.jsonpatch.lang.runtime;
 
 import io.github.mattidragon.jsonpatch.lang.PositionedException;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;

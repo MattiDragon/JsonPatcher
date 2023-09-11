@@ -1,6 +1,6 @@
-package io.github.mattidragon.jsonpatch.lang.ast;
+package io.github.mattidragon.jsonpatch.lang.runtime;
 
-import io.github.mattidragon.jsonpatch.lang.ast.statement.Statement;
+import io.github.mattidragon.jsonpatch.lang.runtime.statement.Statement;
 
 import java.util.List;
 

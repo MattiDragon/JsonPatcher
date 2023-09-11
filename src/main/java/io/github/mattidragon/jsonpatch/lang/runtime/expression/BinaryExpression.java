@@ -1,10 +1,10 @@
-package io.github.mattidragon.jsonpatch.lang.ast.expression;
+package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import io.github.mattidragon.jsonpatch.lang.ast.Context;
-import io.github.mattidragon.jsonpatch.lang.ast.EvaluationException;
-import io.github.mattidragon.jsonpatch.lang.ast.Value;
+import io.github.mattidragon.jsonpatch.lang.runtime.Context;
+import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
+import io.github.mattidragon.jsonpatch.lang.runtime.Value;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
 import java.util.function.BiPredicate;

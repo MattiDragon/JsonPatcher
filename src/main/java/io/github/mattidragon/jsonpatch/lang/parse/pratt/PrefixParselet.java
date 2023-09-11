@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatch.lang.parse.pratt;
 
-import io.github.mattidragon.jsonpatch.lang.ast.Value;
-import io.github.mattidragon.jsonpatch.lang.ast.expression.*;
+import io.github.mattidragon.jsonpatch.lang.runtime.Value;
+import io.github.mattidragon.jsonpatch.lang.runtime.expression.*;
 import io.github.mattidragon.jsonpatch.lang.parse.Parser;
 import io.github.mattidragon.jsonpatch.lang.parse.PositionedToken;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
