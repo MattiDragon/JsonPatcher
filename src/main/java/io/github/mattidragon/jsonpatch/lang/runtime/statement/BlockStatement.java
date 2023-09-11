@@ -12,6 +12,7 @@ public record BlockStatement(List<Statement> statements, SourceSpan pos) impleme
 
     @Override
     public void run(Context context) {
+        context = context.newScope();
         for (var statement : statements) {
             statement.run(context);
         }

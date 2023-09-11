@@ -23,18 +23,18 @@ public record IndexExpression(Expression parent, Expression index, SourceSpan po
     }
 
     @Override
-    public void set(Context context, Value v) {
+    public void set(Context context, Value value) {
         var parent = this.parent.evaluate(context);
         var index = this.index.evaluate(context);
         if (parent instanceof Value.ObjectValue objectValue) {
             if (!(index instanceof Value.StringValue stringValue))
                 throw error("Tried to index object by %s. Objects can only be indexed by string".formatted(index));
-            objectValue.set(stringValue.value(), v, pos);
+            objectValue.set(stringValue.value(), value, pos);
         }
         if (parent instanceof Value.ArrayValue arrayValue) {
             if (!(index instanceof Value.NumberValue numberValue))
                 throw error("Tried to index array by %s. Arrays can only be indexed by number.".formatted(index));
-            arrayValue.set((int) numberValue.value(), v, pos);
+            arrayValue.set((int) numberValue.value(), value, pos);
         }
         throw error("Tried to index %s with %s. Only arrays and objects are indexable.".formatted(parent, index));
     }

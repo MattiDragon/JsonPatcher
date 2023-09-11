@@ -8,6 +8,7 @@ import io.github.mattidragon.jsonpatch.JsonPatch;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
+import io.github.mattidragon.jsonpatch.lang.runtime.VariableStack;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
@@ -64,7 +65,7 @@ public class PatchContext {
         var errors = new ArrayList<EvaluationException>();
         for (var patch : patches.getPatches(id)) {
             try {
-                patch.program().execute(new Context(new Value.ObjectValue(JsonHelper.asObject(json, "patched file"))));
+                patch.program().execute(new Context(new Value.ObjectValue(JsonHelper.asObject(json, "patched file")), new VariableStack()));
             } catch (EvaluationException e) {
                 errors.add(e);
             }

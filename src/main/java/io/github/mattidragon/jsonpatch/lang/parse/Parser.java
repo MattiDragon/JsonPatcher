@@ -33,7 +33,19 @@ public class Parser {
         if (token.getToken() == Token.SimpleToken.BEGIN_CURLY) return blockStatement();
         if (token.getToken() == Token.KeywordToken.APPLY) return applyStatement();
         if (token.getToken() == Token.KeywordToken.IF) return ifStatement();
+        if (token.getToken() == Token.KeywordToken.VAR) return variableStatement(true);
+        if (token.getToken() == Token.KeywordToken.VAL) return variableStatement(false);
         return expressionStatement();
+    }
+
+    private Statement variableStatement(boolean mutable) {
+        var begin = next().getFrom();
+        expect(Token.SimpleToken.DOLLAR);
+        var name = expectWord();
+        expect(Token.SimpleToken.ASSIGN);
+        var initializer = expression();
+        expect(Token.SimpleToken.SEMICOLON);
+        return new VariableCreationStatement(name.value(), initializer, mutable, new SourceSpan(begin, previous().getTo()));
     }
 
     private BlockStatement blockStatement() {

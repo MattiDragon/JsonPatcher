@@ -16,9 +16,14 @@ public interface PrefixParselet<T extends PositionedToken<?>> {
 
     PrefixParselet<PositionedToken.StringToken> STRING = literal(token -> new ValueExpression(new Value.StringValue(token.getToken().value()), token.getPos()));
     PrefixParselet<PositionedToken.NumberToken> NUMBER = literal(token -> new ValueExpression(new Value.NumberValue(token.getToken().value()), token.getPos()));
-    PrefixParselet<PositionedToken.WordToken> IMPLICIT_ROOT = literal(token -> new PropertyAccessExpression(new RootExpression(token.getPos()), token.getToken().value(), token.getPos()));
 
+    PrefixParselet<PositionedToken.WordToken> IMPLICIT_ROOT = literal(token -> new PropertyAccessExpression(new RootExpression(token.getPos()), token.getToken().value(), token.getPos()));
     PrefixParselet<PositionedToken<?>> ROOT = constant(RootExpression::new);
+    PrefixParselet<PositionedToken<?>> VARIABLE = (parser, token) -> {
+        var name = parser.expectWord();
+        return new VariableAccessExpression(name.value(), new SourceSpan(token.getFrom(), parser.previous().getTo()));
+    };
+
     PrefixParselet<PositionedToken<?>> TRUE = constant(pos -> new ValueExpression(Value.BooleanValue.TRUE, pos));
     PrefixParselet<PositionedToken<?>> FALSE = constant(pos -> new ValueExpression(Value.BooleanValue.FALSE, pos));
     PrefixParselet<PositionedToken<?>> NULL = constant(pos -> new ValueExpression(Value.NullValue.NULL, pos));
@@ -73,6 +78,7 @@ public interface PrefixParselet<T extends PositionedToken<?>> {
         if (token.getToken() == Token.KeywordToken.TRUE) return TRUE.parse(parser, token);
         if (token.getToken() == Token.KeywordToken.FALSE) return FALSE.parse(parser, token);
         if (token.getToken() == Token.KeywordToken.NULL) return NULL.parse(parser, token);
+        if (token.getToken() == Token.SimpleToken.DOLLAR) return VARIABLE.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.MINUS) return MINUS.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.BANG) return NOT.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.TILDE) return BITWISE_NOT.parse(parser, token);

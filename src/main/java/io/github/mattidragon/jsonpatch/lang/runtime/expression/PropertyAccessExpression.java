@@ -13,10 +13,10 @@ public record PropertyAccessExpression(Expression parent, String name, SourceSpa
     }
 
     @Override
-    public void set(Context context, Value v) {
+    public void set(Context context, Value value) {
         var parent = this.parent.evaluate(context);
         if (parent instanceof Value.ObjectValue objectValue) {
-            objectValue.set(name, v, pos);
+            objectValue.set(name, value, pos);
         } else {
             throw error("Tried to read property %s of %s. Only objects have properties.".formatted(name, parent));
         }

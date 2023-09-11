@@ -44,7 +44,9 @@ public class PatchLoader {
             }, executor));
         }
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-        JsonPatch.MAIN_LOGGER.error("Failed to load {} patch(es). See logs/jsonpatch.log for details", errorCount.get());
+        if (errorCount.get() > 0) {
+            JsonPatch.MAIN_LOGGER.error("Failed to load {} patch(es). See logs/jsonpatch.log for details", errorCount.get());
+        }
         return patches;
     }
 

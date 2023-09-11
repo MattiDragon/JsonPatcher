@@ -28,7 +28,7 @@ public class Lexer {
                         '/', '*', '-', '+', '=',
                         '.', ',', ':', ';', ')',
                         '(', ']', '[', '}', '>',
-                        '<', '|', '&', '^'
+                        '<', '|', '&', '^', '$'
                         -> readSimpleToken(c);
 
                 case ' ', '\r', '\n', '\t' -> {}
@@ -132,6 +132,7 @@ public class Lexer {
 
             case '!' -> readEqualsOptionalToken(Token.SimpleToken.BANG, Token.SimpleToken.NOT_EQUALS);
             case '?' -> addParsedToken(Token.SimpleToken.QUESTION_MARK, 1);
+            case '$' -> addParsedToken(Token.SimpleToken.DOLLAR, 1);
         }
     }
 

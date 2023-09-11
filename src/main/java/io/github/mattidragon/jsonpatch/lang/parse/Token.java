@@ -50,6 +50,7 @@ public sealed interface Token {
 
         BANG,
         QUESTION_MARK,
+        DOLLAR,
 
         MINUS,
         PLUS,

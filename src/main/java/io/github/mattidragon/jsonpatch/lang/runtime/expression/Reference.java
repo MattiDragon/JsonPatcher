@@ -9,7 +9,7 @@ import io.github.mattidragon.jsonpatch.lang.runtime.Value;
 public interface Reference extends Expression {
     Value get(Context context);
 
-    void set(Context context, Value v);
+    void set(Context context, Value value);
 
     @Override
     default Value evaluate(Context context) {
