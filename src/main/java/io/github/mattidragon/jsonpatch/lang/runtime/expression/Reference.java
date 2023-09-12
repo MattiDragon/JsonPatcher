@@ -15,4 +15,6 @@ public interface Reference extends Expression {
     default Value evaluate(Context context) {
         return get(context);
     }
+
+    void delete(Context context);
 }

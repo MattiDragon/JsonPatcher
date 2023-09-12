@@ -3,6 +3,7 @@ package io.github.mattidragon.jsonpatch.lang.parse;
 import io.github.mattidragon.jsonpatch.lang.PositionedException;
 import io.github.mattidragon.jsonpatch.lang.runtime.Program;
 import io.github.mattidragon.jsonpatch.lang.runtime.expression.Expression;
+import io.github.mattidragon.jsonpatch.lang.runtime.expression.Reference;
 import io.github.mattidragon.jsonpatch.lang.runtime.statement.*;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.PostfixParselet;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.Precedence;
@@ -35,17 +36,8 @@ public class Parser {
         if (token.getToken() == Token.KeywordToken.IF) return ifStatement();
         if (token.getToken() == Token.KeywordToken.VAR) return variableStatement(true);
         if (token.getToken() == Token.KeywordToken.VAL) return variableStatement(false);
+        if (token.getToken() == Token.KeywordToken.DELETE) return deleteStatement();
         return expressionStatement();
-    }
-
-    private Statement variableStatement(boolean mutable) {
-        var begin = next().getFrom();
-        expect(Token.SimpleToken.DOLLAR);
-        var name = expectWord();
-        expect(Token.SimpleToken.ASSIGN);
-        var initializer = expression();
-        expect(Token.SimpleToken.SEMICOLON);
-        return new VariableCreationStatement(name.value(), initializer, mutable, new SourceSpan(begin, previous().getTo()));
     }
 
     private BlockStatement blockStatement() {
@@ -84,6 +76,24 @@ public class Parser {
         }
         var endPos = previous().getTo();
         return new IfStatement(condition, action, elseAction, new SourceSpan(beginPos, endPos));
+    }
+
+    private Statement variableStatement(boolean mutable) {
+        var begin = next().getFrom();
+        expect(Token.SimpleToken.DOLLAR);
+        var name = expectWord();
+        expect(Token.SimpleToken.ASSIGN);
+        var initializer = expression();
+        expect(Token.SimpleToken.SEMICOLON);
+        return new VariableCreationStatement(name.value(), initializer, mutable, new SourceSpan(begin, previous().getTo()));
+    }
+
+    private Statement deleteStatement() {
+        var begin = next().getFrom();
+        var expression = expression();
+        if (!(expression instanceof Reference ref)) throw new Parser.ParseException("Can't delete to %s".formatted(expression), expression.getPos());
+        expect(Token.SimpleToken.SEMICOLON);
+        return new DeleteStatement(ref, new SourceSpan(begin, previous().getTo()));
     }
 
     private ExpressionStatement expressionStatement() {

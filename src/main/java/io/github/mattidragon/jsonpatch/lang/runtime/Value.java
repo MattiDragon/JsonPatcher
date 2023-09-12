@@ -31,6 +31,11 @@ public sealed interface Value {
             this.value.add(key, value.toGson());
         }
 
+        public void remove(String key, SourceSpan pos) {
+            if (!value.has(key)) throw new EvaluationException("Object %s has no key %s".formatted(this, key), pos);
+            value.remove(key);
+        }
+
         @Override
         public boolean asBoolean() {
             return value.size() > 0;
@@ -69,6 +74,10 @@ public sealed interface Value {
 
         public void set(int index, Value value, @Nullable SourceSpan pos) {
             this.value.set(fixIndex(index, pos), value.toGson());
+        }
+
+        public void remove(int index, SourceSpan pos) {
+            value.remove(fixIndex(index, pos));
         }
 
         private int fixIndex(int index, @Nullable SourceSpan pos) {

@@ -57,4 +57,17 @@ public final class VariableStack {
         if (mutable) this.mutable.put(name, value);
         else this.immutable.put(name, value);
     }
+
+    public void delete(String name, SourceSpan pos) {
+        if (immutable.containsKey(name)) {
+            immutable.remove(name);
+            return;
+        }
+        if (mutable.containsKey(name)) {
+            mutable.remove(name);
+            return;
+        }
+        if (has(name)) throw new EvaluationException("Cannot delete variable from outer scope: $%s".formatted(name), pos);
+        throw new EvaluationException("Cannot find variable with name %s".formatted(name), pos);
+    }
 }

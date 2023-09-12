@@ -19,4 +19,9 @@ public record VariableAccessExpression(String name, SourceSpan pos) implements R
     public void set(Context context, Value value) {
         context.variables().set(name, value, pos);
     }
+
+    @Override
+    public void delete(Context context) {
+        context.variables().delete(name, pos);
+    }
 }

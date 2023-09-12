@@ -8,8 +8,11 @@ public record PropertyAccessExpression(Expression parent, String name, SourceSpa
     @Override
     public Value get(Context context) {
         var parent = this.parent.evaluate(context);
-        if (parent instanceof Value.ObjectValue objectValue) return objectValue.get(name, pos);
-        throw error("Tried to read property %s of %s. Only objects have properties.".formatted(name, parent));
+        if (parent instanceof Value.ObjectValue objectValue) {
+            return objectValue.get(name, pos);
+        } else {
+            throw error("Tried to read property %s of %s. Only objects have properties.".formatted(name, parent));
+        }
     }
 
     @Override
@@ -18,7 +21,17 @@ public record PropertyAccessExpression(Expression parent, String name, SourceSpa
         if (parent instanceof Value.ObjectValue objectValue) {
             objectValue.set(name, value, pos);
         } else {
-            throw error("Tried to read property %s of %s. Only objects have properties.".formatted(name, parent));
+            throw error("Tried to write property %s of %s. Only objects have properties.".formatted(name, parent));
+        }
+    }
+
+    @Override
+    public void delete(Context context) {
+        var parent = this.parent.evaluate(context);
+        if (parent instanceof Value.ObjectValue objectValue) {
+            objectValue.remove(name, pos);
+        } else {
+            throw error("Tried to delete property %s of %s. Only objects have properties.".formatted(name, parent));
         }
     }
 
