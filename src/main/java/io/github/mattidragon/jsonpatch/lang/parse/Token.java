@@ -72,6 +72,7 @@ public sealed interface Token {
         IN,
         VAR,
         VAL,
-        DELETE
+        DELETE,
+        FUNCTION
     }
 }

@@ -17,7 +17,7 @@ public interface PrefixParselet<T extends PositionedToken<?>> {
     PrefixParselet<PositionedToken.StringToken> STRING = literal(token -> new ValueExpression(new Value.StringValue(token.getToken().value()), token.getPos()));
     PrefixParselet<PositionedToken.NumberToken> NUMBER = literal(token -> new ValueExpression(new Value.NumberValue(token.getToken().value()), token.getPos()));
 
-    PrefixParselet<PositionedToken.WordToken> IMPLICIT_ROOT = literal(token -> new PropertyAccessExpression(new RootExpression(token.getPos()), token.getToken().value(), token.getPos()));
+    PrefixParselet<PositionedToken.WordToken> IMPLICIT_ROOT = literal(token -> new ImplicitRootExpression(token.getToken().value(), token.getPos()));
     PrefixParselet<PositionedToken<?>> ROOT = constant(RootExpression::new);
     PrefixParselet<PositionedToken<?>> VARIABLE = (parser, token) -> {
         var name = parser.expectWord();

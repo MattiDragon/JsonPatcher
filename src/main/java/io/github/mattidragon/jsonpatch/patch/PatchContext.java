@@ -65,7 +65,7 @@ public class PatchContext {
         var errors = new ArrayList<EvaluationException>();
         for (var patch : patches.getPatches(id)) {
             try {
-                patch.program().execute(new Context(new Value.ObjectValue(JsonHelper.asObject(json, "patched file")), new VariableStack()));
+                patch.program().execute(Context.create(json));
             } catch (EvaluationException e) {
                 errors.add(e);
             }

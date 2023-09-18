@@ -13,6 +13,11 @@ public class EvaluationException extends PositionedException {
         this.pos = pos;
     }
 
+    public EvaluationException(String message, @Nullable SourceSpan pos, EvaluationException cause) {
+        super(message, cause);
+        this.pos = pos;
+    }
+
     @Override
     protected String getBaseMessage() {
         return "Error while applying patch";

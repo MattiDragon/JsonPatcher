@@ -7,7 +7,7 @@ import io.github.mattidragon.jsonpatch.lang.runtime.expression.Expression;
 public record VariableCreationStatement(String name, Expression initializer, boolean mutable, SourceSpan pos) implements Statement {
     @Override
     public void run(Context context) {
-        context.variables().create(name, initializer.evaluate(context), mutable, pos);
+        context.variables().createVariable(name, initializer.evaluate(context), mutable, pos);
     }
 
     @Override

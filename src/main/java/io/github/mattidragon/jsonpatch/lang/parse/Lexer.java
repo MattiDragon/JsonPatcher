@@ -184,6 +184,7 @@ public class Lexer {
             case "var" -> Token.KeywordToken.VAR;
             case "val" -> Token.KeywordToken.VAL;
             case "delete" -> Token.KeywordToken.DELETE;
+            case "function" -> Token.KeywordToken.FUNCTION;
             default -> new Token.WordToken(string.toString());
         };
         addParsedToken(token, length);

@@ -6,6 +6,8 @@ import io.github.mattidragon.jsonpatch.lang.parse.PositionedToken;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.parse.Token;
 
+import java.util.ArrayList;
+
 public interface PostfixParselet {
     Expression parse(Parser parser, Expression left, PositionedToken<?> token);
     Precedence precedence();
@@ -56,7 +58,7 @@ public interface PostfixParselet {
     record AssignmentParselet(BinaryExpression.Operator operator) implements PostfixParselet {
         @Override
         public Expression parse(Parser parser, Expression left, PositionedToken<?> token) {
-            if (!(left instanceof Reference ref)) throw new Parser.ParseException("Can't assign to %s".formatted(left), left.getPos());
+            if (!(left instanceof Reference ref)) throw new Parser.ParseException("Can't assign to %s".formatted(left), token.getPos());
             var right = parser.expression(Precedence.ROOT);
             return new AssignmentExpression(ref, right, operator, token.getPos());
         }
@@ -67,11 +69,38 @@ public interface PostfixParselet {
         }
     }
 
+    record FunctionCallParselet() implements PostfixParselet {
+        @Override
+        public Expression parse(Parser parser, Expression left, PositionedToken<?> token) {
+            // We do a little hack where the implicit root expression gets converted to a function reference if it's called
+            if (!(left instanceof ImplicitRootExpression root)) throw new Parser.ParseException("Can't call %s".formatted(left), token.getPos());
+            var functionName = root.name();
+            var arguments = new ArrayList<Expression>();
+            while (parser.peek().getToken() != Token.SimpleToken.END_PAREN) {
+                arguments.add(parser.expression());
+                if (parser.peek().getToken() == Token.SimpleToken.COMMA) {
+                    parser.next();
+                } else {
+                    break;
+                }
+            }
+            parser.expect(Token.SimpleToken.END_PAREN);
+
+            return new FunctionCallExpression(functionName, arguments, new SourceSpan(token.getFrom(), parser.previous().getTo()));
+        }
+
+        @Override
+        public Precedence precedence() {
+            return Precedence.POSTFIX;
+        }
+    }
+
     static PostfixParselet get(PositionedToken<?> token) {
         if (token instanceof PositionedToken.SimpleToken simpleToken) {
             return switch (simpleToken.getToken()) {
                 case DOT -> new PropertyAccessParselet();
                 case BEGIN_SQUARE -> new IndexParselet();
+                case BEGIN_PAREN -> new FunctionCallParselet();
 
                 case PLUS -> new BinaryOperationParselet(Precedence.SUM, BinaryExpression.Operator.PLUS);
                 case MINUS -> new BinaryOperationParselet(Precedence.SUM, BinaryExpression.Operator.MINUS);

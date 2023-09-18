@@ -3,9 +3,16 @@ package io.github.mattidragon.jsonpatch.lang;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
+
 public abstract class PositionedException extends RuntimeException {
-    public PositionedException(String message) {
+    protected PositionedException(String message) {
         super(message);
+    }
+
+    protected PositionedException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     protected abstract String getBaseMessage();
@@ -13,30 +20,53 @@ public abstract class PositionedException extends RuntimeException {
     protected abstract SourceSpan getPos();
 
     @Override
+    public synchronized Throwable fillInStackTrace() {
+        return this;
+    }
+
+    @Override
+    public synchronized Throwable getCause() {
+        var original = super.getCause();
+        return original instanceof PositionedException ? null : original;
+    }
+
+    @Override
     public final String getMessage() {
         var message = new StringBuilder("\n| ");
         message.append(getBaseMessage());
-        message.append(":\n|   ");
+        message.append("\n| ");
+
+        fillInError(message);
+
+        if (super.getCause() instanceof PositionedException cause) {
+            message.append("\n| \n| Caused by:\n| ");
+            cause.fillInError(message);
+        }
+
+        return message.toString();
+    }
+
+    private void fillInError(StringBuilder message) {
+        message.append("  ").append(super.getMessage()).append("\n| ");
 
         var pos = getPos();
-        message.append(super.getMessage()).append("\n| \n| ");
         if (pos == null) {
             message.append("Location unavailable: no location specified");
-            return message.toString();
+            return;
         }
 
         var from = pos.from();
         var to = pos.to();
         if (from.file() != to.file()){
             message.append("Location unavailable: inconsistent file\n| (from: %s, to: %s)".formatted(from, to));
-            return message.toString();
+            return;
         }
 
         var file = from.file();
 
         if (from.row() > to.row() || from.row() == to.row() && from.column() > to.column()){
             message.append("Location unavailable: unexpected position order\n| (from: %s, to: %s)".formatted(from, to));
-            return message.toString();
+            return;
         }
 
         if (from.row() == to.row()) {
@@ -50,14 +80,18 @@ public abstract class PositionedException extends RuntimeException {
             } else {
                 message.append("Location: in %s, line %s, column %s - %s\n| ".formatted(file.name(), row, from.column(), to.column()));
             }
-            message.append(file.code().substring(rowBegin, rowEnd + 1).replace("\t", "    ")).append("\n| ");
+            message.append(file.code()
+                            .substring(rowBegin, rowEnd)
+                            .replace("\t", "    ")
+                            .replace("\n", "")
+                            .replace("\r", ""))
+                    .append("\n| ");
             message.append(" ".repeat(from.column() - 1));
             message.append("^".repeat(to.column() - from.column() + 1));
             message.append(" here");
-            return message.toString();
+            return;
         }
 
         message.append("Location unavailable: multiline location\n(from: %s, to: %s)".formatted(from, to));
-        return message.toString();
     }
 }

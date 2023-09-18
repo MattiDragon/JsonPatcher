@@ -37,6 +37,7 @@ public class Parser {
         if (token.getToken() == Token.KeywordToken.VAR) return variableStatement(true);
         if (token.getToken() == Token.KeywordToken.VAL) return variableStatement(false);
         if (token.getToken() == Token.KeywordToken.DELETE) return deleteStatement();
+        if (token.getToken() == Token.KeywordToken.FUNCTION) return functionDeclaration();
         return expressionStatement();
     }
 
@@ -94,6 +95,32 @@ public class Parser {
         if (!(expression instanceof Reference ref)) throw new Parser.ParseException("Can't delete to %s".formatted(expression), expression.getPos());
         expect(Token.SimpleToken.SEMICOLON);
         return new DeleteStatement(ref, new SourceSpan(begin, previous().getTo()));
+    }
+
+    private FunctionDeclarationStatement functionDeclaration() {
+        expect(Token.KeywordToken.FUNCTION);
+
+        var name = expectWord().value();
+        var begin = previous().getFrom();
+
+        expect(Token.SimpleToken.BEGIN_PAREN);
+
+        var arguments = new ArrayList<String>();
+        while (peek().getToken() != Token.SimpleToken.END_PAREN) {
+            expect(Token.SimpleToken.DOLLAR);
+            var argument = expectWord().value();
+            if (arguments.contains(argument)) throw new ParseException("Duplicate parameter name: '%s'".formatted(argument), previous().getPos());
+            arguments.add(argument);
+            if (peek().getToken() == Token.SimpleToken.COMMA) {
+                next();
+            } else {
+                break;
+            }
+        }
+        expect(Token.SimpleToken.END_PAREN);
+
+        var body = blockStatement();
+        return new FunctionDeclarationStatement(name, body, arguments, new SourceSpan(begin, previous().getTo()));
     }
 
     private ExpressionStatement expressionStatement() {

@@ -10,14 +10,9 @@
 # Uses custom glob-like syntax
 @target minecraft:recipes/*arrow.json
 
-# We only do shaped recipes (otherwise we would have to deal with the tipped arrow special recipe)
-if (type == "minecraft:crafting_shaped") {
-    # Variables! val is immutable, var is mutable.
-    # Names must start with a dollar sign to differentiate them from values in the json.
-    val $result = result;
-
+function modifyKey($key) {
     # The apply statement allows you to swap out the root element
-    apply (key) {
+    apply ($key) {
         # You can escape names with weird characters with single quotes
         '#' = {
             tag: "minecraft:coals",
@@ -25,7 +20,15 @@ if (type == "minecraft:crafting_shaped") {
 
         if ($result.item == "minecraft:arrow") delete X;
     }
+}
 
+# We only do shaped recipes (otherwise we would have to deal with the tipped arrow special recipe)
+if (type == "minecraft:crafting_shaped") {
+    # Variables! val is immutable, var is mutable.
+    # Names must start with a dollar sign to differentiate them from values in the json.
+    val $result = result;
+
+    modifyKey(key);
 
     if (result.item == "minecraft:arrow") {
         # Array assignment
@@ -33,5 +36,5 @@ if (type == "minecraft:crafting_shaped") {
     }
 
     # Math, with proper order of operations
-    $result.count += 2 + (10 - 9) * 3;
+    $result.count += abs(1-100);
 }
