@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.statement;
 
-import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
+import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 
 import java.util.List;
 

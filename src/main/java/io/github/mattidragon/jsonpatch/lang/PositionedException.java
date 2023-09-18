@@ -3,9 +3,6 @@ package io.github.mattidragon.jsonpatch.lang;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
-
 public abstract class PositionedException extends RuntimeException {
     protected PositionedException(String message) {
         super(message);

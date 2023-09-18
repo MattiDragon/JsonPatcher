@@ -6,6 +6,8 @@ import java.util.Map;
 
 import static io.github.mattidragon.jsonpatch.lang.runtime.function.PatchFunction.BuiltInPatchFunction.numberUnary;
 
+// Suppress spell checker because math functions have weird names
+@SuppressWarnings("SpellCheckingInspection")
 public class BuiltInFunctions {
     public static final PatchFunction.BuiltInPatchFunction ASIN = numberUnary(Math::asin);
     public static final PatchFunction.BuiltInPatchFunction SIN = numberUnary(Math::sin);

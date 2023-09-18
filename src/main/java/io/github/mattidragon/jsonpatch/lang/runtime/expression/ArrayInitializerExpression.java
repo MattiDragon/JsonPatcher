@@ -1,9 +1,9 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
 import com.google.gson.JsonArray;
+import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
-import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
 import java.util.List;
 

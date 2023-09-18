@@ -7,12 +7,9 @@ import com.google.gson.stream.JsonWriter;
 import io.github.mattidragon.jsonpatch.JsonPatch;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
-import io.github.mattidragon.jsonpatch.lang.runtime.Value;
-import io.github.mattidragon.jsonpatch.lang.runtime.VariableStack;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
 
 import java.io.*;
 import java.util.ArrayList;

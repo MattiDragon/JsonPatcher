@@ -1,9 +1,9 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
+import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
-import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
 public record UnaryExpression(Expression input, Operator op, SourceSpan pos) implements Expression {
     @Override

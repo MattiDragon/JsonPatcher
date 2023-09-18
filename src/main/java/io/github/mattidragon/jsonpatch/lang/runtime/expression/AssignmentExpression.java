@@ -1,8 +1,8 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
+import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
-import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 
 public record AssignmentExpression(Reference target, Expression value, BinaryExpression.Operator operator, SourceSpan pos) implements Expression {
     @Override

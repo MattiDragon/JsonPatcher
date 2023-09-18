@@ -1,13 +1,13 @@
 package io.github.mattidragon.jsonpatch.lang.parse;
 
 import io.github.mattidragon.jsonpatch.lang.PositionedException;
+import io.github.mattidragon.jsonpatch.lang.parse.pratt.PostfixParselet;
+import io.github.mattidragon.jsonpatch.lang.parse.pratt.Precedence;
+import io.github.mattidragon.jsonpatch.lang.parse.pratt.PrefixParselet;
 import io.github.mattidragon.jsonpatch.lang.runtime.Program;
 import io.github.mattidragon.jsonpatch.lang.runtime.expression.Expression;
 import io.github.mattidragon.jsonpatch.lang.runtime.expression.Reference;
 import io.github.mattidragon.jsonpatch.lang.runtime.statement.*;
-import io.github.mattidragon.jsonpatch.lang.parse.pratt.PostfixParselet;
-import io.github.mattidragon.jsonpatch.lang.parse.pratt.Precedence;
-import io.github.mattidragon.jsonpatch.lang.parse.pratt.PrefixParselet;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 

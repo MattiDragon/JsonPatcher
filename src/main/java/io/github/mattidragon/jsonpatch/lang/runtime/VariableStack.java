@@ -13,10 +13,6 @@ public final class VariableStack {
     private final HashMap<String, Value> immutable = new HashMap<>();
     private final HashMap<String, PatchFunction> functions;
 
-    public VariableStack() {
-        this((VariableStack) null);
-    }
-
     public VariableStack(Map<String, ? extends PatchFunction> functions) {
         this.parent = null;
         this.functions = new HashMap<>(functions);

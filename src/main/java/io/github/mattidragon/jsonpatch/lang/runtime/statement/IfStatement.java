@@ -1,8 +1,8 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.statement;
 
+import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.expression.Expression;
-import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;
 
 public record IfStatement(Expression condition, Statement action, @Nullable Statement elseAction, SourceSpan pos) implements Statement {
