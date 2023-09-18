@@ -13,7 +13,7 @@ public record FunctionDeclarationStatement(String name, BlockStatement body, Lis
 
     @Override
     public void run(Context context) {
-        context.variables().defineFunction(name, new PatchFunction.DefinedPatchFunction(body, args), pos);
+        context.variables().defineFunction(name, new PatchFunction.DefinedPatchFunction(body, args, context), pos);
     }
 
     @Override

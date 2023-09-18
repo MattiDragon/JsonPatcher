@@ -27,7 +27,7 @@ public sealed interface PatchFunction {
         }
     }
 
-    record DefinedPatchFunction(BlockStatement body, List<String> args) implements PatchFunction {
+    record DefinedPatchFunction(BlockStatement body, List<String> args, Context context) implements PatchFunction {
         public DefinedPatchFunction {
             args = List.copyOf(args);
         }
@@ -38,7 +38,9 @@ public sealed interface PatchFunction {
                 throw new EvaluationException("Incorrect function argument count: expected %s but found %s".formatted(this.args.size(), args.size()), callPos);
             }
 
-            var functionContext = context.newScope();
+            // We use the context the function was created in, not the one it was called in.
+            // This allows for closures if we ever allow a function to escape its original scope
+            var functionContext = this.context.newScope();
             for (int i = 0; i < args.size(); i++) {
                 functionContext.variables().createVariableWithShadowing(this.args.get(i), args.get(i), false);
             }
