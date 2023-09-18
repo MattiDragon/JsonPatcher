@@ -10,7 +10,7 @@
 # Uses custom glob-like syntax
 @target minecraft:recipes/*arrow.json
 
-function modifyKey($key) {
+function modifyKey($key, $result) {
     # The apply statement allows you to swap out the root element
     apply ($key) {
         # You can escape names with weird characters with single quotes
@@ -28,7 +28,7 @@ if (type == "minecraft:crafting_shaped") {
     # Names must start with a dollar sign to differentiate them from values in the json.
     val $result = result;
 
-    modifyKey(key);
+    modifyKey(key, $result);
 
     if (result.item == "minecraft:arrow") {
         # Array assignment

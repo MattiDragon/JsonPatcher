@@ -1,5 +1,6 @@
 package io.github.mattidragon.jsonpatch.patch;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
@@ -13,7 +14,7 @@ import net.minecraft.util.Identifier;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
 
 public class PatchContext {
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
@@ -59,12 +60,25 @@ public class PatchContext {
     }
 
     private void applyPatches(JsonElement json, Identifier id) {
-        var errors = new ArrayList<EvaluationException>();
+        var executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
+        var errors = new ArrayList<Exception>();
         for (var patch : patches.getPatches(id)) {
             try {
-                patch.program().execute(Context.create(json));
-            } catch (EvaluationException e) {
-                errors.add(e);
+                CompletableFuture.runAsync(() ->
+                                patch.program().execute(Context.create(json)), executor)
+                        .get(200, TimeUnit.MILLISECONDS);
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof EvaluationException cause) {
+                    errors.add(cause);
+                } else if (e.getCause() instanceof StackOverflowError cause) {
+                    errors.add(new RuntimeException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
+                } else {
+                    errors.add(new RuntimeException("Unexpected error while applying patch %s".formatted(patch.id()), e));
+                }
+            } catch (InterruptedException e) {
+                errors.add(new RuntimeException("Async error while applying patch %s".formatted(patch.id()), e));
+            } catch (TimeoutException e) {
+                errors.add(new RuntimeException("Timeout applying patch %s".formatted(patch.id()), e));
             }
         }
         if (!errors.isEmpty()) {

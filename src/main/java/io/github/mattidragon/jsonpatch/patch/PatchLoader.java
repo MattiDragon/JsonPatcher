@@ -36,7 +36,7 @@ public class PatchLoader {
                     var target = getTarget(meta);
 
                     var program = new Parser(lexResult.tokens()).program();
-                    patches.add(new Patch(program, target));
+                    patches.add(new Patch(program, id, target));
                 } catch (IOException | Lexer.LexException | Parser.ParseException | IllegalStateException e) {
                     JsonPatch.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);
                     errorCount.incrementAndGet();
