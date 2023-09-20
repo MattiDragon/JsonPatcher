@@ -166,7 +166,7 @@ public class Lexer {
         var string = new StringBuilder();
         var length = 1;
         string.append(c);
-        for (c = peek(); isWordChar(c); c = peek()) {
+        while (hasNext() && isWordChar(peek())) {
             string.append(next());
             length++;
         }
@@ -231,6 +231,7 @@ public class Lexer {
     }
 
     private char peek() {
+        if (!hasNext()) throw error("Unexpected end of file");
         return program.charAt(current);
     }
 

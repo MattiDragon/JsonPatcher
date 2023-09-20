@@ -5,6 +5,7 @@ import io.github.mattidragon.jsonpatch.lang.parse.pratt.PostfixParselet;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.Precedence;
 import io.github.mattidragon.jsonpatch.lang.parse.pratt.PrefixParselet;
 import io.github.mattidragon.jsonpatch.lang.runtime.Program;
+import io.github.mattidragon.jsonpatch.lang.runtime.expression.ErrorExpression;
 import io.github.mattidragon.jsonpatch.lang.runtime.expression.Expression;
 import io.github.mattidragon.jsonpatch.lang.runtime.expression.Reference;
 import io.github.mattidragon.jsonpatch.lang.runtime.statement.*;
@@ -16,17 +17,25 @@ import java.util.List;
 
 public class Parser {
     private final List<PositionedToken<?>> tokens;
+    private final List<ParseException> errors = new ArrayList<>();
     private int current = 0;
 
     public Parser(List<PositionedToken<?>> tokens) {
         this.tokens = tokens;
     }
 
-    public Program program() {
+    public ParseResult program() {
         var statements = new ArrayList<Statement>();
-        while (hasNext())
-            statements.add(statement());
-        return new Program(statements);
+        try {
+            while (hasNext())
+                statements.add(statement());
+        } catch (ParseException e) {
+            errors.add(e);
+        }
+        if (!errors.isEmpty()) {
+            return new ParseResult.Fail(errors);
+        }
+        return new ParseResult.Success(new Program(statements));
     }
 
     private Statement statement() {
@@ -41,18 +50,24 @@ public class Parser {
         return expressionStatement();
     }
 
-    private BlockStatement blockStatement() {
+    private Statement blockStatement() {
         expect(Token.SimpleToken.BEGIN_CURLY);
         var beginPos = previous().getFrom();
         var statements = new ArrayList<Statement>();
-        while (peek().getToken() != Token.SimpleToken.END_CURLY)
-            statements.add(statement());
+        try {
+            while (peek().getToken() != Token.SimpleToken.END_CURLY)
+                statements.add(statement());
+        } catch (ParseException e) {
+            errors.add(e);
+            seek(Token.SimpleToken.END_CURLY);
+            return new ErrorStatement(e);
+        }
         expect(Token.SimpleToken.END_CURLY);
         var endPos = previous().getTo();
         return new BlockStatement(statements, new SourceSpan(beginPos, endPos));
     }
 
-    private ApplyStatement applyStatement() {
+    private Statement applyStatement() {
         expect(Token.KeywordToken.APPLY);
         var beginPos = previous().getFrom();
         expect(Token.SimpleToken.BEGIN_PAREN);
@@ -63,7 +78,7 @@ public class Parser {
         return new ApplyStatement(root, action, new SourceSpan(beginPos, endPos));
     }
 
-    private IfStatement ifStatement() {
+    private Statement ifStatement() {
         expect(Token.KeywordToken.IF);
         var beginPos = previous().getFrom();
         expect(Token.SimpleToken.BEGIN_PAREN);
@@ -109,7 +124,9 @@ public class Parser {
         while (peek().getToken() != Token.SimpleToken.END_PAREN) {
             expect(Token.SimpleToken.DOLLAR);
             var argument = expectWord().value();
-            if (arguments.contains(argument)) throw new ParseException("Duplicate parameter name: '%s'".formatted(argument), previous().getPos());
+            if (arguments.contains(argument)) {
+                errors.add(new ParseException("Duplicate parameter name: '%s'".formatted(argument), previous().getPos()));
+            }
             arguments.add(argument);
             if (peek().getToken() == Token.SimpleToken.COMMA) {
                 next();
@@ -123,8 +140,15 @@ public class Parser {
         return new FunctionDeclarationStatement(name, body, arguments, new SourceSpan(begin, previous().getTo()));
     }
 
-    private ExpressionStatement expressionStatement() {
-        var expression = expression();
+    private Statement expressionStatement() {
+        Expression expression;
+        try {
+            expression = expression();
+        } catch (ParseException e) {
+            errors.add(e);
+            seek(Token.SimpleToken.SEMICOLON);
+            return new ErrorStatement(e);
+        }
         expect(Token.SimpleToken.SEMICOLON);
         return new ExpressionStatement(expression);
     }
@@ -136,17 +160,33 @@ public class Parser {
     public Expression expression(Precedence precedence) {
         var token = next();
 
-        var left = PrefixParselet.getAndParse(this, token);
+        Expression left;
+        try {
+            left = PrefixParselet.getAndParse(this, token);
+        } catch (ParseException e) {
+            errors.add(e);
+            left = new ErrorExpression(e);
+        }
 
         while (true) {
             var postfix = PostfixParselet.get(peek());
             if (postfix == null) break;
             if (precedence.ordinal() >= postfix.precedence().ordinal()) break;
             var postfixToken = next();
-            left = postfix.parse(this, left, postfixToken);
+            try {
+                left = postfix.parse(this, left, postfixToken);
+            } catch (ParseException e) {
+                errors.add(e);
+                left = new ErrorExpression(e);
+            }
         }
 
         return left;
+    }
+
+    private void seek(Token token) {
+        while (hasNext() && peek().getToken() != token) next();
+        expect(token);
     }
 
     public Token.WordToken expectWord() {

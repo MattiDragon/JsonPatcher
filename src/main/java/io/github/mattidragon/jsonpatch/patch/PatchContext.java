@@ -43,7 +43,10 @@ public class PatchContext {
 
     public static void set(PatchContext context) {
         var stored = ACTIVE.get();
-        if (stored != null && stored.context != context) throw new IllegalStateException("State already set to different value");
+        if (stored != null && stored.context != context) {
+            remove(); // Clean up in case this was caused by one-off error
+            throw new IllegalStateException("State already set to different value");
+        }
         var prevCount = stored == null ? 0 : stored.count;
         ACTIVE.set(new Stored(context, prevCount + 1));
     }

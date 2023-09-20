@@ -6,7 +6,7 @@ import io.github.mattidragon.jsonpatch.lang.runtime.function.PatchFunction;
 
 import java.util.List;
 
-public record FunctionDeclarationStatement(String name, BlockStatement body, List<String> args, SourceSpan pos) implements Statement {
+public record FunctionDeclarationStatement(String name, Statement body, List<String> args, SourceSpan pos) implements Statement {
     public FunctionDeclarationStatement {
         args = List.copyOf(args);
     }

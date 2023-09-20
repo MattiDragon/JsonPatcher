@@ -5,6 +5,7 @@ import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
 import io.github.mattidragon.jsonpatch.lang.runtime.statement.BlockStatement;
+import io.github.mattidragon.jsonpatch.lang.runtime.statement.Statement;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
@@ -27,7 +28,7 @@ public sealed interface PatchFunction {
         }
     }
 
-    record DefinedPatchFunction(BlockStatement body, List<String> args, Context context) implements PatchFunction {
+    record DefinedPatchFunction(Statement body, List<String> args, Context context) implements PatchFunction {
         public DefinedPatchFunction {
             args = List.copyOf(args);
         }

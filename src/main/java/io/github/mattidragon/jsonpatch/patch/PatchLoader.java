@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatch.patch;
 
 import io.github.mattidragon.jsonpatch.JsonPatch;
 import io.github.mattidragon.jsonpatch.lang.parse.Lexer;
+import io.github.mattidragon.jsonpatch.lang.parse.ParseResult;
 import io.github.mattidragon.jsonpatch.lang.parse.Parser;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -12,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class PatchLoader {
     private static final ResourceFinder finder = new ResourceFinder("jsonpatch", ".jsonpatch");
@@ -35,9 +37,17 @@ public class PatchLoader {
 
                     var target = getTarget(meta);
 
-                    var program = new Parser(lexResult.tokens()).program();
-                    patches.add(new Patch(program, id, target));
-                } catch (IOException | Lexer.LexException | Parser.ParseException | IllegalStateException e) {
+                    var parseResult = new Parser(lexResult.tokens()).program();
+                    if (parseResult instanceof ParseResult.Fail fail) {
+                        JsonPatch.RELOAD_LOGGER.error("Failed to parse patch {} from {}:\n{}", id, entry.getKey(), fail.errors()
+                                .stream()
+                                .map(Parser.ParseException::toString)
+                                .collect(Collectors.joining("\n")));
+                        errorCount.incrementAndGet();
+                        return;
+                    }
+                    patches.add(new Patch(((ParseResult.Success)parseResult).program(), id, target));
+                } catch (IOException | Lexer.LexException | IllegalStateException e) {
                     JsonPatch.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);
                     errorCount.incrementAndGet();
                 }

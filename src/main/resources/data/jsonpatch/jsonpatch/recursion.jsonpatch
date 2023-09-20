@@ -1,8 +1,4 @@
 @version 1
 @target minecraft:recipes/oak_planks.json
 
-function test() {
-    test();
-}
-
-#test();
+(false + ).a
