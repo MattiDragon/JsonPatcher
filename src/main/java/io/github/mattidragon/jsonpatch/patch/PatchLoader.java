@@ -1,6 +1,7 @@
 package io.github.mattidragon.jsonpatch.patch;
 
 import io.github.mattidragon.jsonpatch.JsonPatch;
+import io.github.mattidragon.jsonpatch.config.Config;
 import io.github.mattidragon.jsonpatch.lang.parse.Lexer;
 import io.github.mattidragon.jsonpatch.lang.parse.ParseResult;
 import io.github.mattidragon.jsonpatch.lang.parse.Parser;
@@ -39,10 +40,16 @@ public class PatchLoader {
 
                     var parseResult = new Parser(lexResult.tokens()).program();
                     if (parseResult instanceof ParseResult.Fail fail) {
-                        JsonPatch.RELOAD_LOGGER.error("Failed to parse patch {} from {}:\n{}", id, entry.getKey(), fail.errors()
-                                .stream()
-                                .map(Parser.ParseException::toString)
-                                .collect(Collectors.joining("\n")));
+                        if (Config.MANAGER.get().useJavaStacktrace()) {
+                            var error = new RuntimeException();
+                            fail.errors().forEach(error::addSuppressed);
+                            JsonPatch.RELOAD_LOGGER.error("Failed to parse patch {} from {}:", id, entry.getKey(), error);
+                        } else {
+                            JsonPatch.RELOAD_LOGGER.error("Failed to parse patch {} from {}:\n{}", id, entry.getKey(), fail.errors()
+                                    .stream()
+                                    .map(Parser.ParseException::toString)
+                                    .collect(Collectors.joining("\n")));
+                        }
                         errorCount.incrementAndGet();
                         return;
                     }

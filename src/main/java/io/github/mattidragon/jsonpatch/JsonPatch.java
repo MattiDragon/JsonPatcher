@@ -1,5 +1,6 @@
 package io.github.mattidragon.jsonpatch;
 
+import io.github.mattidragon.jsonpatch.config.Config;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +25,7 @@ public class JsonPatch implements ModInitializer {
 
     @Override
     public void onInitialize() {
-
+        Config.MANAGER.get();
     }
 
     /**

@@ -13,6 +13,8 @@ repositories {
         name 'JitPack'
         url 'https://jitpack.io'
     }
+    maven { url "https://maven.isxander.dev/releases" }
+    maven { url "https://maven.terraformersmc.com" }
 }
 
 loom.splitEnvironmentSourceSets()
@@ -28,6 +30,12 @@ dependencies {
     // Mixin Extras
     include(modImplementation("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))
     clientAnnotationProcessor(annotationProcessor("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))
+
+    // Config
+    modImplementation include("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
+    annotationProcessor clientAnnotationProcessor("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
+    modImplementation include("dev.isxander.yacl:yet-another-config-lib-fabric:$yacl_version")
+    modCompileOnly(modLocalRuntime("com.terraformersmc:modmenu:$modmenu_version"))
 }
 
 processResources {

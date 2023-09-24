@@ -31,7 +31,8 @@ public class Parser {
                 statements.add(statement());
         } catch (ParseException e) {
             errors.add(e);
-        }
+        } catch (EndParsingException ignored) {}
+
         if (!errors.isEmpty()) {
             return new ParseResult.Fail(errors);
         }
@@ -206,7 +207,10 @@ public class Parser {
     }
 
     public PositionedToken<?> next() {
-        if (!hasNext()) throw new ParseException("Unexpected end of file", new SourceSpan(previous().getTo(), previous().getTo()));
+        if (!hasNext()) {
+            errors.add(new ParseException("Unexpected end of file", new SourceSpan(previous().getTo(), previous().getTo())));
+            throw new EndParsingException();
+        }
         return tokens.get(current++);
     }
 
@@ -216,12 +220,21 @@ public class Parser {
     }
 
     public PositionedToken<?> peek() {
-        if (!hasNext()) throw new ParseException("Unexpected end of file", new SourceSpan(previous().getTo(), previous().getTo()));
+        if (!hasNext()) {
+            errors.add(new ParseException("Unexpected end of file", new SourceSpan(previous().getTo(), previous().getTo())));
+            throw new EndParsingException();
+        }
         return tokens.get(current);
     }
 
     public boolean hasNext() {
         return current < tokens.size();
+    }
+
+    /**
+     * Special error to throw when we reach an error condition from which recovery doesn't make sense (end of file)
+     */
+    private static class EndParsingException extends RuntimeException {
     }
 
     public static class ParseException extends PositionedException {

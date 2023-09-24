@@ -1,5 +1,6 @@
 package io.github.mattidragon.jsonpatch.lang;
 
+import io.github.mattidragon.jsonpatch.config.Config;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,11 +19,14 @@ public abstract class PositionedException extends RuntimeException {
 
     @Override
     public synchronized Throwable fillInStackTrace() {
+        if (Config.MANAGER.get().useJavaStacktrace()) return super.fillInStackTrace();
         return this;
     }
 
     @Override
     public synchronized Throwable getCause() {
+        if (Config.MANAGER.get().useJavaStacktrace()) return super.getCause();
+
         var original = super.getCause();
         return original instanceof PositionedException ? null : original;
     }
@@ -35,7 +39,8 @@ public abstract class PositionedException extends RuntimeException {
 
         fillInError(message);
 
-        if (super.getCause() instanceof PositionedException cause) {
+        if (!Config.MANAGER.get().useJavaStacktrace()
+            && super.getCause() instanceof PositionedException cause) {
             message.append("\n| \n| Caused by:\n| ");
             cause.fillInError(message);
         }
