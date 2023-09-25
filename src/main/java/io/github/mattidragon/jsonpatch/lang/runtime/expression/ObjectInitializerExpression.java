@@ -1,6 +1,5 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
-import com.google.gson.JsonObject;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
@@ -14,9 +13,9 @@ public record ObjectInitializerExpression(Map<String, Expression> contents, Sour
 
     @Override
     public Value evaluate(Context context) {
-        var object = new JsonObject();
-        contents.forEach((key, value) -> object.add(key, value.evaluate(context).toGson()));
-        return new Value.ObjectValue(object);
+        var object = new Value.ObjectValue();
+        contents.forEach((key, value) -> object.value().put(key, value.evaluate(context)));
+        return object;
     }
 
     @Override

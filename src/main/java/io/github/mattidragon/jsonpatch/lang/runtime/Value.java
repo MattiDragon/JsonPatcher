@@ -4,46 +4,81 @@ import com.google.gson.*;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.*;
+
 public sealed interface Value {
+    Set<Value> TO_GSON_RECURSION_TRACKER = Collections.newSetFromMap(new WeakHashMap<>());
+    Set<JsonElement> FROM_GSON_RECURSION_TRACKER = Collections.newSetFromMap(new WeakHashMap<>());
+
     static Value of(JsonElement element) {
-        if (element instanceof JsonObject object) return new ObjectValue(object);
-        if (element instanceof JsonArray array) return new ArrayValue(array);
-        if (element instanceof JsonNull) return NullValue.NULL;
-        if (element instanceof JsonPrimitive primitive) {
-            if (primitive.isBoolean()) return BooleanValue.of(primitive.getAsBoolean());
-            if (primitive.isNumber()) return new NumberValue(primitive.getAsNumber().doubleValue());
-            if (primitive.isString()) return new StringValue(primitive.getAsString());
+        if (!FROM_GSON_RECURSION_TRACKER.add(element)) {
+            throw new IllegalStateException("recursive gson json tree");
         }
-        throw new IllegalStateException("Unsupported json element: " + element);
+
+        try {
+            if (element instanceof JsonObject object) return new ObjectValue(object);
+            if (element instanceof JsonArray array) return new ArrayValue(array);
+            if (element instanceof JsonNull) return NullValue.NULL;
+            if (element instanceof JsonPrimitive primitive) {
+                if (primitive.isBoolean()) return BooleanValue.of(primitive.getAsBoolean());
+                if (primitive.isNumber()) return new NumberValue(primitive.getAsNumber().doubleValue());
+                if (primitive.isString()) return new StringValue(primitive.getAsString());
+            }
+            throw new IllegalStateException("Unsupported json element: " + element);
+        } finally {
+            FROM_GSON_RECURSION_TRACKER.remove(element);
+        }
     }
 
     boolean asBoolean();
 
-    JsonElement toGson();
+    JsonElement toGson(SourceSpan pos);
 
-    record ObjectValue(JsonObject value) implements Value {
+    record ObjectValue(Map<String, Value> value) implements Value {
+        public ObjectValue {
+            value = new LinkedHashMap<>(value);
+        }
+
+        public ObjectValue(JsonObject object) {
+            this();
+            object.asMap().forEach((key, value) -> this.value.put(key, Value.of(value)));
+        }
+
+        public ObjectValue() {
+            this(Map.of());
+        }
+
         public Value get(String key, @Nullable SourceSpan pos) {
-            if (!value.has(key)) throw new EvaluationException("Object %s has no key %s".formatted(this, key), pos);
-            return Value.of(value.get(key));
+            if (!value.containsKey(key)) throw new EvaluationException("Object %s has no key %s".formatted(this, key), pos);
+            return value.get(key);
         }
 
         public void set(String key, Value value, @Nullable SourceSpan pos) {
-            this.value.add(key, value.toGson());
+            this.value.put(key, value);
         }
 
         public void remove(String key, SourceSpan pos) {
-            if (!value.has(key)) throw new EvaluationException("Object %s has no key %s".formatted(this, key), pos);
+            if (!value.containsKey(key)) throw new EvaluationException("Object %s has no key %s".formatted(this, key), pos);
             value.remove(key);
         }
 
         @Override
         public boolean asBoolean() {
-            return value.size() > 0;
+            return !value.isEmpty();
         }
 
         @Override
-        public JsonElement toGson() {
-            return value;
+        public JsonObject toGson(SourceSpan pos) {
+            if (!TO_GSON_RECURSION_TRACKER.add(this)) {
+                throw new EvaluationException("Recursive json tree", pos);
+            }
+            try {
+                var json = new JsonObject();
+                value.forEach((key, value) -> json.add(key, value.toGson(pos)));
+                return json;
+            } finally {
+                TO_GSON_RECURSION_TRACKER.remove(this);
+            }
         }
 
         @Override
@@ -52,15 +87,40 @@ public sealed interface Value {
         }
     }
 
-    record ArrayValue(JsonArray value) implements Value {
+    record ArrayValue(List<Value> value) implements Value {
+        public ArrayValue {
+            value = new ArrayList<>(value);
+        }
+
+        public ArrayValue(JsonArray array) {
+            this();
+            array.asList()
+                    .stream()
+                    .map(Value::of)
+                    .forEach(value::add);
+        }
+
+        public ArrayValue() {
+            this(List.of());
+        }
+
         @Override
         public boolean asBoolean() {
             return !value.isEmpty();
         }
 
         @Override
-        public JsonElement toGson() {
-            return value;
+        public JsonArray toGson(SourceSpan pos) {
+            if (!TO_GSON_RECURSION_TRACKER.add(this)) {
+                throw new EvaluationException("Recursive json tree", pos);
+            }
+            try {
+                var json = new JsonArray();
+                value.forEach((value) -> json.add(value.toGson(pos)));
+                return json;
+            } finally {
+                TO_GSON_RECURSION_TRACKER.remove(this);
+            }
         }
 
         @Override
@@ -69,11 +129,11 @@ public sealed interface Value {
         }
 
         public Value get(int index, @Nullable SourceSpan pos) {
-            return Value.of(this.value.get(fixIndex(index, pos)));
+            return this.value.get(fixIndex(index, pos));
         }
 
         public void set(int index, Value value, @Nullable SourceSpan pos) {
-            this.value.set(fixIndex(index, pos), value.toGson());
+            this.value.set(fixIndex(index, pos), value);
         }
 
         public void remove(int index, SourceSpan pos) {
@@ -97,13 +157,13 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson() {
+        public JsonElement toGson(SourceSpan pos) {
             return new JsonPrimitive(value());
         }
 
         @Override
         public String toString() {
-            return toGson().toString();
+            return toGson(null).toString();
         }
     }
 
@@ -114,13 +174,13 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson() {
+        public JsonElement toGson(SourceSpan pos) {
             return new JsonPrimitive(value());
         }
 
         @Override
         public String toString() {
-            return toGson().toString();
+            return toGson(null).toString();
         }
     }
 
@@ -141,13 +201,13 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson() {
+        public JsonElement toGson(SourceSpan pos) {
             return new JsonPrimitive(value());
         }
 
         @Override
         public String toString() {
-            return toGson().toString();
+            return toGson(null).toString();
         }
     }
 
@@ -160,13 +220,13 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson() {
+        public JsonElement toGson(SourceSpan pos) {
             return JsonNull.INSTANCE;
         }
 
         @Override
         public String toString() {
-            return toGson().toString();
+            return toGson(null).toString();
         }
     }
 }

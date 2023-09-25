@@ -4,7 +4,6 @@ import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
-import io.github.mattidragon.jsonpatch.lang.runtime.statement.BlockStatement;
 import io.github.mattidragon.jsonpatch.lang.runtime.statement.Statement;
 
 import java.util.List;

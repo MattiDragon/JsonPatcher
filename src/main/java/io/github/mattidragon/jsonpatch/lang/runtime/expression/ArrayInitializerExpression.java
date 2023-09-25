@@ -1,6 +1,5 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
-import com.google.gson.JsonArray;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.Value;
@@ -14,12 +13,9 @@ public record ArrayInitializerExpression(List<Expression> contents, SourceSpan p
 
     @Override
     public Value evaluate(Context context) {
-        var array = new JsonArray(contents.size());
-        contents.stream()
+        return new Value.ArrayValue(contents.stream()
                 .map(expression -> expression.evaluate(context))
-                .map(Value::toGson)
-                .forEach(array::add);
-        return new Value.ArrayValue(array);
+                .toList());
     }
 
     @Override

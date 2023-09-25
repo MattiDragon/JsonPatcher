@@ -1,7 +1,5 @@
 package io.github.mattidragon.jsonpatch.lang.runtime.expression;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
@@ -34,17 +32,17 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
             }
             if (first instanceof Value.ArrayValue array1
                 && second instanceof Value.ArrayValue array2) {
-                var array = new JsonArray();
-                array.addAll(array1.value());
-                array.addAll(array2.value());
-                return new Value.ArrayValue(array);
+                var array = new Value.ArrayValue();
+                array.value().addAll(array1.value());
+                array.value().addAll(array2.value());
+                return array;
             }
             if (first instanceof Value.ObjectValue object1
                 && second instanceof Value.ObjectValue object2) {
-                var object = new JsonObject();
-                object.asMap().putAll(object1.value().asMap());
-                object.asMap().putAll(object2.value().asMap());
-                return new Value.ObjectValue(object);
+                var object = new Value.ObjectValue();
+                object.value().putAll(object1.value());
+                object.value().putAll(object2.value());
+                return (object);
             }
             throw new EvaluationException("Can't add %s and %s together".formatted(first, second), pos);
         };
@@ -66,11 +64,11 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
                 return new Value.StringValue(string1.value().repeat((int) number2.value()));
             }
             if (first instanceof Value.ArrayValue array1) {
-                var array = new JsonArray();
+                var array = new Value.ArrayValue();
                 for (int i = 0; i < (int) number2.value(); i++) {
-                    array.addAll(array1.value());
+                    array.value().addAll(array1.value());
                 }
-                return new Value.ArrayValue(array);
+                return array;
             }
             throw new EvaluationException("Can't multiply %s with %s".formatted(first, second), pos);
         };

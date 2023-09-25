@@ -8,9 +8,12 @@ import com.google.gson.stream.JsonWriter;
 import io.github.mattidragon.jsonpatch.JsonPatch;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
 import io.github.mattidragon.jsonpatch.lang.runtime.EvaluationException;
+import io.github.mattidragon.jsonpatch.lang.runtime.Value;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.JsonHelper;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -62,13 +65,17 @@ public class PatchContext {
         return patches.hasPatches(id);
     }
 
-    private void applyPatches(JsonElement json, Identifier id) {
+    private JsonElement applyPatches(JsonElement json, Identifier id) {
         var executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
         var errors = new ArrayList<Exception>();
+        var activeJson = new MutableObject<>(json);
         for (var patch : patches.getPatches(id)) {
             try {
-                CompletableFuture.runAsync(() ->
-                                patch.program().execute(Context.create(json)), executor)
+                CompletableFuture.runAsync(() -> {
+                            var root = new Value.ObjectValue(JsonHelper.asObject(activeJson.getValue(), "patched file"));
+                            patch.program().execute(Context.create(root));
+                            activeJson.setValue(root.toGson(null));
+                        }, executor)
                         .get(200, TimeUnit.MILLISECONDS);
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof EvaluationException cause) {
@@ -88,6 +95,7 @@ public class PatchContext {
             JsonPatch.MAIN_LOGGER.error("Encountered {} error(s) while patching {}. See logs/jsonpatch.log for details", errors.size(), id);
             errors.forEach(error -> JsonPatch.RELOAD_LOGGER.error("Error while patching {}", id, error));
         }
+        return activeJson.getValue();
     }
 
     public static InputSupplier<InputStream> patchInputStream(Identifier id, InputSupplier<InputStream> stream) {
@@ -103,7 +111,7 @@ public class PatchContext {
 
         try {
             var json = GSON.fromJson(new InputStreamReader(stream.get()), JsonElement.class);
-            context.applyPatches(json, id);
+            json = context.applyPatches(json, id);
 
             var out = new ByteArrayOutputStream();
             var writer = new OutputStreamWriter(out);
