@@ -15,14 +15,20 @@ public sealed interface PatchFunction {
     @FunctionalInterface
     non-sealed interface BuiltInPatchFunction extends PatchFunction {
         static BuiltInPatchFunction numberUnary(DoubleUnaryOperator operator) {
-            return (context, args, callPos) -> {
-                if (args.size() != 1) {
-                    throw new EvaluationException("Incorrect function argument count: expected 1 but found %s".formatted(args.size()), callPos);
-                }
+            return ((BuiltInPatchFunction) (context, args, callPos) -> {
                 if (!(args.get(0) instanceof Value.NumberValue value)) {
                     throw new EvaluationException("Expected argument to be number, was %s".formatted(args.get(0)), callPos);
                 }
                 return new Value.NumberValue(operator.applyAsDouble(value.value()));
+            }).argCount(1);
+        }
+
+        default BuiltInPatchFunction argCount(int count) {
+            return (context, args, callPos) -> {
+                if (args.size() != count) {
+                    throw new EvaluationException("Incorrect function argument count: expected %s but found %s".formatted(count, args.size()), callPos);
+                }
+                return execute(context, args, callPos);
             };
         }
     }

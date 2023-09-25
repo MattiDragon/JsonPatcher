@@ -73,6 +73,8 @@ public sealed interface Token {
         VAR,
         VAL,
         DELETE,
-        FUNCTION
+        FUNCTION,
+        RETURN,
+        IMPORT
     }
 }

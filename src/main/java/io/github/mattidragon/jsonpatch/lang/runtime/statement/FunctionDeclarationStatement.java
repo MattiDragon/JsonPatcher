@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatch.lang.runtime.statement;
 
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatch.lang.runtime.Context;
+import io.github.mattidragon.jsonpatch.lang.runtime.Value;
 import io.github.mattidragon.jsonpatch.lang.runtime.function.PatchFunction;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public record FunctionDeclarationStatement(String name, Statement body, List<Str
 
     @Override
     public void run(Context context) {
-        context.variables().defineFunction(name, new PatchFunction.DefinedPatchFunction(body, args, context), pos);
+        context.variables().createVariable(name, new Value.FunctionValue(new PatchFunction.DefinedPatchFunction(body, args, context)), false, pos);
     }
 
     @Override

@@ -11,16 +11,13 @@ public final class VariableStack {
     private final @Nullable VariableStack parent;
     private final HashMap<String, Value> mutable = new HashMap<>();
     private final HashMap<String, Value> immutable = new HashMap<>();
-    private final HashMap<String, PatchFunction> functions;
 
-    public VariableStack(Map<String, ? extends PatchFunction> functions) {
+    public VariableStack() {
         this.parent = null;
-        this.functions = new HashMap<>(functions);
     }
 
     public VariableStack(@Nullable VariableStack parent) {
         this.parent = parent;
-        this.functions = new HashMap<>();
     }
 
     public Value getVariable(String name, SourceSpan pos) {
@@ -76,22 +73,5 @@ public final class VariableStack {
         }
         if (hasVariable(name)) throw new EvaluationException("Cannot delete variable from outer scope: $%s".formatted(name), pos);
         throw new EvaluationException("Cannot find variable with name %s".formatted(name), pos);
-    }
-
-    private boolean hasFunction(String name) {
-        if (functions.containsKey(name)) return true;
-        if (parent != null) return parent.hasFunction(name);
-        return false;
-    }
-
-    public void defineFunction(String name, PatchFunction function, SourceSpan pos) {
-        if (hasFunction(name)) throw new EvaluationException("Cannot create function with duplicate name: %s".formatted(name), pos);
-        functions.put(name, function);
-    }
-
-    public PatchFunction getFunction(String name, SourceSpan pos) {
-        if (functions.containsKey(name)) return functions.get(name);
-        if (parent != null) return parent.getFunction(name, pos);
-        throw new EvaluationException("Cannot find function with name %s".formatted(name), pos);
     }
 }

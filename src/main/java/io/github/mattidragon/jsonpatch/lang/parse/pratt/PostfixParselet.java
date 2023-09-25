@@ -72,9 +72,6 @@ public interface PostfixParselet {
     record FunctionCallParselet() implements PostfixParselet {
         @Override
         public Expression parse(Parser parser, Expression left, PositionedToken<?> token) {
-            // We do a little hack where the implicit root expression gets converted to a function reference if it's called
-            if (!(left instanceof ImplicitRootExpression root)) throw new Parser.ParseException("Can't call %s".formatted(left), token.getPos());
-            var functionName = root.name();
             var arguments = new ArrayList<Expression>();
             while (parser.peek().getToken() != Token.SimpleToken.END_PAREN) {
                 arguments.add(parser.expression());
@@ -86,7 +83,7 @@ public interface PostfixParselet {
             }
             parser.expect(Token.SimpleToken.END_PAREN);
 
-            return new FunctionCallExpression(functionName, arguments, new SourceSpan(token.getFrom(), parser.previous().getTo()));
+            return new FunctionCallExpression(left, arguments, new SourceSpan(token.getFrom(), parser.previous().getTo()));
         }
 
         @Override

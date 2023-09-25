@@ -1,19 +1,10 @@
-# Hashtags are comments
-
-# The @ sign signifies metadata, it's not part of the code, but instead read before any code runs.
-# Can theoretically be anywhere, but is usually at the top of the file
-
-# Mandatory script version
 @version 1
-
-# Target file. Any json files in resource and data packs should work.
-# Uses custom glob-like syntax
 @target minecraft:recipes/*arrow.json
 
+val $math = import(math);
+
 function modifyKey($key, $result) {
-    # The apply statement allows you to swap out the root element
     apply ($key) {
-        # You can escape names with weird characters with single quotes
         '#' = {
             tag: "minecraft:coals",
         };
@@ -22,19 +13,14 @@ function modifyKey($key, $result) {
     }
 }
 
-# We only do shaped recipes (otherwise we would have to deal with the tipped arrow special recipe)
-if (type == "minecraft:crafting_shaped") {
-    # Variables! val is immutable, var is mutable.
-    # Names must start with a dollar sign to differentiate them from values in the json.
-    val $result = result;
+if (type != "minecraft:crafting_shaped") return;
 
-    modifyKey(key, $result);
 
-    if (result.item == "minecraft:arrow") {
-        # Array assignment
-        pattern[0] = "#";
-    }
+val $result = result;
+$modifyKey(key, $result);
 
-    # Math, with proper order of operations
-    $result.count += abs(1-100);
+if (result.item == "minecraft:arrow") {
+    pattern[0] = "#";
 }
+$result.count += $math.abs(1-100);
+

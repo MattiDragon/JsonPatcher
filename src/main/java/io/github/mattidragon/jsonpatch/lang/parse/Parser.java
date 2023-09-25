@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Parser {
     private final List<PositionedToken<?>> tokens;
@@ -47,6 +48,7 @@ public class Parser {
         if (token.getToken() == Token.KeywordToken.VAR) return variableStatement(true);
         if (token.getToken() == Token.KeywordToken.VAL) return variableStatement(false);
         if (token.getToken() == Token.KeywordToken.DELETE) return deleteStatement();
+        if (token.getToken() == Token.KeywordToken.RETURN) return returnStatement();
         if (token.getToken() == Token.KeywordToken.FUNCTION) return functionDeclaration();
         return expressionStatement();
     }
@@ -111,6 +113,18 @@ public class Parser {
         if (!(expression instanceof Reference ref)) throw new Parser.ParseException("Can't delete to %s".formatted(expression), expression.getPos());
         expect(Token.SimpleToken.SEMICOLON);
         return new DeleteStatement(ref, new SourceSpan(begin, previous().getTo()));
+    }
+
+    private Statement returnStatement() {
+        var begin = next().getFrom();
+        Optional<Expression> value;
+        if (peek().getToken() == Token.SimpleToken.SEMICOLON) {
+            value = Optional.empty();
+        } else {
+            value = Optional.of(expression());
+        }
+        expect(Token.SimpleToken.SEMICOLON);
+        return new ReturnStatement(value, new SourceSpan(begin, previous().getTo()));
     }
 
     private FunctionDeclarationStatement functionDeclaration() {

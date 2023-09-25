@@ -9,14 +9,15 @@ public class Lexer {
     public static final int TAB_WIDTH = 4;
     private final SourceFile file;
     private final String program;
+    private final PatchMetadata metadata;
     private final ArrayList<PositionedToken<?>> tokens = new ArrayList<>();
-    private final Map<String, Optional<String>> metadata = new HashMap<>();
     private int current = 0;
     private int currentLine = 1;
     private int currentColumn = 0;
 
-    public Lexer(String program, String filename) {
+    public Lexer(String program, String filename, PatchMetadata.ParserLookup metaParsers) {
         this.program = program;
+        this.metadata = new PatchMetadata(metaParsers);
         this.file = new SourceFile(filename, program);
     }
 
@@ -50,21 +51,20 @@ public class Lexer {
     }
 
     private void readMetaLine() {
+        var pos = new SourcePos(file, currentLine, currentColumn - 1);
         skipWhitespace();
         var key = new StringBuilder();
-        for (var c = peek(); isWordChar(c); c = peek()) {
+        while (hasNext() && isWordChar(peek())) {
             key.append(next());
         }
         skipWhitespace();
-        if (hasNext() && peek() != '\r' && peek() != '\n') {
-            var value = new StringBuilder();
-            while (hasNext() && peek() != '\r' && peek() != '\n') {
-                value.append(next());
-            }
-            metadata.put(key.toString(), Optional.of(value.toString().trim()));
-        } else {
-            metadata.put(key.toString(), Optional.empty());
+
+        var value = new StringBuilder();
+        while (hasNext() && peek() != '\r' && peek() != '\n') {
+            value.append(next());
         }
+
+        metadata.put(key.toString(), value.toString(), pos);
     }
 
     private void skipWhitespace() {
@@ -185,6 +185,8 @@ public class Lexer {
             case "val" -> Token.KeywordToken.VAL;
             case "delete" -> Token.KeywordToken.DELETE;
             case "function" -> Token.KeywordToken.FUNCTION;
+            case "return" -> Token.KeywordToken.RETURN;
+            case "import" -> Token.KeywordToken.IMPORT;
             default -> new Token.WordToken(string.toString());
         };
         addParsedToken(token, length);
@@ -267,7 +269,7 @@ public class Lexer {
     public static class LexException extends PositionedException {
         public final SourcePos pos;
         
-        private LexException(String message, SourcePos pos) {
+        public LexException(String message, SourcePos pos) {
             super(message);
             this.pos = pos;
         }
@@ -283,6 +285,6 @@ public class Lexer {
         }
     }
 
-    public record Result(List<PositionedToken<?>> tokens, Map<String, Optional<String>> metadata) {
+    public record Result(List<PositionedToken<?>> tokens, PatchMetadata metadata) {
     }
 }

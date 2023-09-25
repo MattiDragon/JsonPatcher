@@ -1,5 +1,7 @@
 package io.github.mattidragon.jsonpatch.patch;
 
+import io.github.mattidragon.jsonpatch.lang.parse.Lexer;
+import io.github.mattidragon.jsonpatch.lang.parse.SourcePos;
 import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ public record PatchTarget(List<Pattern> positive, List<Pattern> negative) implem
         negative = List.copyOf(negative);
     }
 
-    public static PatchTarget parse(String code) {
+    public static PatchTarget parse(String code, SourcePos pos) {
         var patterns = code.trim().split(" ");
         var positivePatterns = new ArrayList<Pattern>();
         var negativePatterns = new ArrayList<Pattern>();
@@ -27,8 +29,8 @@ public record PatchTarget(List<Pattern> positive, List<Pattern> negative) implem
             if (negative) pattern = pattern.substring(1);
 
             var namespaceSeparatorIndex = pattern.indexOf(':');
-            var namespace = parseNamespace(pattern, namespaceSeparatorIndex, original);
-            var path = parsePath(pattern, namespaceSeparatorIndex, original);
+            var namespace = parseNamespace(pattern, namespaceSeparatorIndex, original, pos);
+            var path = parsePath(pattern, namespaceSeparatorIndex, original, pos);
 
             if (negative) {
                 negativePatterns.add(new Pattern(namespace, path));
@@ -40,9 +42,9 @@ public record PatchTarget(List<Pattern> positive, List<Pattern> negative) implem
         return new PatchTarget(positivePatterns, negativePatterns);
     }
 
-    private static Optional<String> parseNamespace(String pattern, int namespaceSeparatorIndex, String original) {
+    private static Optional<String> parseNamespace(String pattern, int namespaceSeparatorIndex, String original, SourcePos pos) {
         if (namespaceSeparatorIndex == -1 || pattern.indexOf(':', namespaceSeparatorIndex + 1) != -1)
-            throw new IllegalStateException("Invalid target pattern: %s. Found zero or multiple colons.".formatted(original));
+            throw new Lexer.LexException("Invalid target pattern: %s. Found zero or multiple colons.".formatted(original), pos);
 
         var namespaceString = pattern.substring(0, namespaceSeparatorIndex);
 
@@ -51,13 +53,13 @@ public record PatchTarget(List<Pattern> positive, List<Pattern> negative) implem
             namespace = Optional.empty();
         } else {
             if (namespaceString.indexOf('*') != -1)
-                throw new IllegalStateException("Invalid target pattern: %s. Wildcard namespaces don't support prefixes or suffixes.".formatted(original));
+                throw new Lexer.LexException("Invalid target pattern: %s. Wildcard namespaces don't support prefixes or suffixes.".formatted(original), pos);
             namespace = Optional.of(namespaceString);
         }
         return namespace;
     }
 
-    private static ArrayList<Segment> parsePath(String pattern, int namespaceSeparatorIndex, String original) {
+    private static ArrayList<Segment> parsePath(String pattern, int namespaceSeparatorIndex, String original, SourcePos pos) {
         var path = namespaceSeparatorIndex == -1 ? pattern : pattern.substring(namespaceSeparatorIndex + 1);
         var pathSegments = path.split("/");
         var finalPath = new ArrayList<Segment>();
@@ -68,7 +70,7 @@ public record PatchTarget(List<Pattern> positive, List<Pattern> negative) implem
                 finalPath.add(new Segment.Named(segment));
             } else {
                 if (segment.indexOf('*', wildcardIndex + 1) != -1)
-                    throw new IllegalStateException("Invalid target pattern: %s. Found multiple wildcards in one segment.".formatted(original));
+                    throw new Lexer.LexException("Invalid target pattern: %s. Found multiple wildcards in one segment.".formatted(original), pos);
                 finalPath.add(new Segment.Wildcard(segment.substring(0, wildcardIndex), segment.substring(wildcardIndex + 1)));
             }
         }

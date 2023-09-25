@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatch.lang.runtime;
 
 import com.google.gson.*;
 import io.github.mattidragon.jsonpatch.lang.parse.SourceSpan;
+import io.github.mattidragon.jsonpatch.lang.runtime.function.PatchFunction;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -145,6 +146,18 @@ public sealed interface Value {
                 throw new EvaluationException("Array index out of bounds (index: %s, size: %s)".formatted(index, value.size()), pos);
             if (index < 0) return value.size() + index;
             return index;
+        }
+    }
+
+    record FunctionValue(PatchFunction function) implements Value {
+        @Override
+        public boolean asBoolean() {
+            return true;
+        }
+
+        @Override
+        public JsonElement toGson(SourceSpan pos) {
+            throw new EvaluationException("Tried to convert function to json. Did you place a function in the main tree?", pos);
         }
     }
 

@@ -70,6 +70,13 @@ public interface PrefixParselet<T extends PositionedToken<?>> {
         return expression;
     };
 
+    PrefixParselet<PositionedToken<?>> IMPORT = (parser, token) -> {
+        parser.expect(Token.SimpleToken.BEGIN_PAREN);
+        var name = parser.expectWord();
+        parser.expect(Token.SimpleToken.END_PAREN);
+        return new ImportExpression(name.value(), new SourceSpan(token.getFrom(), parser.previous().getTo()));
+    };
+
     static Expression getAndParse(Parser parser, PositionedToken<?> token) {
         if (token instanceof PositionedToken.StringToken stringToken) return STRING.parse(parser, stringToken);
         if (token instanceof PositionedToken.NumberToken numberToken) return NUMBER.parse(parser, numberToken);
@@ -78,6 +85,7 @@ public interface PrefixParselet<T extends PositionedToken<?>> {
         if (token.getToken() == Token.KeywordToken.TRUE) return TRUE.parse(parser, token);
         if (token.getToken() == Token.KeywordToken.FALSE) return FALSE.parse(parser, token);
         if (token.getToken() == Token.KeywordToken.NULL) return NULL.parse(parser, token);
+        if (token.getToken() == Token.KeywordToken.IMPORT) return IMPORT.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.DOLLAR) return VARIABLE.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.MINUS) return MINUS.parse(parser, token);
         if (token.getToken() == Token.SimpleToken.BANG) return NOT.parse(parser, token);
