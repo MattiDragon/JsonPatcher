@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "jsonpatch",
+  "id": "jsonpatcher",
   "version": "${version}",
-  "name": "JsonPatch",
+  "name": "JsonPatcher",
   "description": "A tool for patching json resource files easily and with great compatibility.",
   "authors": ["MattiDragon"],
   "contact": {
@@ -12,17 +12,14 @@
   "icon": "assets/jsonpatch/icon.png",
   "environment": "*",
   "entrypoints": {
-    "client": [
-      "io.github.mattidragon.jsonpatch.client.JsonPatchClient"
-    ],
     "main": [
-      "io.github.mattidragon.jsonpatch.JsonPatch"
+      "io.github.mattidragon.jsonpatcher.JsonPatcher"
     ]
   },
-  "accessWidener" : "jsonpatch.accesswidener",
+  "accessWidener" : "jsonpatcher.accesswidener",
   "mixins": [
-    "jsonpatch.mixins.json",
-    "client.jsonpatch.mixins.json"
+    "jsonpatcher.mixins.json",
+    "client.jsonpatcher.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.14.22",

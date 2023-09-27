@@ -18,7 +18,7 @@ repositories {
 }
 
 loom.splitEnvironmentSourceSets()
-loom.accessWidenerPath.set file("src/main/resources/jsonpatch.accesswidener")
+loom.accessWidenerPath.set file("src/main/resources/jsonpatcher.accesswidener")
 
 dependencies {
     minecraft "com.mojang:minecraft:$minecraft_version"
