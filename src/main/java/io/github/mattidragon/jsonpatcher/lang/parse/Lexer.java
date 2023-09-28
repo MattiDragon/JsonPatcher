@@ -9,15 +9,13 @@ public class Lexer {
     public static final int TAB_WIDTH = 4;
     private final SourceFile file;
     private final String program;
-    private final PatchMetadata metadata;
     private final ArrayList<PositionedToken<?>> tokens = new ArrayList<>();
     private int current = 0;
     private int currentLine = 1;
     private int currentColumn = 0;
 
-    public Lexer(String program, String filename, PatchMetadata.ParserLookup metaParsers) {
+    public Lexer(String program, String filename) {
         this.program = program;
-        this.metadata = new PatchMetadata(metaParsers);
         this.file = new SourceFile(filename, program);
     }
 
@@ -29,14 +27,14 @@ public class Lexer {
                         '/', '*', '-', '+', '=',
                         '.', ',', ':', ';', ')',
                         '(', ']', '[', '}', '>',
-                        '<', '|', '&', '^', '$'
+                        '<', '|', '&', '^', '$',
+                        '@'
                         -> readSimpleToken(c);
 
                 case ' ', '\r', '\n', '\t' -> {}
 
                 case '"', '\'' -> readString(c);
 
-                case '@' -> readMetaLine();
                 case '#' -> skipComment();
 
                 default -> {
@@ -47,28 +45,7 @@ public class Lexer {
             }
         }
 
-        return new Result(tokens, metadata);
-    }
-
-    private void readMetaLine() {
-        var pos = new SourcePos(file, currentLine, currentColumn - 1);
-        skipWhitespace();
-        var key = new StringBuilder();
-        while (hasNext() && isWordChar(peek())) {
-            key.append(next());
-        }
-        skipWhitespace();
-
-        var value = new StringBuilder();
-        while (hasNext() && peek() != '\r' && peek() != '\n') {
-            value.append(next());
-        }
-
-        metadata.put(key.toString(), value.toString(), pos);
-    }
-
-    private void skipWhitespace() {
-        while (hasNext() && peek() == ' ' || peek() == '\t') next();
+        return new Result(tokens);
     }
 
     private void skipComment() {
@@ -133,6 +110,7 @@ public class Lexer {
             case '!' -> readEqualsOptionalToken(Token.SimpleToken.BANG, Token.SimpleToken.NOT_EQUALS);
             case '?' -> addParsedToken(Token.SimpleToken.QUESTION_MARK, 1);
             case '$' -> addParsedToken(Token.SimpleToken.DOLLAR, 1);
+            case '@' -> addParsedToken(Token.SimpleToken.AT_SIGN, 1);
         }
     }
 
@@ -285,6 +263,6 @@ public class Lexer {
         }
     }
 
-    public record Result(List<PositionedToken<?>> tokens, PatchMetadata metadata) {
+    public record Result(List<PositionedToken<?>> tokens) {
     }
 }

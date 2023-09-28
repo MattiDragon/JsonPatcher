@@ -1,7 +1,9 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.function;
 
+import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,11 +44,19 @@ public class StandardLibrary implements Supplier<Value.ObjectValue> {
     private static StandardLibrary arrays() {
         return new StandardLibrary()
                 .func("insert", (context, args, callPos) -> {
-                    if (!(args.get(0) instanceof Value.ArrayValue array)) throw new EvaluationException("Expected argument 0 to be array, was %s".formatted(args.get(0)), callPos);;
-                    if (!(args.get(1) instanceof Value.NumberValue index)) throw new EvaluationException("Expected argument 1 to be number, was %s".formatted(args.get(1)), callPos);;
-                    array.value().add((int) index.value(), args.get(2));
+                    if (!(args.get(0) instanceof Value.ArrayValue array)) throw new EvaluationException("Expected argument 0 to be array, was %s".formatted(args.get(0)), callPos);
+                    if (!(args.get(1) instanceof Value.NumberValue index)) throw new EvaluationException("Expected argument 1 to be number, was %s".formatted(args.get(1)), callPos);
+                    array.value().add(fixIndexForInsert((int) index.value(), array.value().size(), callPos), args.get(2));
                     return array;
                 }, 3);
+    }
+
+    // Can't use same algorithm as setting, because you can also add at the end.
+    private static int fixIndexForInsert(int index, int size, SourceSpan pos) {
+        if (index > size || index < -size)
+            throw new EvaluationException("Array index out of bounds (index: %s, size: %s)".formatted(index, size), pos);
+        if (index < 0) return size + index + 1; // Offset needed for -1 to mean last element
+        return index;
     }
 
     private StandardLibrary func(String name, PatchFunction.BuiltInPatchFunction function) {

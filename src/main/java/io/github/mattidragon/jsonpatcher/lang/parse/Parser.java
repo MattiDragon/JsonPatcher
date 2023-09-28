@@ -19,13 +19,21 @@ import java.util.Optional;
 public class Parser {
     private final List<PositionedToken<?>> tokens;
     private final List<ParseException> errors = new ArrayList<>();
+    private final PatchMetadata metadata;
     private int current = 0;
 
-    public Parser(List<PositionedToken<?>> tokens) {
+    public Parser(List<PositionedToken<?>> tokens, PatchMetadata.ParserLookup lookup) {
         this.tokens = tokens;
+        this.metadata = new PatchMetadata(lookup);
     }
 
     public ParseResult program() {
+        while (hasNext(Token.SimpleToken.AT_SIGN)) {
+            var id = expectWord().value();
+            metadata.add(id, this);
+            expect(Token.SimpleToken.SEMICOLON);
+        }
+
         var statements = new ArrayList<Statement>();
         try {
             while (hasNext())
@@ -37,7 +45,7 @@ public class Parser {
         if (!errors.isEmpty()) {
             return new ParseResult.Fail(errors);
         }
-        return new ParseResult.Success(new Program(statements));
+        return new ParseResult.Success(new Program(statements), metadata);
     }
 
     private Statement statement() {
@@ -89,7 +97,7 @@ public class Parser {
         expect(Token.SimpleToken.END_PAREN);
         var action = statement();
         Statement elseAction = null;
-        if (hasNext() && peek().getToken() == Token.KeywordToken.ELSE) {
+        if (hasNext(Token.KeywordToken.ELSE)) {
             next();
             elseAction = statement();
         }
@@ -210,14 +218,30 @@ public class Parser {
         return expectFail("word");
     }
 
+    public Token.StringToken expectString() {
+        var token = next().getToken();
+        if (token instanceof Token.StringToken stringToken) return stringToken;
+        return expectFail("string");
+    }
+
+    public Token.NumberToken expectNumber() {
+        var token = next().getToken();
+        if (token instanceof Token.NumberToken numberToken) return numberToken;
+        return expectFail("number");
+    }
+
     public void expect(Token token) {
         var found = next().getToken();
         if (found != token) expectFail(token.toString());
     }
 
     @Contract("_ -> fail")
-    private <T> T expectFail(String expected) {
+    public <T> T expectFail(String expected) {
         throw new ParseException("Expected %s, but found %s".formatted(expected, previous().getToken()), previous().getPos());
+    }
+
+    public void addError(ParseException error) {
+        errors.add(error);
     }
 
     public PositionedToken<?> next() {
@@ -243,6 +267,10 @@ public class Parser {
 
     public boolean hasNext() {
         return current < tokens.size();
+    }
+
+    private boolean hasNext(Token token) {
+        return hasNext() && peek().getToken() == token;
     }
 
     /**

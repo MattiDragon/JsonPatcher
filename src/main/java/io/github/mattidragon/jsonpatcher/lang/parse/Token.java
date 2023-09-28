@@ -51,6 +51,7 @@ public sealed interface Token {
         BANG,
         QUESTION_MARK,
         DOLLAR,
+        AT_SIGN,
 
         MINUS,
         PLUS,
