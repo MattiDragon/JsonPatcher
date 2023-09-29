@@ -1,4 +1,4 @@
-package io.github.mattidragon.jsonpatcher.lang.parse.pratt;
+package io.github.mattidragon.jsonpatcher.lang.parse.parselet;
 
 /**
  * This enum contains precedence values for the pratt parser.

@@ -1,20 +1,19 @@
 package io.github.mattidragon.jsonpatcher.lang.parse;
 
 import io.github.mattidragon.jsonpatcher.lang.PositionedException;
-import io.github.mattidragon.jsonpatcher.lang.parse.pratt.PostfixParselet;
-import io.github.mattidragon.jsonpatcher.lang.parse.pratt.Precedence;
-import io.github.mattidragon.jsonpatcher.lang.parse.pratt.PrefixParselet;
+import io.github.mattidragon.jsonpatcher.lang.parse.parselet.PostfixParselet;
+import io.github.mattidragon.jsonpatcher.lang.parse.parselet.Precedence;
+import io.github.mattidragon.jsonpatcher.lang.parse.parselet.PrefixParser;
+import io.github.mattidragon.jsonpatcher.lang.parse.parselet.StatementParser;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Program;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ErrorExpression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
-import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Reference;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class Parser {
     private final List<PositionedToken<?>> tokens;
@@ -49,131 +48,7 @@ public class Parser {
     }
 
     private Statement statement() {
-        var token = peek();
-        if (token.getToken() == Token.SimpleToken.BEGIN_CURLY) return blockStatement();
-        if (token.getToken() == Token.KeywordToken.APPLY) return applyStatement();
-        if (token.getToken() == Token.KeywordToken.IF) return ifStatement();
-        if (token.getToken() == Token.KeywordToken.VAR) return variableStatement(true);
-        if (token.getToken() == Token.KeywordToken.VAL) return variableStatement(false);
-        if (token.getToken() == Token.KeywordToken.DELETE) return deleteStatement();
-        if (token.getToken() == Token.KeywordToken.RETURN) return returnStatement();
-        if (token.getToken() == Token.KeywordToken.FUNCTION) return functionDeclaration();
-        return expressionStatement();
-    }
-
-    private Statement blockStatement() {
-        expect(Token.SimpleToken.BEGIN_CURLY);
-        var beginPos = previous().getFrom();
-        var statements = new ArrayList<Statement>();
-        try {
-            while (peek().getToken() != Token.SimpleToken.END_CURLY)
-                statements.add(statement());
-        } catch (ParseException e) {
-            errors.add(e);
-            seek(Token.SimpleToken.END_CURLY);
-            return new ErrorStatement(e);
-        }
-        expect(Token.SimpleToken.END_CURLY);
-        var endPos = previous().getTo();
-        return new BlockStatement(statements, new SourceSpan(beginPos, endPos));
-    }
-
-    private Statement applyStatement() {
-        expect(Token.KeywordToken.APPLY);
-        var beginPos = previous().getFrom();
-        expect(Token.SimpleToken.BEGIN_PAREN);
-        var root = expression();
-        expect(Token.SimpleToken.END_PAREN);
-        var action = statement();
-        var endPos = previous().getTo();
-        return new ApplyStatement(root, action, new SourceSpan(beginPos, endPos));
-    }
-
-    private Statement ifStatement() {
-        expect(Token.KeywordToken.IF);
-        var beginPos = previous().getFrom();
-        expect(Token.SimpleToken.BEGIN_PAREN);
-        var condition = expression();
-        expect(Token.SimpleToken.END_PAREN);
-        var action = statement();
-        Statement elseAction = null;
-        if (hasNext(Token.KeywordToken.ELSE)) {
-            next();
-            elseAction = statement();
-        }
-        var endPos = previous().getTo();
-        return new IfStatement(condition, action, elseAction, new SourceSpan(beginPos, endPos));
-    }
-
-    private Statement variableStatement(boolean mutable) {
-        var begin = next().getFrom();
-        expect(Token.SimpleToken.DOLLAR);
-        var name = expectWord();
-        expect(Token.SimpleToken.ASSIGN);
-        var initializer = expression();
-        expect(Token.SimpleToken.SEMICOLON);
-        return new VariableCreationStatement(name.value(), initializer, mutable, new SourceSpan(begin, previous().getTo()));
-    }
-
-    private Statement deleteStatement() {
-        var begin = next().getFrom();
-        var expression = expression();
-        if (!(expression instanceof Reference ref)) throw new Parser.ParseException("Can't delete to %s".formatted(expression), expression.getPos());
-        expect(Token.SimpleToken.SEMICOLON);
-        return new DeleteStatement(ref, new SourceSpan(begin, previous().getTo()));
-    }
-
-    private Statement returnStatement() {
-        var begin = next().getFrom();
-        Optional<Expression> value;
-        if (peek().getToken() == Token.SimpleToken.SEMICOLON) {
-            value = Optional.empty();
-        } else {
-            value = Optional.of(expression());
-        }
-        expect(Token.SimpleToken.SEMICOLON);
-        return new ReturnStatement(value, new SourceSpan(begin, previous().getTo()));
-    }
-
-    private FunctionDeclarationStatement functionDeclaration() {
-        expect(Token.KeywordToken.FUNCTION);
-
-        var name = expectWord().value();
-        var begin = previous().getFrom();
-
-        expect(Token.SimpleToken.BEGIN_PAREN);
-
-        var arguments = new ArrayList<String>();
-        while (peek().getToken() != Token.SimpleToken.END_PAREN) {
-            expect(Token.SimpleToken.DOLLAR);
-            var argument = expectWord().value();
-            if (arguments.contains(argument)) {
-                errors.add(new ParseException("Duplicate parameter name: '%s'".formatted(argument), previous().getPos()));
-            }
-            arguments.add(argument);
-            if (peek().getToken() == Token.SimpleToken.COMMA) {
-                next();
-            } else {
-                break;
-            }
-        }
-        expect(Token.SimpleToken.END_PAREN);
-
-        var body = blockStatement();
-        return new FunctionDeclarationStatement(name, body, arguments, new SourceSpan(begin, previous().getTo()));
-    }
-
-    private Statement expressionStatement() {
-        Expression expression;
-        try {
-            expression = expression();
-        } catch (ParseException e) {
-            errors.add(e);
-            seek(Token.SimpleToken.SEMICOLON);
-            return new ErrorStatement(e);
-        }
-        expect(Token.SimpleToken.SEMICOLON);
-        return new ExpressionStatement(expression);
+        return StatementParser.parse(this);
     }
 
     public Expression expression() {
@@ -181,11 +56,9 @@ public class Parser {
     }
 
     public Expression expression(Precedence precedence) {
-        var token = next();
-
         Expression left;
         try {
-            left = PrefixParselet.getAndParse(this, token);
+            left = PrefixParser.parse(this, next());
         } catch (ParseException e) {
             errors.add(e);
             left = new ErrorExpression(e);
@@ -207,7 +80,7 @@ public class Parser {
         return left;
     }
 
-    private void seek(Token token) {
+    public void seek(Token token) {
         while (hasNext() && peek().getToken() != token) next();
         expect(token);
     }
@@ -269,7 +142,7 @@ public class Parser {
         return current < tokens.size();
     }
 
-    private boolean hasNext(Token token) {
+    public boolean hasNext(Token token) {
         return hasNext() && peek().getToken() == token;
     }
 

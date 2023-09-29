@@ -1,4 +1,4 @@
-package io.github.mattidragon.jsonpatcher.lang.parse.pratt;
+package io.github.mattidragon.jsonpatcher.lang.parse.parselet;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
 import io.github.mattidragon.jsonpatcher.lang.parse.PositionedToken;
