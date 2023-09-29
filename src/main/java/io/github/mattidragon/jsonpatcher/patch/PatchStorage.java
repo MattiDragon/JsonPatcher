@@ -94,6 +94,7 @@ public class PatchStorage {
     }
 
     public @Nullable Patch findLibrary(Identifier id) {
+        if (id == null) return null;
         return libraries.get(id);
     }
 }

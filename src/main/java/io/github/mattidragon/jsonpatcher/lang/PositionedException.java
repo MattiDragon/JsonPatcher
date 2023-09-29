@@ -71,6 +71,11 @@ public abstract class PositionedException extends RuntimeException {
             return;
         }
 
+        if (from.column() - 1 < 0 || to.column() - from.column() + 1 < 0) {
+            message.append("Location unavailable: broken position\n| (from: %s, to: %s)".formatted(from, to));
+            return;
+        }
+
         if (from.row() == to.row()) {
             var row = from.row();
             var rowBegin = file.findRow(row);

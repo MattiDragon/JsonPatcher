@@ -30,6 +30,7 @@ public record PatchTarget(
 
         var fromPos = parser.peek().getFrom();
         while (parser.peek() instanceof PositionedToken.WordToken token) {
+            parser.next();
             if (token.getToken().value().equals("all")) {
                 all = true;
                 continue;
@@ -57,11 +58,11 @@ public record PatchTarget(
         PatchTarget target;
         try {
             target = new PatchTarget(
-                    Optional.of(namespace.getValue()),
-                    Optional.of(pathStart.getValue()),
-                    Optional.of(pathEnd.getValue()),
-                    Optional.of(path.getValue()),
-                    Optional.of(regex.getValue()).map(Pattern::compile)
+                    Optional.ofNullable(namespace.getValue()),
+                    Optional.ofNullable(pathStart.getValue()),
+                    Optional.ofNullable(pathEnd.getValue()),
+                    Optional.ofNullable(path.getValue()),
+                    Optional.ofNullable(regex.getValue()).map(Pattern::compile)
             );
         } catch (PatternSyntaxException e) {
             // add error to parser, but keep going in case of other errors

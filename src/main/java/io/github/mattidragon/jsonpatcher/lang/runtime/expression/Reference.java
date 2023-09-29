@@ -11,10 +11,10 @@ public interface Reference extends Expression {
 
     void set(Context context, Value value);
 
+    void delete(Context context);
+
     @Override
     default Value evaluate(Context context) {
         return get(context);
     }
-
-    void delete(Context context);
 }

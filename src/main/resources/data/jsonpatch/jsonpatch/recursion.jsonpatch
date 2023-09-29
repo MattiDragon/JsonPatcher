@@ -1,4 +1,6 @@
-@version 1
-@target minecraft:recipes/oak_planks.json
+@version 1;
+@target namespace: "minecraft" path: "recipes/oak_planks.json";
 
-(false + ).a
+val $test = import('jsonpatch:lib');
+
+result.count = $test.test();

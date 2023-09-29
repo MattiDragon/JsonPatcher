@@ -1,5 +1,5 @@
-@version 1
-@target minecraft:recipes/*arrow.json
+@version 1;
+@target regex: "minecraft:recipes/.*arrow\\.json";
 
 val $math = import(math);
 

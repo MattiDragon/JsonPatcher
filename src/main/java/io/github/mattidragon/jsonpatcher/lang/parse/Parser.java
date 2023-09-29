@@ -28,6 +28,7 @@ public class Parser {
 
     public ParseResult program() {
         while (hasNext(Token.SimpleToken.AT_SIGN)) {
+            next();
             var id = expectWord().value();
             metadata.add(id, this);
             expect(Token.SimpleToken.SEMICOLON);

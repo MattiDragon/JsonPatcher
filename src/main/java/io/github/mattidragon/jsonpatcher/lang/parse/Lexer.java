@@ -12,7 +12,7 @@ public class Lexer {
     private final ArrayList<PositionedToken<?>> tokens = new ArrayList<>();
     private int current = 0;
     private int currentLine = 1;
-    private int currentColumn = 0;
+    private int currentColumn = 1;
 
     public Lexer(String program, String filename) {
         this.program = program;

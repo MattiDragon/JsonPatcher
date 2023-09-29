@@ -18,6 +18,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 public class PatchContext {
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
@@ -68,27 +69,12 @@ public class PatchContext {
     private JsonElement applyPatches(JsonElement json, Identifier id) {
         var executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
         var errors = new ArrayList<Exception>();
-        var activeJson = new MutableObject<>(json);
+        var activeJson = new MutableObject<>(JsonHelper.asObject(json, "patched file"));
         for (var patch : patches.getPatches(id)) {
-            try {
-                CompletableFuture.runAsync(() -> {
-                            var root = new Value.ObjectValue(JsonHelper.asObject(activeJson.getValue(), "patched file"));
-                            patch.program().execute(Context.create(root));
-                            activeJson.setValue(root.toGson(null));
-                        }, executor)
-                        .get(200, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof EvaluationException cause) {
-                    errors.add(cause);
-                } else if (e.getCause() instanceof StackOverflowError cause) {
-                    errors.add(new RuntimeException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
-                } else {
-                    errors.add(new RuntimeException("Unexpected error while applying patch %s".formatted(patch.id()), e));
-                }
-            } catch (InterruptedException e) {
-                errors.add(new RuntimeException("Async error while applying patch %s".formatted(patch.id()), e));
-            } catch (TimeoutException e) {
-                errors.add(new RuntimeException("Timeout applying patch %s".formatted(patch.id()), e));
+            var root = new Value.ObjectValue(activeJson.getValue());
+            var success = runPatch(patch, executor, errors::add, patches, root);
+            if (success) {
+                activeJson.setValue(root.toGson(null));
             }
         }
         if (!errors.isEmpty()) {
@@ -96,6 +82,38 @@ public class PatchContext {
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while patching {}", id, error));
         }
         return activeJson.getValue();
+    }
+
+    /**
+     * Runs a patch with proper error handling.
+     * @param patch The patch to run.
+     * @param executor An executor to run the patch on, required to run on another thread for timeout to work
+     * @param errorConsumer A consumer the receives errors from the patch.
+     *                      Errors are either {@link EvaluationException EvaluationExceptions} for errors within the patch,
+     *                      or {@link RuntimeException RuntimeExceptions} for timeouts and other errors not from the patch itself
+     * @param patchStorage A patch storage for resolution of libraries
+     * @param root The root object for the patch context, will be modified
+     * @return {@code true} if the patch completed successfully. If {@code false} the {@code errorConsumer} should have received an error.
+     */
+    public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root) {
+        try {
+            CompletableFuture.runAsync(() -> patch.program().execute(Context.create(root, patchStorage)), executor)
+                    .get(200, TimeUnit.MILLISECONDS);
+            return true;
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof EvaluationException cause) {
+                errorConsumer.accept(cause);
+            } else if (e.getCause() instanceof StackOverflowError cause) {
+                errorConsumer.accept(new RuntimeException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
+            } else {
+                errorConsumer.accept(new RuntimeException("Unexpected error while applying patch %s".formatted(patch.id()), e));
+            }
+        } catch (InterruptedException e) {
+            errorConsumer.accept(new RuntimeException("Async error while applying patch %s".formatted(patch.id()), e));
+        } catch (TimeoutException e) {
+            errorConsumer.accept(new RuntimeException("Timeout applying patch %s".formatted(patch.id()), e));
+        }
+        return false;
     }
 
     public static InputSupplier<InputStream> patchInputStream(Identifier id, InputSupplier<InputStream> stream) {

@@ -58,6 +58,9 @@ public class PatchLoader {
                 } catch (IOException | Lexer.LexException | IllegalStateException e) {
                     JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);
                     errorCount.incrementAndGet();
+                } catch (RuntimeException e) {
+                    JsonPatcher.RELOAD_LOGGER.error("Unexpected error while loading patches", e);
+                    errorCount.incrementAndGet();
                 }
             }, executor));
         }
