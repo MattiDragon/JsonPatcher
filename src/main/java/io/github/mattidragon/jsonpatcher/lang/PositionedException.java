@@ -39,42 +39,39 @@ public abstract class PositionedException extends RuntimeException {
 
         fillInError(message);
 
-        if (!Config.MANAGER.get().useJavaStacktrace()
-            && super.getCause() instanceof PositionedException cause) {
-            message.append("\n| \n| Caused by:\n| ");
-            cause.fillInError(message);
+        if (super.getCause() instanceof PositionedException cause) {
+            if (Config.MANAGER.get().useShortStacktrace()) {
+                message.append("\n| Caused by: ");
+                cause.fillInShortError(message);
+            } else if (!Config.MANAGER.get().useJavaStacktrace()) {
+                message.append("\n| \n| Caused by:\n| ");
+                cause.fillInError(message);
+            }
         }
 
         return message.toString();
+    }
+
+    private void fillInShortError(StringBuilder message) {
+        message.append(super.getMessage())
+                .append(" at ");
+
+        message.append(formatLocation(getPos()).location);
     }
 
     private void fillInError(StringBuilder message) {
         message.append("  ").append(super.getMessage()).append("\n| ");
 
         var pos = getPos();
-        if (pos == null) {
-            message.append("Location unavailable: no location specified");
-            return;
-        }
+        var location = formatLocation(pos);
+        message.append("Location: ")
+                .append(location.location)
+                .append("\n| ");
+        if (pos == null || !location.wellBehaved) return;
 
         var from = pos.from();
         var to = pos.to();
-        if (from.file() != to.file()){
-            message.append("Location unavailable: inconsistent file\n| (from: %s, to: %s)".formatted(from, to));
-            return;
-        }
-
         var file = from.file();
-
-        if (from.row() > to.row() || from.row() == to.row() && from.column() > to.column()){
-            message.append("Location unavailable: unexpected position order\n| (from: %s, to: %s)".formatted(from, to));
-            return;
-        }
-
-        if (from.column() - 1 < 0 || to.column() - from.column() + 1 < 0) {
-            message.append("Location unavailable: broken position\n| (from: %s, to: %s)".formatted(from, to));
-            return;
-        }
 
         if (from.row() == to.row()) {
             var row = from.row();
@@ -82,11 +79,6 @@ public abstract class PositionedException extends RuntimeException {
             var rowEnd = file.findRow(row + 1);
             if (rowEnd == -1) rowEnd = file.code().length() - 1;
 
-            if (from.column() == to.column()) {
-                message.append("Location: in %s, line %s, column %s\n| ".formatted(file.name(), row, from.column()));
-            } else {
-                message.append("Location: in %s, line %s, column %s - %s\n| ".formatted(file.name(), row, from.column(), to.column()));
-            }
             message.append(file.code()
                             .substring(rowBegin, rowEnd)
                             .replace("\t", "    ")
@@ -96,9 +88,43 @@ public abstract class PositionedException extends RuntimeException {
             message.append(" ".repeat(from.column() - 1));
             message.append("^".repeat(to.column() - from.column() + 1));
             message.append(" here");
-            return;
+        }
+    }
+
+    private static FormattedLocation formatLocation(SourceSpan pos) {
+        if (pos == null) {
+            return new FormattedLocation("unknown", false);
         }
 
-        message.append("Location unavailable: multiline location\n(from: %s, to: %s)".formatted(from, to));
+        var from = pos.from();
+        var to = pos.to();
+        var file = from.file();
+
+        if (from.file() != to.file()){
+            return new FormattedLocation("error: inconsistent file (from: %s, to: %s)".formatted(from, to), false);
+        }
+
+        if (from.row() > to.row() || from.row() == to.row() && from.column() > to.column()){
+            return new FormattedLocation("error: unexpected position order (from: %s, to: %s)".formatted(from, to), false);
+        }
+
+        if (from.column() - 1 < 0 || to.column() - from.column() + 1 < 0) {
+            return new FormattedLocation("error: broken position (from: %s, to: %s)".formatted(from, to), false);
+        }
+
+        if (from.row() != to.row()) {
+            return new FormattedLocation("%s %s:%s - %s:%s".formatted(file.name(), from.row(), from.column(), to.row(), to.column()), false);
+        }
+
+        var row = from.row();
+        if (from.column() == to.column()) {
+            return new FormattedLocation("%s %s:%s".formatted(file.name(), row, from.column()), true);
+        } else {
+            return new FormattedLocation("%s %s:%s-%s".formatted(file.name(), row, from.column(), to.column()), true);
+        }
+    }
+
+    private record FormattedLocation(String location, boolean wellBehaved) {
+
     }
 }
