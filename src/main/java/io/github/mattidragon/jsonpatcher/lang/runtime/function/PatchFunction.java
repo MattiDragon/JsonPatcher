@@ -7,6 +7,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.DoubleUnaryOperator;
 
 public sealed interface PatchFunction {
@@ -33,7 +34,7 @@ public sealed interface PatchFunction {
         }
     }
 
-    record DefinedPatchFunction(Statement body, List<String> args, Context context) implements PatchFunction {
+    record DefinedPatchFunction(Statement body, List<Optional<String>> args, Context context) implements PatchFunction {
         public DefinedPatchFunction {
             args = List.copyOf(args);
         }
@@ -47,8 +48,21 @@ public sealed interface PatchFunction {
             // We use the context the function was created in, not the one it was called in.
             // This allows for closures if we ever allow a function to escape its original scope
             var functionContext = this.context.newScope();
+
+            var rootIndex = this.args.indexOf(Optional.<String>empty());
+            if (rootIndex != -1) {
+                if (args.get(rootIndex) instanceof Value.ObjectValue root) {
+                    functionContext = functionContext.withRoot(root);
+                } else {
+                    throw new EvaluationException("Only objects can be used in apply statements, tried to use %s".formatted(args.get(rootIndex)), callPos);
+                }
+            }
+
+            var variables = functionContext.variables();
             for (int i = 0; i < args.size(); i++) {
-                functionContext.variables().createVariableWithShadowing(this.args.get(i), args.get(i), false);
+                var argName = this.args.get(i);
+                var argVal = args.get(i);
+                argName.ifPresent(s -> variables.createVariableWithShadowing(s, argVal, false));
             }
 
             try {

@@ -60,7 +60,6 @@ public class StatementParser {
 
     private static Statement variableStatement(Parser parser, boolean mutable) {
         var begin = parser.next().getFrom();
-        parser.expect(Token.SimpleToken.DOLLAR);
         var name = parser.expectWord();
         parser.expect(Token.SimpleToken.ASSIGN);
         var initializer = parser.expression();
@@ -96,14 +95,25 @@ public class StatementParser {
 
         parser.expect(Token.SimpleToken.BEGIN_PAREN);
 
-        var arguments = new ArrayList<String>();
+        var arguments = new ArrayList<Optional<String>>();
         while (parser.peek().getToken() != Token.SimpleToken.END_PAREN) {
-            parser.expect(Token.SimpleToken.DOLLAR);
-            var argument = parser.expectWord().value();
-            if (arguments.contains(argument)) {
-                parser.addError(new Parser.ParseException("Duplicate parameter name: '%s'".formatted(argument), parser.previous().getPos()));
+            Optional<String> optionalArgument;
+            if (parser.hasNext(Token.SimpleToken.DOLLAR)) {
+                parser.next();
+                optionalArgument = Optional.empty();
+            } else {
+                var argument = parser.expectWord().value();
+                optionalArgument = Optional.of(argument);
             }
-            arguments.add(argument);
+
+            if (arguments.contains(optionalArgument)) {
+                if (optionalArgument.isPresent()) {
+                    parser.addError(new Parser.ParseException("Duplicate parameter name: '%s'".formatted(optionalArgument.get()), parser.previous().getPos()));
+                } else {
+                    parser.addError(new Parser.ParseException("Duplicate root parameter", parser.previous().getPos()));
+                }
+            }
+            arguments.add(optionalArgument);
             if (parser.peek().getToken() == Token.SimpleToken.COMMA) {
                 parser.next();
             } else {

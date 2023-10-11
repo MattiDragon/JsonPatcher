@@ -6,8 +6,9 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
 
 import java.util.List;
+import java.util.Optional;
 
-public record FunctionDeclarationStatement(String name, Statement body, List<String> args, SourceSpan pos) implements Statement {
+public record FunctionDeclarationStatement(String name, Statement body, List<Optional<String>> args, SourceSpan pos) implements Statement {
     public FunctionDeclarationStatement {
         args = List.copyOf(args);
     }

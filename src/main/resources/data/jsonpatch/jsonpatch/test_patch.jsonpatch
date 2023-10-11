@@ -1,26 +1,24 @@
 @version 1;
 @target regex: "minecraft:recipes/.*arrow\\.json";
 
-val $math = import(math);
+val math = import(math);
 
-function modifyKey($key, $result) {
-    apply ($key) {
-        '#' = {
-            tag: "minecraft:coals",
-        };
+function modifyKey($, result) {
+    $'#' = {
+        tag: "minecraft:coals",
+    };
 
-        if ($result.item == "minecraft:arrow") delete X;
-    }
+    if (result.item == "minecraft:arrow") delete $X;
 }
 
-if (type != "minecraft:crafting_shaped") return;
+if ($type != "minecraft:crafting_shaped") return;
 
 
-val $result = result;
-$modifyKey(key, $result);
+val result = $result;
+modifyKey($key, result);
 
 if (result.item == "minecraft:arrow") {
     pattern[0] = "#";
 }
-$result.count += $math.abs(1-100);
+result.count += math.abs(1-100);
 

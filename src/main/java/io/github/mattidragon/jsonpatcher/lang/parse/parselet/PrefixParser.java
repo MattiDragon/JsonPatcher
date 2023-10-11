@@ -22,11 +22,12 @@ public class PrefixParser {
         return new ValueExpression(new Value.NumberValue(token.getToken().value()), token.getPos());
     }
 
-    private static Expression implicitRoot(PositionedToken.WordToken token) {
-        return new ImplicitRootExpression(token.getToken().value(), token.getPos());
-    }
+    private static Expression root(Parser parser, PositionedToken<?> token) {
+        if (parser.hasNext() && parser.peek() instanceof PositionedToken.WordToken word) {
+            parser.next();
+            return new ImplicitRootExpression(word.getToken().value(), new SourceSpan(token.getFrom(), word.getTo()));
+        }
 
-    private static Expression root(PositionedToken<?> token) {
         return new RootExpression(token.getPos());
     }
 
@@ -41,9 +42,8 @@ public class PrefixParser {
         return new ImportExpression(name.value(), new SourceSpan(token.getFrom(), parser.previous().getTo()));
     }
 
-    private static Expression variable(Parser parser, PositionedToken<?> token) {
-        var name = parser.expectWord();
-        return new VariableAccessExpression(name.value(), new SourceSpan(token.getFrom(), parser.previous().getTo()));
+    private static Expression variable(PositionedToken<Token.WordToken> token) {
+        return new VariableAccessExpression(token.getToken().value(), new SourceSpan(token.getFrom(), token.getTo()));
     }
 
     private static UnaryExpression unary(Parser parser, PositionedToken<?> token, UnaryExpression.Operator operator) {
@@ -93,13 +93,12 @@ public class PrefixParser {
     public static Expression parse(Parser parser, PositionedToken<?> token) {
         if (token instanceof PositionedToken.StringToken stringToken) return string(stringToken);
         if (token instanceof PositionedToken.NumberToken numberToken) return number(numberToken);
-        if (token instanceof PositionedToken.WordToken nameToken) return implicitRoot(nameToken);
-        if (token.getToken() == Token.KeywordToken.THIS) return root(token);
+        if (token instanceof PositionedToken.WordToken nameToken) return variable(nameToken);
         if (token.getToken() == Token.KeywordToken.TRUE) return constant(token, Value.BooleanValue.TRUE);
         if (token.getToken() == Token.KeywordToken.FALSE) return constant(token, Value.BooleanValue.FALSE);
         if (token.getToken() == Token.KeywordToken.NULL) return constant(token, Value.NullValue.NULL);
         if (token.getToken() == Token.KeywordToken.IMPORT) return importExpression(parser, token);
-        if (token.getToken() == Token.SimpleToken.DOLLAR) return variable(parser, token);
+        if (token.getToken() == Token.SimpleToken.DOLLAR) return root(parser, token);
         if (token.getToken() == Token.SimpleToken.MINUS) return unary(parser, token, UnaryExpression.Operator.MINUS);
         if (token.getToken() == Token.SimpleToken.BANG) return unary(parser, token, UnaryExpression.Operator.NOT);
         if (token.getToken() == Token.SimpleToken.TILDE) return unary(parser, token, UnaryExpression.Operator.BITWISE_NOT);
