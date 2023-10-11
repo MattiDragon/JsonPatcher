@@ -19,6 +19,7 @@ public record PatchTarget(
         Optional<String> pathEnd,
         Optional<String> path,
         Optional<Pattern> regex) implements Predicate<Identifier> {
+
     public static PatchTarget parse(Parser parser) {
         MutableObject<String> namespace = new MutableObject<>();
         MutableObject<String> pathStart = new MutableObject<>();
@@ -33,6 +34,18 @@ public record PatchTarget(
             parser.next();
             if (token.getToken().value().equals("all")) {
                 all = true;
+                continue;
+            } else if (token.getToken().value().equals("id")) {
+                parser.expect(Token.SimpleToken.COLON);
+                var value = parser.expectString();
+                var id = Identifier.tryParse(value.value());
+                if (id == null) {
+                    parser.addError(new Parser.ParseException("Invalid id in target", parser.previous().getPos()));
+                } else {
+                    namespace.setValue(id.getNamespace());
+                    path.setValue(id.getPath());
+                }
+                hasNormal = true;
                 continue;
             }
 

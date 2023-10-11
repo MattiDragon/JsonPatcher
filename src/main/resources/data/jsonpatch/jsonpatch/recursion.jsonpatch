@@ -1,5 +1,5 @@
 @version 1;
-@target namespace: "minecraft" path: "recipes/oak_planks.json";
+@target id: "minecraft:recipes/oak_planks.json";
 
 val test = import('jsonpatch:lib');
 

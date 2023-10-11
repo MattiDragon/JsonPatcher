@@ -4,4 +4,3 @@ function test() {
     return 10;
 }
 
-test = $test;
