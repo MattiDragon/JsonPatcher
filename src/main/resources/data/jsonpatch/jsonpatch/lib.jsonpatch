@@ -1,6 +1,6 @@
 @version 1;
 
-function test() {
+$test = function () {
     return 10;
-}
+};
 

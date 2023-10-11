@@ -18,7 +18,7 @@ val result = $result;
 modifyKey($key, result);
 
 if (result.item == "minecraft:arrow") {
-    pattern[0] = "#";
+    $pattern[0] = "#";
 }
-result.count += math.abs(1-100);
+result.count += math.abs(1 - 100);
 

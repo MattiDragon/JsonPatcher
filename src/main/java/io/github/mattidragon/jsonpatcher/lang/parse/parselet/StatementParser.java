@@ -14,7 +14,7 @@ public class StatementParser {
     private StatementParser() {
     }
 
-    private static Statement blockStatement(Parser parser) {
+    static Statement blockStatement(Parser parser) {
         parser.expect(Token.SimpleToken.BEGIN_CURLY);
         var beginPos = parser.previous().getFrom();
         var statements = new ArrayList<Statement>();
@@ -93,37 +93,7 @@ public class StatementParser {
         var name = parser.expectWord().value();
         var begin = parser.previous().getFrom();
 
-        parser.expect(Token.SimpleToken.BEGIN_PAREN);
-
-        var arguments = new ArrayList<Optional<String>>();
-        while (parser.peek().getToken() != Token.SimpleToken.END_PAREN) {
-            Optional<String> optionalArgument;
-            if (parser.hasNext(Token.SimpleToken.DOLLAR)) {
-                parser.next();
-                optionalArgument = Optional.empty();
-            } else {
-                var argument = parser.expectWord().value();
-                optionalArgument = Optional.of(argument);
-            }
-
-            if (arguments.contains(optionalArgument)) {
-                if (optionalArgument.isPresent()) {
-                    parser.addError(new Parser.ParseException("Duplicate parameter name: '%s'".formatted(optionalArgument.get()), parser.previous().getPos()));
-                } else {
-                    parser.addError(new Parser.ParseException("Duplicate root parameter", parser.previous().getPos()));
-                }
-            }
-            arguments.add(optionalArgument);
-            if (parser.peek().getToken() == Token.SimpleToken.COMMA) {
-                parser.next();
-            } else {
-                break;
-            }
-        }
-        parser.expect(Token.SimpleToken.END_PAREN);
-
-        var body = blockStatement(parser);
-        return new FunctionDeclarationStatement(name, body, arguments, new SourceSpan(begin, parser.previous().getTo()));
+        return new FunctionDeclarationStatement(name, PrefixParser.functionExpression(parser, begin));
     }
 
     private static Statement expressionStatement(Parser parser) {
@@ -142,6 +112,7 @@ public class StatementParser {
     public static Statement parse(Parser parser) {
         var token = parser.peek();
         if (token.getToken() == Token.SimpleToken.BEGIN_CURLY) return blockStatement(parser);
+        if (token.getToken() == Token.SimpleToken.SEMICOLON) return new UnnecessarySemicolonStatement(token.getPos());
         if (token.getToken() == Token.KeywordToken.APPLY) return applyStatement(parser);
         if (token.getToken() == Token.KeywordToken.IF) return ifStatement(parser);
         if (token.getToken() == Token.KeywordToken.VAR) return variableStatement(parser,true);

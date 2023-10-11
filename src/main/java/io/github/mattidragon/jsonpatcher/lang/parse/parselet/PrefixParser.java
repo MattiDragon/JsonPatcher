@@ -1,14 +1,12 @@
 package io.github.mattidragon.jsonpatcher.lang.parse.parselet;
 
-import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
-import io.github.mattidragon.jsonpatcher.lang.parse.PositionedToken;
-import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.parse.Token;
+import io.github.mattidragon.jsonpatcher.lang.parse.*;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
 
 public class PrefixParser {
     private PrefixParser() {
@@ -84,6 +82,40 @@ public class PrefixParser {
         return new ObjectInitializerExpression(children, new SourceSpan(token.getFrom(), parser.previous().getTo()));
     }
 
+    static FunctionExpression functionExpression(Parser parser, SourcePos beginPos) {
+        parser.expect(Token.SimpleToken.BEGIN_PAREN);
+
+        var arguments = new ArrayList<Optional<String>>();
+        while (parser.peek().getToken() != Token.SimpleToken.END_PAREN) {
+            Optional<String> optionalArgument;
+            if (parser.hasNext(Token.SimpleToken.DOLLAR)) {
+                parser.next();
+                optionalArgument = Optional.empty();
+            } else {
+                var argument = parser.expectWord().value();
+                optionalArgument = Optional.of(argument);
+            }
+
+            if (arguments.contains(optionalArgument)) {
+                if (optionalArgument.isPresent()) {
+                    parser.addError(new Parser.ParseException("Duplicate parameter name: '%s'".formatted(optionalArgument.get()), parser.previous().getPos()));
+                } else {
+                    parser.addError(new Parser.ParseException("Duplicate root parameter", parser.previous().getPos()));
+                }
+            }
+            arguments.add(optionalArgument);
+            if (parser.peek().getToken() == Token.SimpleToken.COMMA) {
+                parser.next();
+            } else {
+                break;
+            }
+        }
+        parser.expect(Token.SimpleToken.END_PAREN);
+
+        var body = StatementParser.blockStatement(parser);
+        return new FunctionExpression(body, arguments, new SourceSpan(beginPos, parser.previous().getTo()));
+    }
+
     private static Expression parenthesis(Parser parser) {
         var expression = parser.expression();
         parser.expect(Token.SimpleToken.END_PAREN);
@@ -98,6 +130,7 @@ public class PrefixParser {
         if (token.getToken() == Token.KeywordToken.FALSE) return constant(token, Value.BooleanValue.FALSE);
         if (token.getToken() == Token.KeywordToken.NULL) return constant(token, Value.NullValue.NULL);
         if (token.getToken() == Token.KeywordToken.IMPORT) return importExpression(parser, token);
+        if (token.getToken() == Token.KeywordToken.FUNCTION) return functionExpression(parser, token.getFrom());
         if (token.getToken() == Token.SimpleToken.DOLLAR) return root(parser, token);
         if (token.getToken() == Token.SimpleToken.MINUS) return unary(parser, token, UnaryExpression.Operator.MINUS);
         if (token.getToken() == Token.SimpleToken.BANG) return unary(parser, token, UnaryExpression.Operator.NOT);
