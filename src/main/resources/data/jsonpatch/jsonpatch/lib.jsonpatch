@@ -1,6 +1,11 @@
 @version 1;
 
 $test = function () {
-    return 10;
+    var list = [];
+    for (var i = 0; i < 10; i += 1) {
+        list += [i];
+    }
+
+    return list;
 };
 

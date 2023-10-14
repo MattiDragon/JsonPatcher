@@ -39,18 +39,19 @@ public final class VariableStack {
     }
 
     public void setVariable(String name, Value value, SourceSpan pos) {
-        if (parent != null && parent.hasVariable(name)) parent.setVariable(name, value, pos);
-        if (mutable.containsKey(name)) {
+        if (parent != null && parent.hasVariable(name)) {
+            parent.setVariable(name, value, pos);
+        } else if (mutable.containsKey(name)) {
             mutable.put(name, value);
         } else if (immutable.containsKey(name)) {
-            throw new EvaluationException("Attempt to assign to mutable variable $%s".formatted(name), pos);
+            throw new EvaluationException("Attempt to assign to mutable variable %s".formatted(name), pos);
         } else {
-            throw new EvaluationException("Cannot find variable with name $%s".formatted(name), pos);
+            throw new EvaluationException("Cannot find variable with name %s".formatted(name), pos);
         }
     }
 
     public void createVariable(String name, Value value, boolean mutable, SourceSpan pos) {
-        if (hasVariable(name)) throw new EvaluationException("Cannot create variable with duplicate name: $%s".formatted(name), pos);
+        if (hasVariable(name)) throw new EvaluationException("Cannot create variable with duplicate name: %s".formatted(name), pos);
         if (mutable) this.mutable.put(name, value);
         else this.immutable.put(name, value);
     }
@@ -69,7 +70,7 @@ public final class VariableStack {
             mutable.remove(name);
             return;
         }
-        if (hasVariable(name)) throw new EvaluationException("Cannot delete variable from outer scope: $%s".formatted(name), pos);
+        if (hasVariable(name)) throw new EvaluationException("Cannot delete variable from outer scope: %s".formatted(name), pos);
         throw new EvaluationException("Cannot find variable with name %s".formatted(name), pos);
     }
 }

@@ -62,4 +62,9 @@ public record Context(Value.ObjectValue root, VariableStack variables, PatchStor
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "Context[]";
+    }
 }

@@ -1,5 +1,11 @@
 package io.github.mattidragon.jsonpatcher.lang.parse;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 public sealed interface Token {
     record NumberToken(double value) implements Token {
     }
@@ -62,20 +68,34 @@ public sealed interface Token {
     }
 
     enum KeywordToken implements Token {
-        TRUE,
-        FALSE,
-        NULL,
-        APPLY,
-        THIS,
-        IF,
-        ELSE,
-        FOR,
-        IN,
-        VAR,
-        VAL,
-        DELETE,
-        FUNCTION,
-        RETURN,
-        IMPORT
+        TRUE("true"),
+        FALSE("false"),
+        NULL("null"),
+        APPLY("apply"),
+        THIS("this"),
+        IF("if"),
+        ELSE("else"),
+        IN("in"),
+        VAR("var"),
+        VAL("val"),
+        DELETE("delete"),
+        FUNCTION("function"),
+        RETURN("return"),
+        IMPORT("import"),
+        WHILE("while"),
+        FOR("for"),
+        FOREACH("foreach");
+
+        public static final Map<String, KeywordToken> ALL = Arrays.stream(KeywordToken.values()).collect(Collectors.toUnmodifiableMap(KeywordToken::getValue, Function.identity()));
+
+        private final String value;
+
+        KeywordToken(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 }

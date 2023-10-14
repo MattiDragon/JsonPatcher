@@ -149,25 +149,11 @@ public class Lexer {
             length++;
         }
 
-        var token = switch (string.toString()) {
-            case "true" -> Token.KeywordToken.TRUE;
-            case "false" -> Token.KeywordToken.FALSE;
-            case "null" -> Token.KeywordToken.NULL;
-            case "apply" -> Token.KeywordToken.APPLY;
-            case "this" -> Token.KeywordToken.THIS;
-            case "if" -> Token.KeywordToken.IF;
-            case "else" -> Token.KeywordToken.ELSE;
-            case "for" -> Token.KeywordToken.FOR;
-            case "in" -> Token.KeywordToken.IN;
-            case "var" -> Token.KeywordToken.VAR;
-            case "val" -> Token.KeywordToken.VAL;
-            case "delete" -> Token.KeywordToken.DELETE;
-            case "function" -> Token.KeywordToken.FUNCTION;
-            case "return" -> Token.KeywordToken.RETURN;
-            case "import" -> Token.KeywordToken.IMPORT;
-            default -> new Token.WordToken(string.toString());
-        };
-        addParsedToken(token, length);
+        if (Token.KeywordToken.ALL.containsKey(string.toString())) {
+            addParsedToken(Token.KeywordToken.ALL.get(string.toString()), length);
+        } else {
+            addParsedToken(new Token.WordToken(string.toString()), length);
+        }
     }
 
     private boolean isWordStartChar(char c) {
