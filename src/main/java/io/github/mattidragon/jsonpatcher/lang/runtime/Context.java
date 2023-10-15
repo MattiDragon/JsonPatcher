@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.BuiltInFunctions;
-import io.github.mattidragon.jsonpatcher.lang.runtime.function.StandardLibrary;
+import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.Libraries;
 import io.github.mattidragon.jsonpatcher.patch.PatchContext;
 import io.github.mattidragon.jsonpatcher.patch.PatchStorage;
 import net.minecraft.util.Identifier;
@@ -34,8 +34,8 @@ public record Context(Value.ObjectValue root, VariableStack variables, PatchStor
     }
 
     public Value findLibrary(String libraryName, SourceSpan pos) {
-        if (StandardLibrary.LIBRARIES.containsKey(libraryName)) {
-            return StandardLibrary.LIBRARIES.get(libraryName).get();
+        if (Libraries.LOOKUP.containsKey(libraryName)) {
+            return Libraries.LOOKUP.get(libraryName).get();
         }
         var libId = Identifier.tryParse(libraryName);
         var userLib = storage.findLibrary(libId);
