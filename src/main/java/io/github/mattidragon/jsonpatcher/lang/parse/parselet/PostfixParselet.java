@@ -55,6 +55,19 @@ public interface PostfixParselet {
         }
     }
 
+    record UnaryModificationParselet(UnaryExpression.Operator operator) implements PostfixParselet {
+        @Override
+        public Expression parse(Parser parser, Expression left, PositionedToken<?> token) {
+            if (!(left instanceof Reference ref)) throw new Parser.ParseException("Can't modify %s".formatted(left), token.getPos());
+            return new UnaryModificationExpression(true, ref, operator, token.getPos());
+        }
+
+        @Override
+        public Precedence precedence() {
+            return Precedence.POSTFIX;
+        }
+    }
+
     record AssignmentParselet(BinaryExpression.Operator operator) implements PostfixParselet {
         @Override
         public Expression parse(Parser parser, Expression left, PositionedToken<?> token) {
@@ -104,6 +117,7 @@ public interface PostfixParselet {
                 case STAR -> new BinaryOperationParselet(Precedence.PRODUCT, BinaryExpression.Operator.MULTIPLY);
                 case SLASH -> new BinaryOperationParselet(Precedence.PRODUCT, BinaryExpression.Operator.DIVIDE);
                 case PERCENT -> new BinaryOperationParselet(Precedence.PRODUCT, BinaryExpression.Operator.MODULO);
+                case DOUBLE_STAR -> new BinaryOperationParselet(Precedence.EXPONENT, BinaryExpression.Operator.EXPONENT);
                 case OR -> new BinaryOperationParselet(Precedence.BITWISE_OR, BinaryExpression.Operator.OR);
                 case AND -> new BinaryOperationParselet(Precedence.BITWISE_AND, BinaryExpression.Operator.AND);
                 case XOR -> new BinaryOperationParselet(Precedence.BITWISE_XOR, BinaryExpression.Operator.XOR);
@@ -116,6 +130,10 @@ public interface PostfixParselet {
                 case LESS_THAN_EQUAL -> new BinaryOperationParselet(Precedence.COMPARISON, BinaryExpression.Operator.LESS_THAN_EQUAL);
                 case GREATER_THAN -> new BinaryOperationParselet(Precedence.COMPARISON, BinaryExpression.Operator.GREATER_THAN);
                 case GREATER_THAN_EQUAL -> new BinaryOperationParselet(Precedence.COMPARISON, BinaryExpression.Operator.GREATER_THAN_EQUAL);
+
+                case DOUBLE_MINUS -> new UnaryModificationParselet(UnaryExpression.Operator.DECREMENT);
+                case DOUBLE_PLUS -> new UnaryModificationParselet(UnaryExpression.Operator.INCREMENT);
+                case DOUBLE_BANG -> new UnaryModificationParselet(UnaryExpression.Operator.NOT);
 
                 case ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.ASSIGN);
                 case PLUS_ASSIGN -> new AssignmentParselet(BinaryExpression.Operator.PLUS);

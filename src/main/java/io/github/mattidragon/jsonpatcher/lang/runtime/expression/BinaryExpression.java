@@ -86,6 +86,13 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
             }
             throw new EvaluationException("Can't take %s modulo %s".formatted(first, second), pos);
         };
+        Operator EXPONENT = (first, second, pos) -> {
+            if (first instanceof Value.NumberValue number1
+                && second instanceof Value.NumberValue number2) {
+                return new Value.NumberValue(Math.pow(number1.value(), number2.value()));
+            }
+            throw new EvaluationException("Can't take %s to the %s".formatted(first, second), pos);
+        };
 
         Operator AND = (first, second, pos) -> {
             if (first instanceof Value.NumberValue number1

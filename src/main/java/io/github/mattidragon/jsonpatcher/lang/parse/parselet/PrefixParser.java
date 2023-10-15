@@ -48,6 +48,13 @@ public class PrefixParser {
         return new UnaryExpression(parser.expression(Precedence.PREFIX), operator, token.getPos());
     }
 
+    private static Expression unaryModification(Parser parser, PositionedToken<?> token, UnaryExpression.Operator operator) {
+        var expression = parser.expression(Precedence.PREFIX);
+        if (!(expression instanceof Reference ref)) throw new Parser.ParseException("Can't modify to %s".formatted(expression), token.getPos());
+
+        return new UnaryModificationExpression(false, ref, operator, token.getPos());
+    }
+
     private static Expression arrayInit(Parser parser, PositionedToken<?> token) {
         var children = new ArrayList<Expression>();
         while (parser.peek().getToken() != Token.SimpleToken.END_SQUARE) {
@@ -135,6 +142,9 @@ public class PrefixParser {
         if (token.getToken() == Token.SimpleToken.MINUS) return unary(parser, token, UnaryExpression.Operator.MINUS);
         if (token.getToken() == Token.SimpleToken.BANG) return unary(parser, token, UnaryExpression.Operator.NOT);
         if (token.getToken() == Token.SimpleToken.TILDE) return unary(parser, token, UnaryExpression.Operator.BITWISE_NOT);
+        if (token.getToken() == Token.SimpleToken.DOUBLE_MINUS) return unaryModification(parser, token, UnaryExpression.Operator.DECREMENT);
+        if (token.getToken() == Token.SimpleToken.DOUBLE_PLUS) return unaryModification(parser, token, UnaryExpression.Operator.INCREMENT);
+        if (token.getToken() == Token.SimpleToken.DOUBLE_BANG) return unaryModification(parser, token, UnaryExpression.Operator.NOT);
         if (token.getToken() == Token.SimpleToken.BEGIN_SQUARE) return arrayInit(parser, token);
         if (token.getToken() == Token.SimpleToken.BEGIN_CURLY) return objectInit(parser, token);
         if (token.getToken() == Token.SimpleToken.BEGIN_PAREN) return parenthesis(parser);

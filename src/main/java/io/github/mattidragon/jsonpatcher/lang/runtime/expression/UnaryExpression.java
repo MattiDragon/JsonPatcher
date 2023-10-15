@@ -31,5 +31,13 @@ public record UnaryExpression(Expression input, Operator op, SourceSpan pos) imp
             if (value instanceof Value.NumberValue numberValue) return new Value.NumberValue(~(int) numberValue.value());
             throw new EvaluationException("Can't apply bitwise not to %s. Only numbers are supported.".formatted(value), pos);
         };
+        Operator INCREMENT = (value, pos) -> {
+            if (value instanceof Value.NumberValue numberValue) return new Value.NumberValue(numberValue.value() + 1);
+            throw new EvaluationException("Can't negate %s. Only numbers are supported.".formatted(value), pos);
+        };
+        Operator DECREMENT = (value, pos) -> {
+            if (value instanceof Value.NumberValue numberValue) return new Value.NumberValue(numberValue.value() - 1);
+            throw new EvaluationException("Can't negate %s. Only numbers are supported.".formatted(value), pos);
+        };
     }
 }
