@@ -77,7 +77,7 @@ public abstract class PositionedException extends RuntimeException {
             var row = from.row();
             var rowBegin = file.findRow(row);
             var rowEnd = file.findRow(row + 1);
-            if (rowEnd == -1) rowEnd = file.code().length() - 1;
+            if (rowEnd == -1) rowEnd = file.code().length();
 
             message.append(file.code()
                             .substring(rowBegin, rowEnd)

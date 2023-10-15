@@ -22,26 +22,19 @@ public class Lexer {
     public Result lex() {
         while (hasNext()) {
             var c = next();
-            switch (c) {
-                case '{', '?', '!', '~', '%',
-                        '/', '*', '-', '+', '=',
-                        '.', ',', ':', ';', ')',
-                        '(', ']', '[', '}', '>',
-                        '<', '|', '&', '^', '$',
-                        '@'
-                        -> readSimpleToken(c);
+            if (c == ' ' || c == '\r' || c == '\n' || c == '\t') {
+                continue;
+            }
 
-                case ' ', '\r', '\n', '\t' -> {}
-
-                case '"', '\'' -> readString(c);
-
-                case '#' -> skipComment();
-
-                default -> {
-                    if (c >= '0' && c <= '9') readNumber(c);
-                    else if (isWordStartChar(c)) readWord(c);
-                    else throw error("Unexpected character: %c (0x%x)".formatted(c, (int) c), 1);
-                }
+            if (c == '"' || c == '\'') {
+                readString(c);
+            } else if (c == '#') {
+                skipComment();
+            } else {
+                if (c >= '0' && c <= '9') readNumber(c);
+                else if (TokenTree.isStart(c)) readSimpleToken(c);
+                else if (isWordStartChar(c)) readWord(c);
+                else throw error("Unexpected character: %c (0x%x)".formatted(c, (int) c), 1);
             }
         }
 
@@ -55,74 +48,9 @@ public class Lexer {
     }
 
     private void readSimpleToken(char c) {
-        switch (c) {
-            case '{' -> addParsedToken(Token.SimpleToken.BEGIN_CURLY, 1);
-            case '}' -> addParsedToken(Token.SimpleToken.END_CURLY, 1);
-            case '[' -> addParsedToken(Token.SimpleToken.BEGIN_SQUARE, 1);
-            case ']' -> addParsedToken(Token.SimpleToken.END_SQUARE, 1);
-            case '(' -> addParsedToken(Token.SimpleToken.BEGIN_PAREN, 1);
-            case ')' -> addParsedToken(Token.SimpleToken.END_PAREN, 1);
-
-            case ';' -> addParsedToken(Token.SimpleToken.SEMICOLON, 1);
-            case ':' -> addParsedToken(Token.SimpleToken.COLON, 1);
-            case ',' -> addParsedToken(Token.SimpleToken.COMMA, 1);
-            case '.' -> addParsedToken(Token.SimpleToken.DOT, 1);
-
-            case '=' -> readEqualsOptionalToken(Token.SimpleToken.ASSIGN, Token.SimpleToken.EQUALS);
-            case '>' -> readEqualsOptionalToken(Token.SimpleToken.GREATER_THAN, Token.SimpleToken.GREATER_THAN_EQUAL);
-            case '<' -> readEqualsOptionalToken(Token.SimpleToken.LESS_THAN, Token.SimpleToken.LESS_THAN_EQUAL);
-
-            case '&' -> {
-                switch (peek()) {
-                    case '&' -> {
-                        next();
-                        addParsedToken(Token.SimpleToken.DOUBLE_AND, 2);
-                    }
-                    case '=' -> {
-                        next();
-                        addParsedToken(Token.SimpleToken.AND_ASSIGN, 2);
-                    }
-                    default -> addParsedToken(Token.SimpleToken.AND, 1);
-                }
-            }
-            case '|' -> {
-                switch (peek()) {
-                    case '|' -> {
-                        next();
-                        addParsedToken(Token.SimpleToken.DOUBLE_OR, 2);
-                    }
-                    case '=' -> {
-                        next();
-                        addParsedToken(Token.SimpleToken.OR_ASSIGN, 2);
-                    }
-                    default -> addParsedToken(Token.SimpleToken.OR, 1);
-                }
-            }
-            case '^' -> readEqualsOptionalToken(Token.SimpleToken.XOR, Token.SimpleToken.XOR_ASSIGN);
-
-            case '+' -> readEqualsOptionalToken(Token.SimpleToken.PLUS, Token.SimpleToken.PLUS_ASSIGN);
-            case '-' -> readEqualsOptionalToken(Token.SimpleToken.MINUS, Token.SimpleToken.MINUS_ASSIGN);
-            case '*' -> readEqualsOptionalToken(Token.SimpleToken.STAR, Token.SimpleToken.STAR_ASSIGN);
-            case '/' -> readEqualsOptionalToken(Token.SimpleToken.SLASH, Token.SimpleToken.SLASH_ASSIGN);
-            case '%' -> readEqualsOptionalToken(Token.SimpleToken.PERCENT, Token.SimpleToken.PERCENT_ASSIGN);
-            case '~' -> addParsedToken(Token.SimpleToken.TILDE, 1);
-
-            case '!' -> readEqualsOptionalToken(Token.SimpleToken.BANG, Token.SimpleToken.NOT_EQUALS);
-            case '?' -> addParsedToken(Token.SimpleToken.QUESTION_MARK, 1);
-            case '$' -> addParsedToken(Token.SimpleToken.DOLLAR, 1);
-            case '@' -> addParsedToken(Token.SimpleToken.AT_SIGN, 1);
-        }
+        var success = TokenTree.parse(this, c);
+        if (!success) throw error("Unable to parse token", 1);
     }
-
-    private void readEqualsOptionalToken(Token.SimpleToken withoutEquals, Token.SimpleToken withEquals) {
-        if (peek() == '=') {
-            next();
-            addParsedToken(withEquals, 2);
-        } else {
-            addParsedToken(withoutEquals, 1);
-        }
-    }
-
 
     private void readNumber(char c) {
         var string = new StringBuilder();
@@ -192,16 +120,16 @@ public class Lexer {
         addParsedToken(token, currentColumn - beginPos);
     }
 
-    private boolean hasNext() {
+    public boolean hasNext() {
         return current < program.length();
     }
 
-    private char peek() {
+    public char peek() {
         if (!hasNext()) throw error("Unexpected end of file");
         return program.charAt(current);
     }
 
-    private char next() {
+    public char next() {
         if (!hasNext()) throw error("Unexpected end of file");
         var c = program.charAt(current++);
         if (c == '\n') {
@@ -216,17 +144,27 @@ public class Lexer {
         return c;
     }
 
-    private void addParsedToken(Token token, int length) {
+    public void addParsedToken(Token token, int length) {
         var from = new SourcePos(file, currentLine, currentColumn - length);
         var to = new SourcePos(file, currentLine, currentColumn - 1);
         tokens.add(PositionedToken.of(new SourceSpan(from, to), token));
     }
+
+    public Position savePos() {
+        return new Position(current, currentLine, currentColumn);
+    }
+
+    public void loadPos(Position pos) {
+        current = pos.current;
+        currentLine = pos.currentLine;
+        currentColumn = pos.currentColumn;
+    }
     
-    private LexException error(String message) {
+    public LexException error(String message) {
         return error(message, 0);
     }
 
-    private LexException error(String message, int offset) {
+    public LexException error(String message, int offset) {
         return new LexException(message, new SourcePos(file, currentLine, currentColumn - offset));
     }
 
@@ -251,4 +189,6 @@ public class Lexer {
 
     public record Result(List<PositionedToken<?>> tokens) {
     }
+
+    public record Position(int current, int currentLine, int currentColumn) {}
 }

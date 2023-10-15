@@ -1,7 +1,6 @@
 package io.github.mattidragon.jsonpatcher.lang.parse;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -41,6 +40,10 @@ public sealed interface Token {
 
         DOUBLE_AND,
         DOUBLE_OR,
+        DOUBLE_MINUS,
+        DOUBLE_PLUS,
+        DOUBLE_STAR,
+        DOUBLE_BANG,
 
         BEGIN_CURLY,
         END_CURLY,

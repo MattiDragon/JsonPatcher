@@ -22,4 +22,3 @@ if (result.item == "minecraft:arrow") {
 }
 result.count += math.abs(1 - 100);
 
-//while (true);
