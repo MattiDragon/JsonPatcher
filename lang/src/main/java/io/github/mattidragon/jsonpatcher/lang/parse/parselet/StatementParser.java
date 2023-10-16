@@ -177,6 +177,20 @@ public class StatementParser {
         return new ForEachLoopStatement(expression, name.value(), body, new SourceSpan(from, to));
     }
 
+    private static Statement breakStatement(Parser parser) {
+        parser.expect(KeywordToken.BREAK);
+        var from = parser.previous().getFrom();
+        parser.expect(SimpleToken.SEMICOLON);
+        return new BreakStatement(new SourceSpan(from, parser.previous().getTo()));
+    }
+
+    private static Statement continueStatement(Parser parser) {
+        parser.expect(KeywordToken.CONTINUE);
+        var from = parser.previous().getFrom();
+        parser.expect(SimpleToken.SEMICOLON);
+        return new ContinueStatement(new SourceSpan(from, parser.previous().getTo()));
+    }
+
     public static Statement parse(Parser parser) {
         var token = parser.peek();
         if (token.getToken() == SimpleToken.BEGIN_CURLY) return blockStatement(parser);
@@ -194,6 +208,8 @@ public class StatementParser {
         if (token.getToken() == KeywordToken.WHILE) return whileLoop(parser);
         if (token.getToken() == KeywordToken.FOR) return forLoop(parser);
         if (token.getToken() == KeywordToken.FOREACH) return forEachLoop(parser);
+        if (token.getToken() == KeywordToken.BREAK) return breakStatement(parser);
+        if (token.getToken() == KeywordToken.CONTINUE) return continueStatement(parser);
         return expressionStatement(parser);
     }
 }

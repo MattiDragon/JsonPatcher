@@ -9,7 +9,13 @@ public record ForLoopStatement(Statement initializer, Expression condition, Stat
     public void run(Context context) {
         context = context.newScope();
         for (initializer.run(context); condition.evaluate(context).asBoolean(); incrementer.run(context)) {
-            body.run(context);
+            try {
+                body.run(context);
+            } catch (BreakStatement.BreakException e) {
+                break;
+            } catch (ContinueStatement.ContinueException e) {
+                // Continue
+            }
         }
     }
 

@@ -8,7 +8,13 @@ public record WhileLoopStatement(Expression condition, Statement body, SourceSpa
     @Override
     public void run(Context context) {
         while (condition.evaluate(context).asBoolean()) {
-            body.run(context);
+            try {
+                body.run(context);
+            } catch (BreakStatement.BreakException e) {
+                break;
+            } catch (ContinueStatement.ContinueException e) {
+                // Continue
+            }
         }
     }
 

@@ -16,7 +16,13 @@ public record ForEachLoopStatement(Expression iterable, String variableName, Sta
         for (var value : arrayValue.value()) {
             var loopContext = context.newScope();
             loopContext.variables().createVariable(variableName, value, false, pos);
-            body.run(context);
+            try {
+                body.run(context);
+            } catch (BreakStatement.BreakException e) {
+                break;
+            } catch (ContinueStatement.ContinueException e) {
+                // Continue
+            }
         }
     }
 
