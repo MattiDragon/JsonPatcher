@@ -8,7 +8,7 @@ import io.github.mattidragon.jsonpatcher.lang.parse.parselet.StatementParser;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Program;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ErrorExpression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
-import io.github.mattidragon.jsonpatcher.lang.runtime.statement.*;
+import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 

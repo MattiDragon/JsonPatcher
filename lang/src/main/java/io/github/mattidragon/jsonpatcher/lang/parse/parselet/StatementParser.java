@@ -2,7 +2,6 @@ package io.github.mattidragon.jsonpatcher.lang.parse.parselet;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.parse.Token;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Reference;
@@ -12,7 +11,8 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.statement.*;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static io.github.mattidragon.jsonpatcher.lang.parse.Token.*;
+import static io.github.mattidragon.jsonpatcher.lang.parse.Token.KeywordToken;
+import static io.github.mattidragon.jsonpatcher.lang.parse.Token.SimpleToken;
 
 public class StatementParser {
     private StatementParser() {

@@ -1,10 +1,11 @@
-package io.github.mattidragon.jsonpatcher.lang.runtime;
+package io.github.mattidragon.jsonpatcher;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.gson.JsonObject;
-import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.function.BuiltInFunctions;
+import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
+import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
+import io.github.mattidragon.jsonpatcher.lang.runtime.VariableStack;
 import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.Libraries;
 import io.github.mattidragon.jsonpatcher.patch.PatchContext;
 import io.github.mattidragon.jsonpatcher.patch.PatchStorage;
@@ -15,22 +16,21 @@ import java.util.Deque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public record Context(Value.ObjectValue root, VariableStack variables, PatchStorage storage) {
+public record ContextImpl(Value.ObjectValue root, VariableStack variables, PatchStorage storage) implements Context {
     private static final ThreadLocal<Deque<Identifier>> LIBRARY_RECURSION_DETECTOR = ThreadLocal.withInitial(ArrayDeque::new);
     private static final ThreadLocal<ExecutorService> LIBRARY_APPLICATOR = ThreadLocal.withInitial(() -> Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Library Builder (%s)").build()));
 
-    public Context withRoot(Value.ObjectValue root) {
-        return new Context(root, variables, storage);
+    public ContextImpl withRoot(Value.ObjectValue root) {
+        return new ContextImpl(root, variables, storage);
     }
 
-    public Context newScope() {
-        return new Context(root, new VariableStack(variables), storage);
+    public ContextImpl newScope() {
+        return new ContextImpl(root, new VariableStack(variables), storage);
     }
 
-    public static Context create(Value.ObjectValue json, PatchStorage storage) {
+    public static ContextImpl create(Value.ObjectValue json, PatchStorage storage) {
         var variables = new VariableStack();
-        BuiltInFunctions.ALL_FUNCTIONS.forEach((name, func) -> variables.createVariable(name, new Value.FunctionValue(func), true, null));
-        return new Context(json, variables, storage);
+        return new ContextImpl(json, variables, storage);
     }
 
     public Value findLibrary(String libraryName, SourceSpan pos) {
@@ -46,7 +46,7 @@ public record Context(Value.ObjectValue root, VariableStack variables, PatchStor
 
         try {
             LIBRARY_RECURSION_DETECTOR.get().add(libId);
-            var json = new Value.ObjectValue(new JsonObject());
+            var json = new Value.ObjectValue();
             PatchContext.runPatch(userLib, LIBRARY_APPLICATOR.get(), e -> {
                 if (e instanceof EvaluationException evaluationException) {
                     throw new EvaluationException("Failed to load library %s".formatted(libId), pos, evaluationException);

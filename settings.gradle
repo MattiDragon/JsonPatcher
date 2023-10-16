@@ -5,7 +5,10 @@ pluginManagement {
             url = 'https://maven.fabricmc.net/'
         }
         gradlePluginPortal()
+        mavenCentral()
     }
 }
 
 rootProject.name = "JsonPatcher"
+
+include(":lang")

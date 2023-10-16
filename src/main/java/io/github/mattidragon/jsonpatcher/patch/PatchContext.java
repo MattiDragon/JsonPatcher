@@ -5,8 +5,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
+import io.github.mattidragon.jsonpatcher.ContextImpl;
+import io.github.mattidragon.jsonpatcher.GsonConverter;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import net.minecraft.resource.InputSupplier;
@@ -71,10 +72,10 @@ public class PatchContext {
         var errors = new ArrayList<Exception>();
         var activeJson = new MutableObject<>(JsonHelper.asObject(json, "patched file"));
         for (var patch : patches.getPatches(id)) {
-            var root = new Value.ObjectValue(activeJson.getValue());
+            var root = GsonConverter.fromGson(activeJson.getValue());
             var success = runPatch(patch, executor, errors::add, patches, root);
             if (success) {
-                activeJson.setValue(root.toGson(null));
+                activeJson.setValue(GsonConverter.toGson(root));
             }
         }
         if (!errors.isEmpty()) {
@@ -97,7 +98,7 @@ public class PatchContext {
      */
     public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root) {
         try {
-            CompletableFuture.runAsync(() -> patch.program().execute(Context.create(root, patchStorage)), executor)
+            CompletableFuture.runAsync(() -> patch.program().execute(ContextImpl.create(root, patchStorage)), executor)
                     .get(200, TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {

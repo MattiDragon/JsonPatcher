@@ -15,15 +15,6 @@ public sealed interface PatchFunction {
 
     @FunctionalInterface
     non-sealed interface BuiltInPatchFunction extends PatchFunction {
-        static BuiltInPatchFunction numberUnary(DoubleUnaryOperator operator) {
-            return ((BuiltInPatchFunction) (context, args, callPos) -> {
-                if (!(args.get(0) instanceof Value.NumberValue value)) {
-                    throw new EvaluationException("Expected argument to be number, was %s".formatted(args.get(0)), callPos);
-                }
-                return new Value.NumberValue(operator.applyAsDouble(value.value()));
-            }).argCount(1);
-        }
-
         default BuiltInPatchFunction argCount(int count) {
             return (context, args, callPos) -> {
                 if (args.size() != count) {

@@ -27,6 +27,8 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
+    include(implementation(project(":lang")))
+
     // Mixin Extras
     include(modImplementation("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))
     clientAnnotationProcessor(annotationProcessor("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))

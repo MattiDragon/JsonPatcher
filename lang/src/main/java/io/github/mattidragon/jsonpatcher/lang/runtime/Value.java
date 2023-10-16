@@ -1,48 +1,21 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime;
 
-import com.google.gson.*;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public sealed interface Value {
-    Set<Value> TO_GSON_RECURSION_TRACKER = Collections.newSetFromMap(new WeakHashMap<>());
-    Set<JsonElement> FROM_GSON_RECURSION_TRACKER = Collections.newSetFromMap(new WeakHashMap<>());
-
-    static Value of(JsonElement element) {
-        if (!FROM_GSON_RECURSION_TRACKER.add(element)) {
-            throw new IllegalStateException("recursive gson json tree");
-        }
-
-        try {
-            if (element instanceof JsonObject object) return new ObjectValue(object);
-            if (element instanceof JsonArray array) return new ArrayValue(array);
-            if (element instanceof JsonNull) return NullValue.NULL;
-            if (element instanceof JsonPrimitive primitive) {
-                if (primitive.isBoolean()) return BooleanValue.of(primitive.getAsBoolean());
-                if (primitive.isNumber()) return new NumberValue(primitive.getAsNumber().doubleValue());
-                if (primitive.isString()) return new StringValue(primitive.getAsString());
-            }
-            throw new IllegalStateException("Unsupported json element: " + element);
-        } finally {
-            FROM_GSON_RECURSION_TRACKER.remove(element);
-        }
-    }
 
     boolean asBoolean();
-
-    JsonElement toGson(SourceSpan pos);
 
     record ObjectValue(Map<String, Value> value) implements Value {
         public ObjectValue {
             value = new LinkedHashMap<>(value);
-        }
-
-        public ObjectValue(JsonObject object) {
-            this();
-            object.asMap().forEach((key, value) -> this.value.put(key, Value.of(value)));
         }
 
         public ObjectValue() {
@@ -69,20 +42,6 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonObject toGson(SourceSpan pos) {
-            if (!TO_GSON_RECURSION_TRACKER.add(this)) {
-                throw new EvaluationException("Recursive json tree", pos);
-            }
-            try {
-                var json = new JsonObject();
-                value.forEach((key, value) -> json.add(key, value.toGson(pos)));
-                return json;
-            } finally {
-                TO_GSON_RECURSION_TRACKER.remove(this);
-            }
-        }
-
-        @Override
         public String toString() {
             return value.toString();
         }
@@ -93,14 +52,6 @@ public sealed interface Value {
             value = new ArrayList<>(value);
         }
 
-        public ArrayValue(JsonArray array) {
-            this();
-            array.asList()
-                    .stream()
-                    .map(Value::of)
-                    .forEach(value::add);
-        }
-
         public ArrayValue() {
             this(List.of());
         }
@@ -108,20 +59,6 @@ public sealed interface Value {
         @Override
         public boolean asBoolean() {
             return !value.isEmpty();
-        }
-
-        @Override
-        public JsonArray toGson(SourceSpan pos) {
-            if (!TO_GSON_RECURSION_TRACKER.add(this)) {
-                throw new EvaluationException("Recursive json tree", pos);
-            }
-            try {
-                var json = new JsonArray();
-                value.forEach((value) -> json.add(value.toGson(pos)));
-                return json;
-            } finally {
-                TO_GSON_RECURSION_TRACKER.remove(this);
-            }
         }
 
         @Override
@@ -155,10 +92,6 @@ public sealed interface Value {
             return true;
         }
 
-        @Override
-        public JsonElement toGson(SourceSpan pos) {
-            throw new EvaluationException("Tried to convert function to json. Did you place a function in the main tree?", pos);
-        }
     }
 
     sealed interface Primitive extends Value {}
@@ -170,13 +103,8 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson(SourceSpan pos) {
-            return new JsonPrimitive(value());
-        }
-
-        @Override
         public String toString() {
-            return toGson(null).toString();
+            return "\"" + value + "\"";
         }
     }
 
@@ -187,13 +115,8 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson(SourceSpan pos) {
-            return new JsonPrimitive(value());
-        }
-
-        @Override
         public String toString() {
-            return toGson(null).toString();
+            return String.valueOf(value);
         }
     }
 
@@ -214,13 +137,8 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson(SourceSpan pos) {
-            return new JsonPrimitive(value());
-        }
-
-        @Override
         public String toString() {
-            return toGson(null).toString();
+            return String.valueOf(value());
         }
     }
 
@@ -233,13 +151,8 @@ public sealed interface Value {
         }
 
         @Override
-        public JsonElement toGson(SourceSpan pos) {
-            return JsonNull.INSTANCE;
-        }
-
-        @Override
         public String toString() {
-            return toGson(null).toString();
+            return "null";
         }
     }
 }

@@ -6,7 +6,7 @@
   "description": "A tool for patching json resource files easily and with great compatibility.",
   "authors": ["MattiDragon"],
   "contact": {
-    "repo": "https://github.com/MattiDragon/JsonPatch"
+    "repo": "https://github.com/MattiDragon/JsonPatcher"
   },
   "license": "MIT",
   "icon": "assets/jsonpatch/icon.png",

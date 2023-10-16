@@ -3,7 +3,8 @@ package io.github.mattidragon.jsonpatcher.lang.parse;
 import io.github.mattidragon.jsonpatcher.lang.PositionedException;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Lexer {
     public static final int TAB_WIDTH = 4;

@@ -1,16 +1,15 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.stdlib;
 
-import com.google.common.collect.HashMultimap;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -32,7 +31,7 @@ public class LibraryBuilder {
     }
 
     private void buildFunctions() {
-        var methods = HashMultimap.<String, Method>create();
+        var methods = new HashMap<String, List<Method>>();
 
         for (var method : libraryClass.getDeclaredMethods()) {
             if ((method.getModifiers() & Modifier.PUBLIC) == 0) continue;
@@ -56,11 +55,10 @@ public class LibraryBuilder {
                 throw new IllegalStateException("Library function return type must be of subclass Value or void, %s from %s is not".formatted(method.getReturnType(), method));
             }
 
-            methods.put(method.getName(), method);
+            methods.computeIfAbsent(method.getName(), name -> new ArrayList<>()).add(method);
         }
 
-        methods.keySet().forEach(name -> {
-            var overloads = List.copyOf(methods.get(name));
+        methods.forEach((name, overloads) -> {
             var byArgCount = new HashMap<Integer, Method>();
             for (var overload : overloads) {
                 var argCount = overload.getParameterCount();
@@ -87,7 +85,14 @@ public class LibraryBuilder {
                 }
 
                 try {
-                    Object[] argsArray = hasContext ? ArrayUtils.addFirst(args.toArray(), new FunctionContext(context, callPos)) : args.toArray();
+                    Object[] argsArray;
+                    if (hasContext) {
+                        argsArray = new Object[args.size() + 1];
+                        System.arraycopy(args.toArray(), 0, argsArray, 1, args.size());
+                        argsArray[0] = new FunctionContext(context, callPos);
+                    } else {
+                        argsArray = args.toArray();
+                    }
 
                     var result = overload.invoke(instance, argsArray);
 
