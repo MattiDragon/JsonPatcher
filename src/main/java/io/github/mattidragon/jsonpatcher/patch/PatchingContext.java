@@ -5,9 +5,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
-import io.github.mattidragon.jsonpatcher.ContextImpl;
 import io.github.mattidragon.jsonpatcher.GsonConverter;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import net.minecraft.resource.InputSupplier;
@@ -21,17 +21,17 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-public class PatchContext {
+public class PatchingContext {
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
     private static final Gson GSON = new Gson();
 
     private boolean loaded = false;
     private PatchStorage patches = null;
 
-    public PatchContext() {
+    public PatchingContext() {
     }
 
-    public static PatchContext get() {
+    public static PatchingContext get() {
         var stored = ACTIVE.get();
         return stored == null ? null : stored.context;
     }
@@ -46,7 +46,7 @@ public class PatchContext {
         }
     }
 
-    public static void set(PatchContext context) {
+    public static void set(PatchingContext context) {
         var stored = ACTIVE.get();
         if (stored != null && stored.context != context) {
             remove(); // Clean up in case this was caused by one-off error
@@ -98,7 +98,7 @@ public class PatchContext {
      */
     public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root) {
         try {
-            CompletableFuture.runAsync(() -> patch.program().execute(ContextImpl.create(root, patchStorage)), executor)
+            CompletableFuture.runAsync(() -> patch.program().execute(EvaluationContext.create(root, patchStorage)), executor)
                     .get(200, TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {
@@ -145,6 +145,6 @@ public class PatchContext {
         }
     }
 
-    private record Stored(PatchContext context, int count) {
+    private record Stored(PatchingContext context, int count) {
     }
 }

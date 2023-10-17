@@ -1,17 +1,16 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.function;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.DoubleUnaryOperator;
 
 public sealed interface PatchFunction {
-    Value execute(Context context, List<Value> args, SourceSpan callPos);
+    Value execute(EvaluationContext context, List<Value> args, SourceSpan callPos);
 
     @FunctionalInterface
     non-sealed interface BuiltInPatchFunction extends PatchFunction {
@@ -25,13 +24,13 @@ public sealed interface PatchFunction {
         }
     }
 
-    record DefinedPatchFunction(Statement body, List<Optional<String>> args, Context context) implements PatchFunction {
+    record DefinedPatchFunction(Statement body, List<Optional<String>> args, EvaluationContext context) implements PatchFunction {
         public DefinedPatchFunction {
             args = List.copyOf(args);
         }
 
         @Override
-        public Value execute(Context context, List<Value> args, SourceSpan callPos) {
+        public Value execute(EvaluationContext context, List<Value> args, SourceSpan callPos) {
             if (this.args.size() != args.size()) {
                 throw new EvaluationException("Incorrect function argument count: expected %s but found %s".formatted(this.args.size(), args.size()), callPos);
             }

@@ -1,12 +1,12 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.expression;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 
 public record IndexExpression(Expression parent, Expression index, SourceSpan pos) implements Reference {
     @Override
-    public Value get(Context context) {
+    public Value get(EvaluationContext context) {
         var parent = this.parent.evaluate(context);
         var index = this.index.evaluate(context);
         if (parent instanceof Value.ObjectValue objectValue) {
@@ -23,7 +23,7 @@ public record IndexExpression(Expression parent, Expression index, SourceSpan po
     }
 
     @Override
-    public void set(Context context, Value value) {
+    public void set(EvaluationContext context, Value value) {
         var parent = this.parent.evaluate(context);
         var index = this.index.evaluate(context);
         if (parent instanceof Value.ObjectValue objectValue) {
@@ -42,7 +42,7 @@ public record IndexExpression(Expression parent, Expression index, SourceSpan po
     }
 
     @Override
-    public void delete(Context context) {
+    public void delete(EvaluationContext context) {
         var parent = this.parent.evaluate(context);
         var index = this.index.evaluate(context);
         if (parent instanceof Value.ObjectValue objectValue) {

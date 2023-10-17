@@ -1,11 +1,11 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.statement;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 
 public record BreakStatement(SourceSpan pos) implements Statement {
     @Override
-    public void run(Context context) {
+    public void run(EvaluationContext context) {
         throw new BreakException();
     }
 

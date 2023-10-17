@@ -1,5 +1,5 @@
-@version 1;
-@target id: "minecraft:recipes/oak_planks.json";
+@version "1";
+@target "minecraft:recipes/oak_planks.json";
 
 val test = import('jsonpatch:lib');
 

@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import io.github.mattidragon.jsonpatcher.patch.PatchContext;
+import io.github.mattidragon.jsonpatcher.patch.PatchingContext;
 import net.minecraft.resource.LifecycledResourceManager;
 import net.minecraft.server.SaveLoading;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,9 +22,9 @@ public class SaveLoadingMixin {
                                             Executor applyExecutor,
                                             CallbackInfoReturnable<CompletableFuture<R>> cir,
                                             @Local LifecycledResourceManager lifecycledResourceManager) {
-        var context = new PatchContext();
+        var context = new PatchingContext();
         context.load(lifecycledResourceManager, prepareExecutor);
-        PatchContext.set(context);
+        PatchingContext.set(context);
     }
     @Inject(method = "load", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/registry/RegistryLoader;load(Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/registry/DynamicRegistryManager;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;"))
     private static <D, R> void removeContext(SaveLoading.ServerConfig serverConfig,
@@ -33,6 +33,6 @@ public class SaveLoadingMixin {
                                             Executor prepareExecutor,
                                             Executor applyExecutor,
                                             CallbackInfoReturnable<CompletableFuture<R>> cir) {
-        PatchContext.remove();
+        PatchingContext.remove();
     }
 }

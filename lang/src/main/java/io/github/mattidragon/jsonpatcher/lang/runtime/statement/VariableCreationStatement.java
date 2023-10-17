@@ -1,12 +1,12 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.statement;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
 
 public record VariableCreationStatement(String name, Expression initializer, boolean mutable, SourceSpan pos) implements Statement {
     @Override
-    public void run(Context context) {
+    public void run(EvaluationContext context) {
         context.variables().createVariable(name, initializer.evaluate(context), mutable, pos);
     }
 

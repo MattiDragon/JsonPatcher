@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.statement;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ public record BlockStatement(List<Statement> statements, SourceSpan pos) impleme
     }
 
     @Override
-    public void run(Context context) {
+    public void run(EvaluationContext context) {
         context = context.newScope();
         for (var statement : statements) {
             statement.run(context);

@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.statement;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ValueExpression;
@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public record ReturnStatement(Optional<Expression> value, SourceSpan pos) implements Statement {
     @Override
-    public void run(Context context) {
+    public void run(EvaluationContext context) {
         throw new ReturnException(value.orElseGet(() -> new ValueExpression(Value.NullValue.NULL, pos)).evaluate(context), pos);
     }
 

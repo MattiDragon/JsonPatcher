@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.stdlib;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
@@ -133,6 +133,6 @@ public class LibraryBuilder {
         return object;
     }
 
-    public record FunctionContext(Context context, SourceSpan callPos) {
+    public record FunctionContext(EvaluationContext context, SourceSpan callPos) {
     }
 }

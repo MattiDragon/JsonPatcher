@@ -1,97 +1,43 @@
 package io.github.mattidragon.jsonpatcher.lang.parse;
 
-import org.jetbrains.annotations.Nullable;
+import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 
-// Horrible generics crime in order to have a clean interface on the outside
 public class PatchMetadata {
-    private final Map<Key<?>, Object> values = new LinkedHashMap<>();
-    private final ParserLookup lookup;
+    private final Map<String, Value> values = new LinkedHashMap<>();
 
-    public PatchMetadata(ParserLookup lookup) {
-        this.lookup = lookup;
+    public void add(String key, Parser parser) {
+        var value = new JsonParser(parser).parse();
+        values.put(key, value);
     }
 
-    public <T> T get(Key<T> key) {
-        //noinspection unchecked
-        return (T) values.get(key);
+    public boolean has(String key) {
+        return values.containsKey(key);
     }
 
-    public <T> T expect(Key<T> key) {
-        var value = get(key);
-        if (value == null) throw new IllegalStateException("Missing metadata: @%s".formatted(key.name));
-        return value;
+    public Value get(String key) {
+        return values.get(key);
     }
 
-    public <T> Optional<T> getOrEmpty(Key<T> key) {
-        var value = get(key);
-        if (value == null) return Optional.empty();
-        return Optional.of(value);
+    public Value.ObjectValue getObject(String key) {
+        if (values.get(key) instanceof Value.ObjectValue object) return object;
+        throw new IllegalStateException("Expected object for meta key '%s', got '%s'".formatted(key, values.get(key)));
     }
 
-    public void add(String keyName, Parser parser) {
-        var key = lookup.findKey(keyName);
-        if (key.isEmpty()) throw new Parser.ParseException("Unknown meta tag: '@%s'".formatted(keyName), parser.previous().getPos());
-        values.put(key.get(), getAndParse(parser, key.get()));
+    public Value.ArrayValue getArray(String key) {
+        if (values.get(key) instanceof Value.ArrayValue array) return array;
+        throw new IllegalStateException("Expected array for meta key '%s', got '%s'".formatted(key, values.get(key)));
     }
 
-    private <T> T getAndParse(Parser parser, Key<T> key) {
-        //noinspection unchecked
-        var metaParser = (MetaParser<T>) lookup.parsers.get(key);
-        return metaParser.parse(parser, get(key));
+    public String getString(String key) {
+        if (values.get(key) instanceof Value.StringValue string) return string.value();
+        throw new IllegalStateException("Expected string for meta key '%s', got '%s'".formatted(key, values.get(key)));
     }
 
-    public record Key<T>(String name) {
-    }
-
-    public static class ParserLookup {
-        private final Map<Key<?>, MetaParser<?>> parsers = new HashMap<>();
-
-        public <T> ParserLookup put(Key<T> key, MetaParser<T> value) {
-            parsers.put(key, value);
-            return this;
-        }
-
-        private Optional<Key<?>> findKey(String keyName) {
-            for (var key : parsers.keySet()) {
-                if (key.name().equals(keyName)) {
-                    return Optional.of(key);
-                }
-            }
-            return Optional.empty();
-        }
-    }
-
-    public interface MetaParser<T> {
-        T parse(Parser parser, @Nullable T previous);
-
-        interface SingleValueMetaParser<T> extends MetaParser<T> {
-            @Override
-            default T parse(Parser parser, @Nullable T previous) {
-                if (previous != null) {
-                    var name = parser.previous().getToken() instanceof Token.WordToken word ? word.value() : "(unknown)";
-                    throw new Parser.ParseException("Duplicate meta tag: @%s".formatted(name), parser.previous().getPos());
-                }
-                return parse(parser);
-            }
-
-            T parse(Parser parser);
-        }
-    }
-
-    // In the future: make this actually store script version instead of just validating
-    public record Version() {
-        public static final Key<Version> KEY = new Key<>("version");
-        public static final MetaParser.SingleValueMetaParser<Version> PARSER = parser -> {
-            var version = parser.next();
-            if (!(version.getToken() instanceof Token.NumberToken number))
-                return parser.expectFail("number");
-            if (number.value() != 1) throw new IllegalStateException("Unsupported version: '%s'".formatted(number));
-            return new Version();
-        };
+    public double getNumber(String key) {
+        if (values.get(key) instanceof Value.NumberValue number) return number.value();
+        throw new IllegalStateException("Expected number for meta key '%s', got '%s'".formatted(key, values.get(key)));
     }
 }

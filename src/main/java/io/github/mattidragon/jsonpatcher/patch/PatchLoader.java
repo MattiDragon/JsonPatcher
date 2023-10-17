@@ -1,12 +1,11 @@
 package io.github.mattidragon.jsonpatcher.patch;
 
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
-import io.github.mattidragon.jsonpatcher.TargetPatchMetadata;
+import io.github.mattidragon.jsonpatcher.ValueOps;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.lang.parse.Lexer;
 import io.github.mattidragon.jsonpatcher.lang.parse.ParseResult;
 import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
-import io.github.mattidragon.jsonpatcher.lang.parse.PatchMetadata;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
 
@@ -37,9 +36,7 @@ public class PatchLoader {
                     var code = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
                     var lexResult = new Lexer(code, id.toString()).lex();
 
-                    var parseResult = new Parser(lexResult.tokens(), new PatchMetadata.ParserLookup()
-                            .put(TargetPatchMetadata.KEY, TargetPatchMetadata.PARSER)
-                            .put(PatchMetadata.Version.KEY, PatchMetadata.Version.PARSER)).program();
+                    var parseResult = new Parser(lexResult.tokens()).program();
 
                     if (parseResult instanceof ParseResult.Fail fail) {
                         if (Config.MANAGER.get().useJavaStacktrace()) {
@@ -56,10 +53,21 @@ public class PatchLoader {
                     } else {
                         var result = (ParseResult.Success) parseResult;
                         var meta = result.metadata();
-                        meta.expect(PatchMetadata.Version.KEY); // We'll deal with validation once we have more than one supported version
-                        var target = meta.getOrEmpty(TargetPatchMetadata.KEY);
+                        if (!meta.getString("version").equals("1")) {
+                            throw new IllegalStateException("Unsupported patch version '%s'".formatted(meta.getString("version")));
+                        }
 
-                        patches.add(new Patch(result.program(), id, target.map(TargetPatchMetadata::target)));
+                        List<PatchTarget> target;
+                        if (meta.has("target")) {
+                            target = PatchTarget.LIST_CODEC.parse(ValueOps.INSTANCE, meta.get("target"))
+                                    .getOrThrow(false, error -> {
+                                        throw new IllegalStateException("Failed to parse target: %s".formatted(error));
+                                    });
+                        } else {
+                            target = List.of();
+                        }
+
+                        patches.add(new Patch(result.program(), id, target));
                     }
                 } catch (IOException | Lexer.LexException | IllegalStateException e) {
                     JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);

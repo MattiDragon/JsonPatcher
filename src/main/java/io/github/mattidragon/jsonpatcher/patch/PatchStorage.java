@@ -2,17 +2,26 @@ package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
+import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class PatchStorage {
-    private final Multimap<String, Patch> namespacedPatches = LinkedHashMultimap.create();
+
+public class PatchStorage implements EvaluationContext.LibraryLocator {
+    private static final ThreadLocal<ExecutorService> LIBRARY_APPLICATOR = ThreadLocal.withInitial(() -> Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Library Builder (%s)").build()));
+
+    private final Multimap<String, Patch> namespacePatches = LinkedHashMultimap.create();
     private final Multimap<String, Patch> pathPatches = LinkedHashMultimap.create();
+
+    private final Multimap<String, Patch> namespaceFilteredPatches = LinkedHashMultimap.create();
+
     private final Multimap<Identifier, Patch> directIdPatches = LinkedHashMultimap.create();
     private final List<Patch> nonTrivialPatches = new ArrayList<>();
     private final List<Patch> alwaysActivePatches = new ArrayList<>();
@@ -25,48 +34,51 @@ public class PatchStorage {
     Group 3: direct id patches
     Group 4: path only patches
     Group 5: always active patches
+    Group 6: namespace filtered patches
 
-    |          |11111111222222223333111144442225|
-    +----------+--------------------------------+
-    |pathStart |X X X X X X X X X X X X X X X X |
-    |pathEnd   |XX  XX  XX  XX  XX  XX  XX  XX  |
-    |path      |XXXX    XXXX    XXXX    XXXX    |
-    |namespace |XXXXXXXX        XXXXXXXX        |
-    |regex     |xxxxxxxxxxxxxxxx                |
-     */
+    |             |666222361425|
+    +-------------+------------+
+    |pathStartEnd | X  X  X  X |
+    |path         |X  X  X  X  |
+    |namespace    |XXX   XXX   |
+    |regex        |xxxxxx      |
+    */
     public PatchStorage(List<Patch> patches) {
         for (var patch : patches) {
-            patch.target().ifPresent(target -> {
-                if (target.regex().isPresent() && target.namespace().isPresent()) {
-                    namespacedPatches.put(target.namespace().get(), patch);
-                } else if (target.regex().isPresent()) {
-                    nonTrivialPatches.add(patch);
-                } else if (target.namespace().isPresent() && target.path().isPresent()) {
-                    var path = target.path().get();
-                    var id = Identifier.tryParse(target.namespace().get() + ":" + path);
-                    if (id == null) return; // Invalid id, can't match anything
+            patch.target().forEach(target -> {
+                var simplePath = target.path().map(PatchTarget.Path::path).flatMap(either -> either.left());
+                var splitPath = target.path().map(PatchTarget.Path::path).flatMap(either -> either.right());
 
-                    // Eliminate impossible cases relating to path start and end
-                    if (target.pathStart().isPresent() && !path.startsWith(target.pathStart().get())) return;
-                    if (target.pathEnd().isPresent() && !path.endsWith(target.pathEnd().get())) return;
-
-                    directIdPatches.put(id, patch);
-                } else if (target.namespace().isPresent()) {
-                    namespacedPatches.put(target.namespace().get(), patch);
-                } else if (target.path().isPresent()) {
-                    var path = target.path().get();
-
-                    // Eliminate impossible cases relating to path start and end
-                    if (target.pathStart().isPresent() && !path.startsWith(target.pathStart().get())) return;
-                    if (target.pathEnd().isPresent() && !path.endsWith(target.pathEnd().get())) return;
-
-                    pathPatches.put(path, patch);
-                } else if (target.pathStart().isPresent() || target.pathEnd().isPresent()) {
-                    nonTrivialPatches.add(patch);
-                } else {
-                    alwaysActivePatches.add(patch);
+                // All regex patches and patches with split paths need to be checked at runtime. We can only bucket them by namespace here.
+                if (target.regex().isPresent() || splitPath.isPresent()) {
+                    if (target.namespace().isPresent()) {
+                        namespaceFilteredPatches.put(target.namespace().get(), patch);
+                    } else {
+                        nonTrivialPatches.add(patch);
+                    }
+                    return;
                 }
 
+                // Full id patches will be somewhat command and thus receive their own bucket
+                if (target.namespace().isPresent() && simplePath.isPresent()) {
+                    var id = Identifier.tryParse(target.namespace().get() + ":" + simplePath.get());
+                    if (id == null) return; // Invalid id, can't match anything
+
+                    directIdPatches.put(id, patch);
+                    return;
+                }
+
+                // Namespace and full path only patches are rare, but lookup is fast, so we can save a little bit of time by putting them in their own bucket
+                if (target.namespace().isPresent()) {
+                    namespacePatches.put(target.namespace().get(), patch);
+                    return;
+                }
+                if (simplePath.isPresent()) {
+                    pathPatches.put(simplePath.get(), patch);
+                    return;
+                }
+
+                alwaysActivePatches.add(patch);
             });
             libraries.put(patch.id(), patch);
         }
@@ -74,18 +86,20 @@ public class PatchStorage {
 
     public boolean hasPatches(Identifier id) {
         if (!alwaysActivePatches.isEmpty()) return true;
-        if (namespacedPatches.containsKey(id.getNamespace())) return true;
+        if (namespacePatches.containsKey(id.getNamespace())) return true;
         if (pathPatches.containsKey(id.getPath())) return true;
         if (directIdPatches.containsKey(id)) return true;
-        return nonTrivialPatches.stream().anyMatch(patch -> patch.target().orElseThrow().test(id));
+        if (namespaceFilteredPatches.get(id.getNamespace()).stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.test(id)))) return true;
+        return nonTrivialPatches.stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.test(id)));
     }
 
-    public List<Patch> getPatches(Identifier id) {
-        var patches = new ArrayList<>(alwaysActivePatches);
-        namespacedPatches.entries().stream().filter(entry -> entry.getKey().equals(id.getNamespace())).map(Map.Entry::getValue).forEach(patches::add);
+    public Collection<Patch> getPatches(Identifier id) {
+        // Use a set to avoid duplicates from patches with multiple targets. Also allows us to not store which target put a patch in a bucket
+        var patches = new HashSet<>(alwaysActivePatches);
+        namespacePatches.entries().stream().filter(entry -> entry.getKey().equals(id.getNamespace())).map(Map.Entry::getValue).forEach(patches::add);
         pathPatches.entries().stream().filter(entry -> entry.getKey().equals(id.getPath())).map(Map.Entry::getValue).forEach(patches::add);
         directIdPatches.entries().stream().filter(entry -> entry.getKey().equals(id)).map(Map.Entry::getValue).forEach(patches::add);
-        nonTrivialPatches.stream().filter(patch -> patch.target().orElseThrow().test(id)).forEach(patches::add);
+        nonTrivialPatches.stream().filter(patch -> patch.target().stream().anyMatch(target -> target.test(id))).forEach(patches::add);
         return patches;
     }
 
@@ -93,8 +107,23 @@ public class PatchStorage {
         return libraries.size();
     }
 
-    public @Nullable Patch findLibrary(Identifier id) {
-        if (id == null) return null;
-        return libraries.get(id);
+    @Override
+    public void loadLibrary(String libraryName, Value.ObjectValue libraryObject, SourceSpan importPos) {
+        var libId = Identifier.tryParse(libraryName);
+        if (libId == null) {
+            throw new EvaluationException("Invalid library name '%s'".formatted(libraryName), importPos);
+        }
+
+        var userLib = libraries.get(libId);
+        if (userLib == null) {
+            throw new EvaluationException("Cannot locate library '%s'".formatted(libraryName), importPos);
+        }
+
+        PatchingContext.runPatch(userLib, LIBRARY_APPLICATOR.get(), e -> {
+            if (e instanceof EvaluationException evaluationException) {
+                throw new EvaluationException("Failed to load library %s".formatted(libId), importPos, evaluationException);
+            }
+            throw new RuntimeException("Failed to load library %s".formatted(libId), e);
+        }, this, libraryObject);
     }
 }

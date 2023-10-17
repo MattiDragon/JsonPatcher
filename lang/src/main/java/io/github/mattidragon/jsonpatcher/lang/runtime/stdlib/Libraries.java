@@ -17,12 +17,16 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("unused")
 public class Libraries {
-    public static final Supplier<Value.ObjectValue> MATH = new LibraryBuilder(MathLibrary.class)::build;
-    public static final Supplier<Value.ObjectValue> ARRAYS = new LibraryBuilder(ArraysLibrary.class)::build;
-    public static final Map<String, Supplier<Value.ObjectValue>> LOOKUP = Map.of(
-            "math", MATH,
-            "arrays", ARRAYS
-    );
+    /**
+     * Libraries that can be imported by the user.
+     */
+    public static final Map<String, Supplier<Value.ObjectValue>> LOOKUP = Map.of();
+    /**
+     * Libraries that are built in and always available.
+     */
+    public static final Map<String, Supplier<Value.ObjectValue>> BUILTIN = Map.of(
+            "math", new LibraryBuilder(MathLibrary.class)::build,
+            "arrays", new LibraryBuilder(ArraysLibrary.class)::build);
 
     public static class MathLibrary {
         public final Value.NumberValue PI = new Value.NumberValue(Math.PI);

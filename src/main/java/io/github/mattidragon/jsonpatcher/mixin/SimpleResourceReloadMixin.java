@@ -2,7 +2,7 @@ package io.github.mattidragon.jsonpatcher.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import io.github.mattidragon.jsonpatcher.patch.PatchContext;
+import io.github.mattidragon.jsonpatcher.patch.PatchingContext;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceReload;
 import net.minecraft.resource.ResourceReloader;
@@ -34,26 +34,26 @@ public class SimpleResourceReloadMixin<S> {
                                       @Local(argsOnly = true) LocalRef<CompletableFuture<Unit>> initialStage,
                                       @Local(argsOnly = true, ordinal = 0) LocalRef<Executor> prepareExecutor,
                                       @Local(argsOnly = true, ordinal = 1) LocalRef<Executor> applyExecutor) {
-        var context = new PatchContext();
+        var context = new PatchingContext();
 
         // Setup context for constructor because some reloaders get resources on the reload thread
-        PatchContext.set(context);
+        PatchingContext.set(context);
 
         // Patches have to be loaded here instead of in the initial stage because some reloaders read resources on the main thread (font manager)
         context.load(manager, prepareExecutor1);
 
         // Patch the prepare executor to apply patches
         prepareExecutor.set(command -> prepareExecutor1.execute(() -> {
-            PatchContext.set(context);
+            PatchingContext.set(context);
             command.run();
-            PatchContext.remove();
+            PatchingContext.remove();
         }));
 
         // Patch the apply executor to apply patches. This is done for safety, some mod might decide to load resources here
         applyExecutor.set(command -> applyExecutor1.execute(() -> {
-            PatchContext.set(context);
+            PatchingContext.set(context);
             command.run();
-            PatchContext.remove();
+            PatchingContext.remove();
         }));
     }
 
@@ -65,6 +65,6 @@ public class SimpleResourceReloadMixin<S> {
                                          SimpleResourceReload.Factory<S> factory,
                                          CompletableFuture<Unit> initialStage1,
                                          CallbackInfo ci) {
-        PatchContext.remove();
+        PatchingContext.remove();
     }
 }

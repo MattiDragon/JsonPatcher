@@ -6,7 +6,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 import java.util.List;
 
 public record Program(List<Statement> statements) {
-    public void execute(Context context) {
+    public void execute(EvaluationContext context) {
         try {
             for (var statement : statements) {
                 statement.run(context);

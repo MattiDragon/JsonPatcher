@@ -21,9 +21,9 @@ public class Parser {
     private final PatchMetadata metadata;
     private int current = 0;
 
-    public Parser(List<PositionedToken<?>> tokens, PatchMetadata.ParserLookup lookup) {
+    public Parser(List<PositionedToken<?>> tokens) {
         this.tokens = tokens;
-        this.metadata = new PatchMetadata(lookup);
+        this.metadata = new PatchMetadata();
     }
 
     public ParseResult program() {

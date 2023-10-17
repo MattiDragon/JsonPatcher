@@ -1,7 +1,7 @@
-@version 1;
-@target regex: "minecraft:recipes/.*arrow\\.json";
-
-val math = import(math);
+@version "1";
+@target {
+    "regex": "minecraft:recipes/.*arrow\\.json"
+};
 
 function modifyKey($, result) {
     $'#' = {

@@ -1,20 +1,20 @@
 package io.github.mattidragon.jsonpatcher.lang.runtime.expression;
 
-import io.github.mattidragon.jsonpatcher.lang.runtime.Context;
+import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 
 /**
  * An expression which can also be assigned to.
  */
 public interface Reference extends Expression {
-    Value get(Context context);
+    Value get(EvaluationContext context);
 
-    void set(Context context, Value value);
+    void set(EvaluationContext context, Value value);
 
-    void delete(Context context);
+    void delete(EvaluationContext context);
 
     @Override
-    default Value evaluate(Context context) {
+    default Value evaluate(EvaluationContext context) {
         return get(context);
     }
 }
