@@ -1,0 +1,53 @@
+# JsonPatcher Format Demo
+# Syntax still subject to change
+
+# Metadata tags specify metadata about a file. They have to be at the top.
+# The value is formatted as json (with some quirks due to using the jsonpatcher lexer)
+
+# Mandatory version tag (for compatibility breaking changes in the future)
+@version "1";
+
+# Target tag specifies the target file(s) to patch
+# You can specify multiple targets in an array and
+# filter by id, path, namespace, regex or any combination of those
+# The target tag is optional, if not specified the patch will not be applied to any files
+# It can still be imported like all other patches.
+@target {
+    "path": {
+        "start": "worldgen/biome/",
+        "end": ".json"
+    }
+};
+
+# Optional tag for toggling a patch on or off
+@enabled false;
+
+# Variables, declared with var or val (val is immutable)
+val sky_color = $effects.sky_color; # Access contents of the target file using $. The dot is optional for top-level elements
+val water_color = $effects.water_color;
+
+# Assign back to swap the colors
+$effects.sky_color = water_color;
+$effects.water_color = sky_color;
+
+# This code removed the ore_dirt feature from all biomes
+foreach (step in $features) {
+    # Manually iterate the array by index and remove the element
+    # In the future I might add a helper function for this
+    for (var i = 0; i < step.length; i++) {
+        if (step[i] == "minecraft:ore_dirt") {
+            delete step[i];
+            i--; # Readjust i because an element was removed
+        }
+    }
+}
+
+# Lots of other language features are implemented:
+# - custom functions (as first-class values)
+# - while loops
+# - if/else
+# - return, break and continue
+# - importing other files
+# - arithmetic and boolean logic
+
+# Patches have a configurable timeout in the mods config to avoid issues with infinite loops from malicious patches

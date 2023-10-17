@@ -6,6 +6,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -18,9 +19,15 @@ public class LibraryBuilder {
     private final Object instance;
     private final HashMap<String, PatchFunction.BuiltInPatchFunction> functions = new HashMap<>();
     private final HashMap<String, Value> constants = new HashMap<>();
+    private final Class<? extends Annotation> filterAnnotation;
 
     public LibraryBuilder(Class<?> libraryClass) {
+        this(libraryClass, null);
+    }
+
+    public LibraryBuilder(Class<?> libraryClass, Class<? extends Annotation> filterAnnotation) {
         this.libraryClass = libraryClass;
+        this.filterAnnotation = filterAnnotation;
         try {
             this.instance = libraryClass.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
@@ -31,46 +38,10 @@ public class LibraryBuilder {
     }
 
     private void buildFunctions() {
-        var methods = new HashMap<String, List<Method>>();
-
-        for (var method : libraryClass.getDeclaredMethods()) {
-            if ((method.getModifiers() & Modifier.PUBLIC) == 0) continue;
-            if (method.isVarArgs()) throw new IllegalStateException("Library functions cannot be varargs (yet), %s is".formatted(method));
-
-            var parameterTypes = method.getParameterTypes();
-            for (int i = 0; i < parameterTypes.length; i++) {
-                var type = parameterTypes[i];
-
-                // Allow context as first argument
-                if (i == 0 && type == FunctionContext.class) {
-                    continue;
-                }
-
-                if (!Value.class.isAssignableFrom(type)) {
-                    throw new IllegalStateException("Library function parameters must be of subclass Value, %s from %s is not".formatted(type, method));
-                }
-            }
-
-            if (method.getReturnType() != void.class && !Value.class.isAssignableFrom(method.getReturnType())) {
-                throw new IllegalStateException("Library function return type must be of subclass Value or void, %s from %s is not".formatted(method.getReturnType(), method));
-            }
-
-            methods.computeIfAbsent(method.getName(), name -> new ArrayList<>()).add(method);
-        }
+        var methods = findMethods();
 
         methods.forEach((name, overloads) -> {
-            var byArgCount = new HashMap<Integer, Method>();
-            for (var overload : overloads) {
-                var argCount = overload.getParameterCount();
-                if (overload.getParameterTypes()[0] == FunctionContext.class) {
-                    argCount--;
-                }
-
-                if (byArgCount.containsKey(argCount)) {
-                    throw new IllegalStateException("Library function %s has multiple overloads with the same number of arguments".formatted(name));
-                }
-                byArgCount.put(argCount, overload);
-            }
+            var byArgCount = groupOverloadsByArgCount(name, overloads);
 
             functions.put(name, (context, args, callPos) -> {
                 var overload = byArgCount.get(args.size());
@@ -114,9 +85,59 @@ public class LibraryBuilder {
         });
     }
 
+    private static HashMap<Integer, Method> groupOverloadsByArgCount(String name, List<Method> overloads) {
+        var byArgCount = new HashMap<Integer, Method>();
+        for (var overload : overloads) {
+            var argCount = overload.getParameterCount();
+            if (overload.getParameterTypes()[0] == FunctionContext.class) {
+                argCount--;
+            }
+
+            if (byArgCount.containsKey(argCount)) {
+                throw new IllegalStateException("Library function %s has multiple overloads with the same number of arguments".formatted(name));
+            }
+            byArgCount.put(argCount, overload);
+        }
+        return byArgCount;
+    }
+
+    private HashMap<String, List<Method>> findMethods() {
+        var methods = new HashMap<String, List<Method>>();
+
+        for (var method : libraryClass.getDeclaredMethods()) {
+            if ((method.getModifiers() & Modifier.PUBLIC) == 0) continue;
+            if (method.getAnnotation(DontBind.class) != null) continue;
+            if (filterAnnotation != null && method.getAnnotation(filterAnnotation) == null) continue;
+            if (method.isVarArgs()) throw new IllegalStateException("Library functions cannot be varargs (yet), %s is".formatted(method));
+
+            var parameterTypes = method.getParameterTypes();
+            for (int i = 0; i < parameterTypes.length; i++) {
+                var type = parameterTypes[i];
+
+                // Allow context as first argument
+                if (i == 0 && type == FunctionContext.class) {
+                    continue;
+                }
+
+                if (!Value.class.isAssignableFrom(type)) {
+                    throw new IllegalStateException("Library function parameters must be of subclass Value, %s from %s is not".formatted(type, method));
+                }
+            }
+
+            if (method.getReturnType() != void.class && !Value.class.isAssignableFrom(method.getReturnType())) {
+                throw new IllegalStateException("Library function return type must be of subclass Value or void, %s from %s is not".formatted(method.getReturnType(), method));
+            }
+
+            methods.computeIfAbsent(method.getName(), name -> new ArrayList<>()).add(method);
+        }
+        return methods;
+    }
+
     private void buildConstants() {
         for (var field : libraryClass.getDeclaredFields()) {
             if ((field.getModifiers() & Modifier.PUBLIC) == 0) continue;
+            if (field.getAnnotation(DontBind.class) != null) continue;
+            if (filterAnnotation != null && field.getAnnotation(filterAnnotation) == null) continue;
             if (!Value.class.isAssignableFrom(field.getType())) throw new IllegalStateException("Library constants must be of subclass Value, %s from %s is not".formatted(field.getType(), field));
             try {
                 constants.put(field.getName(), (Value) field.get(instance));
@@ -124,6 +145,10 @@ public class LibraryBuilder {
                 throw new IllegalStateException("Library constant %s is not accessible".formatted(field), e);
             }
         }
+    }
+
+    public HashMap<String, PatchFunction.BuiltInPatchFunction> getFunctions() {
+        return functions;
     }
 
     public Value.ObjectValue build() {

@@ -16,7 +16,7 @@ public class JsonParser {
         if (token.getToken() instanceof Token.StringToken stringToken) return new Value.StringValue(stringToken.value());
         if (token.getToken() instanceof Token.NumberToken numberToken) return new Value.NumberValue(numberToken.value());
         if (token.getToken() == Token.KeywordToken.TRUE) return Value.BooleanValue.TRUE;
-        if (token.getToken() == Token.KeywordToken.FUNCTION) return Value.BooleanValue.FALSE;
+        if (token.getToken() == Token.KeywordToken.FALSE) return Value.BooleanValue.FALSE;
         if (token.getToken() == Token.KeywordToken.NULL) return Value.NullValue.NULL;
         throw new Parser.ParseException("Unexpected token in json: " + token.getToken(), token.getPos());
     }

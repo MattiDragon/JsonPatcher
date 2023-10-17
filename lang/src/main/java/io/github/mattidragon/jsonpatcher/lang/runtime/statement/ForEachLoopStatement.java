@@ -17,7 +17,7 @@ public record ForEachLoopStatement(Expression iterable, String variableName, Sta
             var loopContext = context.newScope();
             loopContext.variables().createVariable(variableName, value, false, pos);
             try {
-                body.run(context);
+                body.run(loopContext);
             } catch (BreakStatement.BreakException e) {
                 break;
             } catch (ContinueStatement.ContinueException e) {
