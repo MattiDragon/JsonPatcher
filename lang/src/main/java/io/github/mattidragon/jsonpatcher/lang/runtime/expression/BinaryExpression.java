@@ -135,8 +135,19 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
         Operator LESS_THAN_EQUAL = numberComparison((first, second) -> first <= second);
         Operator GREATER_THAN_EQUAL = numberComparison((first, second) -> first >= second);
 
+        Operator IN = (first, second, pos) -> {
+            if (second instanceof Value.ArrayValue arrayValue) {
+                return Value.BooleanValue.of(arrayValue.value().contains(first));
+            }
+            if (first instanceof Value.StringValue string && second instanceof Value.ObjectValue objectValue) {
+                return Value.BooleanValue.of(objectValue.value().containsKey(string.value()));
+            }
+            throw new EvaluationException("Can't check if %s is in %s".formatted(first, second), pos);
+        };
+
         /**
-         * Special operator used for the normal assignment. Returns the second value
+         * Special operator used for the normal assignment. Returns the second value.
+         * @implNote This operator is checked for with an identity check. An equivalent operator will not work.
          */
         Operator ASSIGN = (first, second, pos) -> second;
 

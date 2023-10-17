@@ -79,6 +79,7 @@ public sealed interface Token {
         IF("if"),
         ELSE("else"),
         IN("in"),
+        IS("is"),
         VAR("var"),
         VAL("val"),
         DELETE("delete"),

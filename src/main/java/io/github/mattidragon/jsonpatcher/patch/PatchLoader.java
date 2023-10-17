@@ -53,6 +53,10 @@ public class PatchLoader {
                     } else {
                         var result = (ParseResult.Success) parseResult;
                         var meta = result.metadata();
+                        if (meta.has("enabled") && !meta.getBoolean("enabled")) {
+                            return;
+                        }
+
                         if (!meta.getString("version").equals("1")) {
                             throw new IllegalStateException("Unsupported patch version '%s'".formatted(meta.getString("version")));
                         }

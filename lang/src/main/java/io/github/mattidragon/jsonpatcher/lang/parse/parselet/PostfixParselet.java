@@ -105,7 +105,52 @@ public interface PostfixParselet {
         }
     }
 
+    record IsInstanceParselet() implements PostfixParselet {
+        @Override
+        public Expression parse(Parser parser, Expression left, PositionedToken<?> token) {
+            var type = parser.next().getToken();
+            if (type == Token.KeywordToken.NULL) {
+                return new IsInstanceExpression(left, IsInstanceExpression.Type.NULL, token.getPos());
+            }
+            if (type instanceof Token.WordToken word) {
+                switch (word.value()) {
+                    case "number" -> {
+                        return new IsInstanceExpression(left, IsInstanceExpression.Type.NUMBER, token.getPos());
+                    }
+                    case "string" -> {
+                        return new IsInstanceExpression(left, IsInstanceExpression.Type.STRING, token.getPos());
+                    }
+                    case "boolean" -> {
+                        return new IsInstanceExpression(left, IsInstanceExpression.Type.BOOLEAN, token.getPos());
+                    }
+                    case "array" -> {
+                        return new IsInstanceExpression(left, IsInstanceExpression.Type.ARRAY, token.getPos());
+                    }
+                    case "object" -> {
+                        return new IsInstanceExpression(left, IsInstanceExpression.Type.OBJECT, token.getPos());
+                    }
+                    case "function" -> {
+                        return new IsInstanceExpression(left, IsInstanceExpression.Type.FUNCTION, token.getPos());
+                    }
+                }
+            }
+            throw new Parser.ParseException("Expected type name, got %s".formatted(type), token.getPos());
+        }
+
+        @Override
+        public Precedence precedence() {
+            return Precedence.COMPARISON;
+        }
+    }
+
     static PostfixParselet get(PositionedToken<?> token) {
+        if (token.getToken() == Token.KeywordToken.IN) {
+            return new BinaryOperationParselet(Precedence.COMPARISON, BinaryExpression.Operator.IN);
+        }
+        if (token.getToken() == Token.KeywordToken.IS) {
+            return new IsInstanceParselet();
+        }
+
         if (token instanceof PositionedToken.SimpleToken simpleToken) {
             return switch (simpleToken.getToken()) {
                 case DOT -> new PropertyAccessParselet();

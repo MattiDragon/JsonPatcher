@@ -7,6 +7,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
 import io.github.mattidragon.jsonpatcher.GsonConverter;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
+import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
@@ -22,6 +23,7 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class PatchingContext {
+    private static final ExecutorService PATCHER = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
     private static final Gson GSON = new Gson();
 
@@ -68,15 +70,20 @@ public class PatchingContext {
     }
 
     private JsonElement applyPatches(JsonElement json, Identifier id) {
-        var executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
         var errors = new ArrayList<Exception>();
         var activeJson = new MutableObject<>(JsonHelper.asObject(json, "patched file"));
-        for (var patch : patches.getPatches(id)) {
-            var root = GsonConverter.fromGson(activeJson.getValue());
-            var success = runPatch(patch, executor, errors::add, patches, root);
-            if (success) {
-                activeJson.setValue(GsonConverter.toGson(root));
+        try {
+            for (var patch : patches.getPatches(id)) {
+                Value.ObjectValue root;
+
+                root = GsonConverter.fromGson(activeJson.getValue());
+                var success = runPatch(patch, PATCHER, errors::add, patches, root);
+                if (success) {
+                    activeJson.setValue(GsonConverter.toGson(root));
+                }
             }
+        } catch (RuntimeException e) {
+            errors.add(e);
         }
         if (!errors.isEmpty()) {
             JsonPatcher.MAIN_LOGGER.error("Encountered {} error(s) while patching {}. See logs/jsonpatch.log for details", errors.size(), id);
@@ -99,7 +106,7 @@ public class PatchingContext {
     public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root) {
         try {
             CompletableFuture.runAsync(() -> patch.program().execute(EvaluationContext.create(root, patchStorage)), executor)
-                    .get(200, TimeUnit.MILLISECONDS);
+                    .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof EvaluationException cause) {

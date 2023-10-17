@@ -40,4 +40,9 @@ public class PatchMetadata {
         if (values.get(key) instanceof Value.NumberValue number) return number.value();
         throw new IllegalStateException("Expected number for meta key '%s', got '%s'".formatted(key, values.get(key)));
     }
+
+    public boolean getBoolean(String key) {
+        if (values.get(key) instanceof Value.BooleanValue bool) return bool.value();
+        throw new IllegalStateException("Expected boolean for meta key '%s', got '%s'".formatted(key, values.get(key)));
+    }
 }

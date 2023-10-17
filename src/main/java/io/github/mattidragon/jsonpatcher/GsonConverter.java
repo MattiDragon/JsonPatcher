@@ -1,22 +1,21 @@
 package io.github.mattidragon.jsonpatcher;
 
+import com.google.common.collect.Sets;
 import com.google.gson.*;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 
-import java.util.Collections;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 public class GsonConverter {
-    private static final Set<Value> TO_GSON_RECURSION_TRACKER = Collections.newSetFromMap(new WeakHashMap<>());
-    private static final Set<JsonElement> FROM_GSON_RECURSION_TRACKER = Collections.newSetFromMap(new WeakHashMap<>());
+    private static final ThreadLocal<Set<Value>> TO_GSON_RECURSION_TRACKER = ThreadLocal.withInitial(Sets::newIdentityHashSet);
+    private static final ThreadLocal<Set<JsonElement>> FROM_GSON_RECURSION_TRACKER = ThreadLocal.withInitial(Sets::newIdentityHashSet);
 
     private GsonConverter() {
     }
 
     public static JsonElement toGson(Value value) {
         try {
-            if (!TO_GSON_RECURSION_TRACKER.add(value)) {
+            if (!TO_GSON_RECURSION_TRACKER.get().add(value)) {
                 throw new IllegalStateException("recursive value tree");
             }
             if (value instanceof Value.ObjectValue objectValue) return toGson(objectValue);
@@ -27,7 +26,7 @@ public class GsonConverter {
             if (value instanceof Value.NullValue) return JsonNull.INSTANCE;
             throw new IllegalStateException("Can't convert %s to gson".formatted(value));
         } finally {
-            TO_GSON_RECURSION_TRACKER.remove(value);
+            TO_GSON_RECURSION_TRACKER.get().remove(value);
         }
     }
 
@@ -49,7 +48,7 @@ public class GsonConverter {
 
     public static Value fromGson(JsonElement json) {
         try {
-            if (!FROM_GSON_RECURSION_TRACKER.add(json)) {
+            if (!FROM_GSON_RECURSION_TRACKER.get().add(json)) {
                 throw new IllegalStateException("recursive gson json tree");
             }
             if (json instanceof JsonObject jsonObject) return fromGson(jsonObject);
@@ -62,7 +61,7 @@ public class GsonConverter {
             if (json instanceof JsonNull) return Value.NullValue.NULL;
             throw new IllegalStateException("Can't convert %s to value".formatted(json));
         } finally {
-            FROM_GSON_RECURSION_TRACKER.remove(json);
+            FROM_GSON_RECURSION_TRACKER.get().remove(json);
         }
     }
 
