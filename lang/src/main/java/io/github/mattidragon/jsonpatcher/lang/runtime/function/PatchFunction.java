@@ -5,6 +5,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
+import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.Libraries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,11 +15,7 @@ public sealed interface PatchFunction {
     Value execute(EvaluationContext context, List<Value> args, SourceSpan callPos);
 
     default PatchFunction bind(Value value) {
-        return (BuiltInPatchFunction) (context, args, callPos) -> {
-            var newArgs = new ArrayList<>(args);
-            newArgs.add(0, value);
-            return execute(context, newArgs, callPos);
-        };
+        return Libraries.FunctionsLibrary.bind(new Value.FunctionValue(this), value).function();
     }
 
     @FunctionalInterface

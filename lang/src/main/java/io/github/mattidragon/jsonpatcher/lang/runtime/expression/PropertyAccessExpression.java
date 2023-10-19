@@ -28,6 +28,14 @@ public record PropertyAccessExpression(Expression parent, String name, SourceSpa
             } else {
                 throw error("Tried to read invalid property %s of %s.".formatted(name, parent));
             }
+        } else if (parent instanceof Value.FunctionValue functionValue) {
+            if (Libraries.FunctionsLibrary.METHODS.containsKey(name)) {
+                var function = Libraries.FunctionsLibrary.METHODS.get(name);
+                return new Value.FunctionValue(function.bind(functionValue));
+            } else {
+                throw error("Tried to read invalid property %s of %s.".formatted(name, parent));
+            }
+
         } else {
             throw error("Tried to read property %s of %s. Only objects and arrays have properties.".formatted(name, parent));
         }

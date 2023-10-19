@@ -5,6 +5,8 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
@@ -28,7 +30,8 @@ public class Libraries {
     public static final Map<String, Supplier<Value.ObjectValue>> BUILTIN = Map.of(
             "math", new LibraryBuilder(MathLibrary.class)::build,
             "arrays", new LibraryBuilder(ArraysLibrary.class)::build,
-            "strings", new LibraryBuilder(StringsLibrary.class)::build);
+            "strings", new LibraryBuilder(StringsLibrary.class)::build,
+            "functions", new LibraryBuilder(FunctionsLibrary.class)::build);
 
     public static class MathLibrary {
         public final Value.NumberValue PI = new Value.NumberValue(Math.PI);
@@ -106,6 +109,73 @@ public class Libraries {
             var found = array.get(i, context.callPos());
             array.remove(i, context.callPos());
             return found;
+        }
+
+        @Method
+        public Value.ArrayValue map(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.FunctionValue function) {
+            var newArray = new Value.ArrayValue();
+            for (var value : array.value()) {
+                newArray.value().add(function.function().execute(context.context(), List.of(value), context.callPos()));
+            }
+            return newArray;
+        }
+
+        @Method
+        public Value.ArrayValue mapped(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.FunctionValue function) {
+            for (int i = 0; i < array.value().size(); i++) {
+                array.value().set(i, function.function().execute(context.context(), List.of(array.get(i, context.callPos())), context.callPos()));
+            }
+            return array;
+        }
+
+        @Method
+        public Value.ArrayValue filter(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.FunctionValue function) {
+            var newArray = new Value.ArrayValue();
+            for (var value : array.value()) {
+                var result = function.function().execute(context.context(), List.of(value), context.callPos());
+                if (result.asBoolean()) newArray.value().add(value);
+            }
+            return newArray;
+        }
+
+        @Method
+        public Value.ArrayValue filtered(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.FunctionValue function) {
+            array.value().removeIf(value -> !function.function().execute(context.context(), List.of(value), context.callPos()).asBoolean());
+            return array;
+        }
+
+        @Method
+        public Value reduce(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.FunctionValue function, Value initialValue) {
+            var result = initialValue;
+            for (var value : array.value()) {
+                result = function.function().execute(context.context(), List.of(result, value), context.callPos());
+            }
+            return result;
+        }
+
+        @Method
+        public Value.ArrayValue slice(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.NumberValue start, Value.NumberValue end) {
+            var newArray = new Value.ArrayValue();
+            var s = (int) start.value();
+            var e = (int) end.value();
+            if (s < 0 || s > array.value().size()) throw new EvaluationException("Array index out of bounds (index: %s, size: %s)".formatted(s, array.value().size()), context.callPos());
+            if (e < 0 || e > array.value().size()) throw new EvaluationException("Array index out of bounds (index: %s, size: %s)".formatted(e, array.value().size()), context.callPos());
+            if (s > e) throw new EvaluationException("Start index must be less than end index (start: %s, end: %s)".formatted(s, e), context.callPos());
+            for (int i = s; i < e; i++) {
+                newArray.value().add(array.value().get(i));
+            }
+            return newArray;
+        }
+
+        @Method
+        public Value.ArrayValue slice(LibraryBuilder.FunctionContext context, Value.ArrayValue array, Value.NumberValue start) {
+            var newArray = new Value.ArrayValue();
+            var s = (int) start.value();
+            if (s < 0 || s > array.value().size()) throw new EvaluationException("Array index out of bounds (index: %s, size: %s)".formatted(s, array.value().size()), context.callPos());
+            for (int i = s; i < array.value().size(); i++) {
+                newArray.value().add(array.value().get(i));
+            }
+            return newArray;
         }
 
         // Can't use same algorithm as normal access, because you can also add at the end.
@@ -276,6 +346,46 @@ public class Libraries {
                 return new Value.StringValue(builder.toString());
             }
             throw new EvaluationException("Can't convert %s to string".formatted(value), context.callPos());
+        }
+    }
+
+    public static class FunctionsLibrary {
+        @DontBind
+        public static final Map<String, PatchFunction.BuiltInPatchFunction> METHODS = new LibraryBuilder(FunctionsLibrary.class, Method.class).getFunctions();
+
+        @Method
+        public static Value.FunctionValue bind(Value.FunctionValue function, Value value) {
+            return new Value.FunctionValue((PatchFunction.BuiltInPatchFunction) (context, args, callPos) -> {
+                var newArgs = new ArrayList<>(args);
+                newArgs.add(0, value);
+                return function.function().execute(context, newArgs, callPos);
+            });
+        }
+
+        @Method
+        public Value.FunctionValue bind(Value.FunctionValue function, Value value, Value.NumberValue index) {
+            return new Value.FunctionValue((PatchFunction.BuiltInPatchFunction) (context1, args, callPos) -> {
+                var newArgs = new ArrayList<>(args);
+                newArgs.add((int) index.value(), value);
+                return function.function().execute(context1, newArgs, callPos);
+            });
+        }
+
+        @Method
+        public Value.FunctionValue then(Value.FunctionValue function, Value.FunctionValue next) {
+            return new Value.FunctionValue(((PatchFunction.BuiltInPatchFunction) (context1, args, callPos) -> {
+                var result = function.function().execute(context1, args, callPos);
+                return next.function().execute(context1, List.of(result), callPos);
+            }));
+        }
+
+
+        public Value.FunctionValue identity() {
+            return new Value.FunctionValue(((PatchFunction.BuiltInPatchFunction) (context, args, callPos) -> args.get(0)).argCount(1));
+        }
+
+        public Value.FunctionValue constant(Value value) {
+            return new Value.FunctionValue(((PatchFunction.BuiltInPatchFunction) (context, args, callPos) -> value).argCount(0));
         }
     }
 }
