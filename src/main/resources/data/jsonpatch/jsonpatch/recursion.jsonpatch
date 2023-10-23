@@ -4,3 +4,4 @@
 val test = import('jsonpatch:lib');
 
 $.result.count = test.test()[5];
+debug.log(test.test());

@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatcher.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import io.github.mattidragon.jsonpatcher.ReloadDescription;
 import io.github.mattidragon.jsonpatcher.patch.PatchingContext;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceReload;
@@ -31,10 +32,9 @@ public class SimpleResourceReloadMixin<S> {
                                       CompletableFuture<Unit> initialStage1,
                                       boolean profiled,
                                       CallbackInfoReturnable<ResourceReload> cir,
-                                      @Local(argsOnly = true) LocalRef<CompletableFuture<Unit>> initialStage,
                                       @Local(argsOnly = true, ordinal = 0) LocalRef<Executor> prepareExecutor,
                                       @Local(argsOnly = true, ordinal = 1) LocalRef<Executor> applyExecutor) {
-        var context = new PatchingContext();
+        var context = new PatchingContext(ReloadDescription.pop());
 
         // Setup context for constructor because some reloaders get resources on the reload thread
         PatchingContext.set(context);

@@ -7,12 +7,15 @@ import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
 import io.github.mattidragon.jsonpatcher.GsonConverter;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
+import io.github.mattidragon.jsonpatcher.ReloadDescription;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -23,14 +26,22 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class PatchingContext {
-    private static final ExecutorService PATCHER = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
+    private static final ExecutorService PATCHER = new ThreadPoolExecutor(0,
+            Integer.MAX_VALUE,
+            5,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
+            new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
+
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
     private static final Gson GSON = new Gson();
+    private final ReloadDescription description;
 
     private boolean loaded = false;
     private PatchStorage patches = null;
 
-    public PatchingContext() {
+    public PatchingContext(ReloadDescription description) {
+        this.description = description;
     }
 
     public static PatchingContext get() {
@@ -61,7 +72,7 @@ public class PatchingContext {
     public void load(ResourceManager manager, Executor executor) {
         if (loaded) throw new IllegalStateException("Already loaded");
         patches = new PatchStorage(PatchLoader.load(executor, manager));
-        JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches", patches.size());
+        JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload '{}'", patches.size(), description.name());
         loaded = true;
     }
 
@@ -77,7 +88,10 @@ public class PatchingContext {
                 Value.ObjectValue root;
 
                 root = GsonConverter.fromGson(activeJson.getValue());
+                var timeBeforePatch = System.nanoTime();
                 var success = runPatch(patch, PATCHER, errors::add, patches, root);
+                var timeAfterPatch = System.nanoTime();
+                JsonPatcher.RELOAD_LOGGER.debug("Patched {} with {} in {}ms", id, patch.id(), (timeAfterPatch - timeBeforePatch) / 1e6);
                 if (success) {
                     activeJson.setValue(GsonConverter.toGson(root));
                 }
@@ -86,8 +100,13 @@ public class PatchingContext {
             errors.add(e);
         }
         if (!errors.isEmpty()) {
-            JsonPatcher.MAIN_LOGGER.error("Encountered {} error(s) while patching {}. See logs/jsonpatch.log for details", errors.size(), id);
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while patching {}", id, error));
+            description.errorConsumer().accept(Text.literal("Encountered %s error(s) while patching %s. See logs/jsonpatch.log for details".formatted(errors.size(), id)).formatted(Formatting.RED));
+            if (Config.MANAGER.get().abortOnFailure()) {
+                throw new PatchingException("Encountered %s error(s) while patching %s. See logs/jsonpatch.log for details".formatted(errors.size(), id));
+            } else {
+                JsonPatcher.MAIN_LOGGER.error("Encountered {} error(s) while patching {}. See logs/jsonpatch.log for details", errors.size(), id);
+            }
         }
         return activeJson.getValue();
     }
@@ -105,21 +124,21 @@ public class PatchingContext {
      */
     public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root) {
         try {
-            CompletableFuture.runAsync(() -> patch.program().execute(EvaluationContext.create(root, patchStorage)), executor)
+            CompletableFuture.runAsync(() -> patch.program().execute(EvaluationContext.create(root, patchStorage, value -> JsonPatcher.RELOAD_LOGGER.info("Debug from {}: {}", patch.id(), value))), executor)
                     .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof EvaluationException cause) {
                 errorConsumer.accept(cause);
             } else if (e.getCause() instanceof StackOverflowError cause) {
-                errorConsumer.accept(new RuntimeException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
+                errorConsumer.accept(new PatchingException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
             } else {
                 errorConsumer.accept(new RuntimeException("Unexpected error while applying patch %s".formatted(patch.id()), e));
             }
         } catch (InterruptedException e) {
-            errorConsumer.accept(new RuntimeException("Async error while applying patch %s".formatted(patch.id()), e));
+            errorConsumer.accept(new PatchingException("Async error while applying patch %s".formatted(patch.id()), e));
         } catch (TimeoutException e) {
-            errorConsumer.accept(new RuntimeException("Timeout applying patch %s".formatted(patch.id()), e));
+            errorConsumer.accept(new PatchingException("Timeout while applying patch %s. Check for infinite loops and increase the timeout in the config.".formatted(patch.id()), e));
         }
         return false;
     }
@@ -148,6 +167,9 @@ public class PatchingContext {
             return () -> new ByteArrayInputStream(out.toByteArray());
         } catch (JsonParseException | IOException e) {
             JsonPatcher.RELOAD_LOGGER.error("Failed to patch json at {}", id, e);
+            if (Config.MANAGER.get().abortOnFailure()) {
+                throw new RuntimeException("Failed to patch json at %s".formatted(id), e);
+            }
             return stream;
         }
     }

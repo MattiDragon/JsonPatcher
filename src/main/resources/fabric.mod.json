@@ -14,6 +14,9 @@
   "entrypoints": {
     "main": [
       "io.github.mattidragon.jsonpatcher.JsonPatcher"
+    ],
+    "preLaunch": [
+      "io.github.mattidragon.jsonpatcher.JsonPatcherPreLaunch"
     ]
   },
   "accessWidener" : "jsonpatcher.accesswidener",

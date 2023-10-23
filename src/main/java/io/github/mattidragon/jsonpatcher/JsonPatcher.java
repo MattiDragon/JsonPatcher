@@ -3,6 +3,7 @@ package io.github.mattidragon.jsonpatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.appender.RandomAccessFileAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -49,6 +50,8 @@ public class JsonPatcher implements ModInitializer {
             configuration.addAppender(appender);
             configuration.addLoggerAppender(log4jLogger, appender);
             configuration.setLoggerAdditive(log4jLogger, false);
+
+            log4jLogger.setLevel(Level.toLevel(System.getProperty("jsonpatcher.log.level"), Level.INFO));
 
             MAIN_LOGGER.debug("Successfully hacked log4j config. Now we have our own file!");
         } catch (IncompatibleClassChangeError | NoClassDefFoundError | RuntimeException e) {

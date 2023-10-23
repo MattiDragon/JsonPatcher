@@ -7,7 +7,6 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.Libraries;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 

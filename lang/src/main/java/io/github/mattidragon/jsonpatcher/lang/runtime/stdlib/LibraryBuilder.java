@@ -89,7 +89,7 @@ public class LibraryBuilder {
         var byArgCount = new HashMap<Integer, Method>();
         for (var overload : overloads) {
             var argCount = overload.getParameterCount();
-            if (overload.getParameterTypes()[0] == FunctionContext.class) {
+            if (argCount >= 1 && overload.getParameterTypes()[0] == FunctionContext.class) {
                 argCount--;
             }
 

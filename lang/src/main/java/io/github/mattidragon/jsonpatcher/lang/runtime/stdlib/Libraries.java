@@ -31,11 +31,15 @@ public class Libraries {
             "math", new LibraryBuilder(MathLibrary.class)::build,
             "arrays", new LibraryBuilder(ArraysLibrary.class)::build,
             "strings", new LibraryBuilder(StringsLibrary.class)::build,
-            "functions", new LibraryBuilder(FunctionsLibrary.class)::build);
+            "functions", new LibraryBuilder(FunctionsLibrary.class)::build,
+            "debug", new LibraryBuilder(DebugLibrary.class)::build);
 
     public static class MathLibrary {
         public final Value.NumberValue PI = new Value.NumberValue(Math.PI);
         public final Value.NumberValue E = new Value.NumberValue(Math.E);
+        public final Value.NumberValue NaN = new Value.NumberValue(Double.NaN);
+        public final Value.NumberValue POSITIVE_INFINITY = new Value.NumberValue(Double.POSITIVE_INFINITY);
+        public final Value.NumberValue NEGATIVE_INFINITY = new Value.NumberValue(Double.NEGATIVE_INFINITY);
 
         // We use fields here because there are many similar methods
         public final Value.FunctionValue asin = numberUnary(Math::asin);
@@ -386,6 +390,12 @@ public class Libraries {
 
         public Value.FunctionValue constant(Value value) {
             return new Value.FunctionValue(((PatchFunction.BuiltInPatchFunction) (context, args, callPos) -> value).argCount(0));
+        }
+    }
+
+    public static class DebugLibrary {
+        public void log(LibraryBuilder.FunctionContext context, Value value) {
+            context.context().log(value);
         }
     }
 }

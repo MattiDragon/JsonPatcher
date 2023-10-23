@@ -6,23 +6,28 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
-public record EvaluationContext(Value.ObjectValue root, VariableStack variables, LibraryLocator libraryLocator) {
+public record EvaluationContext(Value.ObjectValue root, VariableStack variables, LibraryLocator libraryLocator, Consumer<Value> debugConsumer) {
     private static final ThreadLocal<Set<String>> LIBRARY_RECURSION_DETECTOR = ThreadLocal.withInitial(HashSet::new);
 
-    public static EvaluationContext create(Value.ObjectValue json, LibraryLocator libraryLocator) {
+    public static EvaluationContext create(Value.ObjectValue json, LibraryLocator libraryLocator, Consumer<Value> debugConsumer) {
         var variables = new VariableStack();
-        var context = new EvaluationContext(json, variables, libraryLocator);
+        var context = new EvaluationContext(json, variables, libraryLocator, debugConsumer);
         Libraries.BUILTIN.forEach((name, supplier) -> variables.createVariable(name, supplier.get(), false, null));
         return context.newScope();
     }
 
     public EvaluationContext withRoot(Value.ObjectValue root) {
-        return new EvaluationContext(root, variables, libraryLocator);
+        return new EvaluationContext(root, variables, libraryLocator, debugConsumer);
     }
 
     public EvaluationContext newScope() {
-        return new EvaluationContext(root, new VariableStack(variables), libraryLocator);
+        return new EvaluationContext(root, new VariableStack(variables), libraryLocator, debugConsumer);
+    }
+
+    public void log(Value value) {
+        debugConsumer.accept(value);
     }
 
     public Value findLibrary(String libraryName, SourceSpan pos) {

@@ -1,0 +1,4 @@
+@version "1";
+@target "minecraft:lang/en_us.json";
+
+$'item.minecraft.ender_pearl' = "Void Pearl";
