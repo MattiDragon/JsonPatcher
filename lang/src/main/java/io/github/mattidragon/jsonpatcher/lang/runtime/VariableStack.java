@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatcher.lang.runtime;
 
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 
@@ -31,7 +32,8 @@ public final class VariableStack {
         throw new EvaluationException("Cannot find variable with name %s".formatted(name), pos);
     }
 
-    private boolean hasVariable(String name) {
+    @VisibleForTesting
+    public boolean hasVariable(String name) {
         if (mutable.containsKey(name)) return true;
         if (immutable.containsKey(name)) return true;
         if (parent != null) return parent.hasVariable(name);
@@ -56,7 +58,10 @@ public final class VariableStack {
         else this.immutable.put(name, value);
     }
 
-    public void createVariableWithShadowing(String name, Value value, boolean mutable) {
+    /**
+     * Creates a variable without checking for duplicates.
+     */
+    public void createVariableUnsafe(String name, Value value, boolean mutable) {
         if (mutable) this.mutable.put(name, value);
         else this.immutable.put(name, value);
     }

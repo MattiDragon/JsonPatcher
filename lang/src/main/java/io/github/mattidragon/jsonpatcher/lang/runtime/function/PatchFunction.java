@@ -57,7 +57,7 @@ public sealed interface PatchFunction {
             for (int i = 0; i < args.size(); i++) {
                 var argName = this.args.get(i);
                 var argVal = args.get(i);
-                argName.ifPresent(s -> variables.createVariableWithShadowing(s, argVal, false));
+                argName.ifPresent(s -> variables.createVariableUnsafe(s, argVal, false));
             }
 
             try {

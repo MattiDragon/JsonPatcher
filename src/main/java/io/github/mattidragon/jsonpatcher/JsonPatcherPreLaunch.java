@@ -13,6 +13,6 @@ public class JsonPatcherPreLaunch implements PreLaunchEntrypoint {
          It might be related to loading many classes or reflecting lots of code for building methods.
         */
         // noinspection ResultOfMethodCallIgnored
-        Libraries.LOOKUP.size();
+        Libraries.BUILTIN.size();
     }
 }
