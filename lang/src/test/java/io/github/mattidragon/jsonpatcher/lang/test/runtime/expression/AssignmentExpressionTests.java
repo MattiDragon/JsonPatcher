@@ -1,6 +1,5 @@
 package io.github.mattidragon.jsonpatcher.lang.test.runtime.expression;
 
-import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.AssignmentExpression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.BinaryExpression;
@@ -9,9 +8,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ValueExpression
 import io.github.mattidragon.jsonpatcher.lang.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
-import static io.github.mattidragon.jsonpatcher.lang.test.TestUtils.*;
+import static io.github.mattidragon.jsonpatcher.lang.test.TestUtils.POS;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AssignmentExpressionTests {

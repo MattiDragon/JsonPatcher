@@ -5,17 +5,16 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.Libraries;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public record EvaluationContext(Value.ObjectValue root, VariableStack variables, LibraryLocator libraryLocator, Consumer<Value> debugConsumer) {
     private static final ThreadLocal<Set<String>> LIBRARY_RECURSION_DETECTOR = ThreadLocal.withInitial(HashSet::new);
 
-    public static EvaluationContext create(Value.ObjectValue json, LibraryLocator libraryLocator, Consumer<Value> debugConsumer) {
-        var variables = new VariableStack();
-        var context = new EvaluationContext(json, variables, libraryLocator, debugConsumer);
-        Libraries.BUILTIN.forEach((name, supplier) -> variables.createVariable(name, supplier.get(), false, null));
-        return context.newScope();
+    public static Builder builder() {
+        return new Builder();
     }
 
     public EvaluationContext withRoot(Value.ObjectValue root) {
@@ -61,5 +60,53 @@ public record EvaluationContext(Value.ObjectValue root, VariableStack variables,
          */
         @ApiStatus.OverrideOnly
         void loadLibrary(String libraryName, Value.ObjectValue libraryObject, SourceSpan importPos);
+    }
+
+    public static class Builder {
+        private Value.ObjectValue root = new Value.ObjectValue();
+        private final VariableStack variables = new VariableStack();
+        private LibraryLocator libraryLocator = (name, obj, pos) -> {
+            throw new EvaluationException("No libraries available", pos);
+        };
+        private Consumer<Value> debugConsumer = x -> System.out.println("Debug from patch: " + x);
+        private Map<String, Supplier<Value.ObjectValue>> stdlib = Libraries.BUILTIN;
+
+        public Builder root(Value.ObjectValue root) {
+            this.root = root;
+            return this;
+        }
+
+        public Builder variable(String name, String value) {
+            return variable(name, new Value.StringValue(value));
+        }
+
+        public Builder variable(String name, boolean value) {
+            return variable(name, Value.BooleanValue.of(value));
+        }
+
+        public Builder variable(String name, Value value) {
+            variables.createVariable(name, value, false, null);
+            return this;
+        }
+
+        public Builder libraryLocator(LibraryLocator libraryLocator) {
+            this.libraryLocator = libraryLocator;
+            return this;
+        }
+
+        public Builder debugConsumer(Consumer<Value> debugConsumer) {
+            this.debugConsumer = debugConsumer;
+            return this;
+        }
+
+        public Builder stdlib(Map<String, Supplier<Value.ObjectValue>> stdlib) {
+            this.stdlib = stdlib;
+            return this;
+        }
+
+        public EvaluationContext build() {
+            stdlib.forEach((name, supplier) -> variables.createVariable(name, supplier.get(), false, null));
+            return new EvaluationContext(root, variables, libraryLocator, debugConsumer).newScope();
+        }
     }
 }

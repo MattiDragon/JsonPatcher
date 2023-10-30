@@ -33,13 +33,6 @@ public class PrefixParser {
         return new ValueExpression(value, token.getPos());
     }
 
-    private static ImportExpression importExpression(Parser parser, PositionedToken<?> token) {
-        parser.expect(Token.SimpleToken.BEGIN_PAREN);
-        var name = parser.expectWord();
-        parser.expect(Token.SimpleToken.END_PAREN);
-        return new ImportExpression(name.value(), new SourceSpan(token.getFrom(), parser.previous().getTo()));
-    }
-
     private static Expression variable(PositionedToken<Token.WordToken> token) {
         return new VariableAccessExpression(token.getToken().value(), new SourceSpan(token.getFrom(), token.getTo()));
     }
@@ -136,7 +129,6 @@ public class PrefixParser {
         if (token.getToken() == Token.KeywordToken.TRUE) return constant(token, Value.BooleanValue.TRUE);
         if (token.getToken() == Token.KeywordToken.FALSE) return constant(token, Value.BooleanValue.FALSE);
         if (token.getToken() == Token.KeywordToken.NULL) return constant(token, Value.NullValue.NULL);
-        if (token.getToken() == Token.KeywordToken.IMPORT) return importExpression(parser, token);
         if (token.getToken() == Token.KeywordToken.FUNCTION) return functionExpression(parser, token.getFrom());
         if (token.getToken() == Token.SimpleToken.DOLLAR) return root(parser, token);
         if (token.getToken() == Token.SimpleToken.MINUS) return unary(parser, token, UnaryExpression.Operator.MINUS);

@@ -19,6 +19,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class PatchingContext {
 
                 root = GsonConverter.fromGson(activeJson.getValue());
                 var timeBeforePatch = System.nanoTime();
-                var success = runPatch(patch, PATCHER, errors::add, patches, root);
+                var success = runPatch(patch, PATCHER, errors::add, patches, root, id.toString());
                 var timeAfterPatch = System.nanoTime();
                 JsonPatcher.RELOAD_LOGGER.debug("Patched {} with {} in {}ms", id, patch.id(), (timeAfterPatch - timeBeforePatch) / 1e6);
                 if (success) {
@@ -120,11 +121,19 @@ public class PatchingContext {
      *                      or {@link RuntimeException RuntimeExceptions} for timeouts and other errors not from the patch itself
      * @param patchStorage A patch storage for resolution of libraries
      * @param root The root object for the patch context, will be modified
+     * @param target The target file of the patch, or {@code null} if the patch is a library. Used to set the {@code _target} and {@code _isLibrary} variables.
      * @return {@code true} if the patch completed successfully. If {@code false} the {@code errorConsumer} should have received an error.
      */
-    public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root) {
+    public static boolean runPatch(Patch patch, ExecutorService executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root, @Nullable String target) {
         try {
-            CompletableFuture.runAsync(() -> patch.program().execute(EvaluationContext.create(root, patchStorage, value -> JsonPatcher.RELOAD_LOGGER.info("Debug from {}: {}", patch.id(), value))), executor)
+            var context = EvaluationContext.builder()
+                    .root(root)
+                    .libraryLocator(patchStorage)
+                    .debugConsumer(value -> JsonPatcher.RELOAD_LOGGER.info("Debug from {}: {}", patch.id(), value))
+                    .variable("_isLibrary", target == null)
+                    .variable("_target", target == null ? Value.NullValue.NULL : new Value.StringValue(target))
+                    .build();
+            CompletableFuture.runAsync(() -> patch.program().execute(context), executor)
                     .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {

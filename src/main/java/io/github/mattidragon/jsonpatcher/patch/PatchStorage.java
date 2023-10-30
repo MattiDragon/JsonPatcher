@@ -124,6 +124,6 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
                 throw new EvaluationException("Failed to load library %s".formatted(libId), importPos, evaluationException);
             }
             throw new RuntimeException("Failed to load library %s".formatted(libId), e);
-        }, this, libraryObject);
+        }, this, libraryObject, null);
     }
 }

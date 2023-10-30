@@ -90,7 +90,8 @@ public sealed interface Token {
         FOR("for"),
         FOREACH("foreach"),
         BREAK("break"),
-        CONTINUE("continue");
+        CONTINUE("continue"),
+        AS("as");
 
         public static final Map<String, KeywordToken> ALL = Arrays.stream(KeywordToken.values()).collect(Collectors.toUnmodifiableMap(KeywordToken::getValue, Function.identity()));
 

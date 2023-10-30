@@ -191,6 +191,21 @@ public class StatementParser {
         return new ContinueStatement(new SourceSpan(from, parser.previous().getTo()));
     }
 
+    private static Statement importStatement(Parser parser) {
+        parser.expect(KeywordToken.IMPORT);
+        var from = parser.previous().getFrom();
+        var libraryName = parser.expectString().value();
+        if (parser.hasNext(KeywordToken.AS)) {
+            parser.next();
+            var variableName = parser.expectWord().value();
+            parser.expect(SimpleToken.SEMICOLON);
+            return new ImportStatement(libraryName, variableName, new SourceSpan(from, parser.previous().getTo()));
+        } else {
+            parser.expect(SimpleToken.SEMICOLON);
+            return new ImportStatement(libraryName, libraryName, new SourceSpan(from, parser.previous().getTo()));
+        }
+    }
+
     public static Statement parse(Parser parser) {
         var token = parser.peek();
         if (token.getToken() == SimpleToken.BEGIN_CURLY) return blockStatement(parser);
@@ -210,6 +225,7 @@ public class StatementParser {
         if (token.getToken() == KeywordToken.FOREACH) return forEachLoop(parser);
         if (token.getToken() == KeywordToken.BREAK) return breakStatement(parser);
         if (token.getToken() == KeywordToken.CONTINUE) return continueStatement(parser);
+        if (token.getToken() == KeywordToken.IMPORT) return importStatement(parser);
         return expressionStatement(parser);
     }
 }
