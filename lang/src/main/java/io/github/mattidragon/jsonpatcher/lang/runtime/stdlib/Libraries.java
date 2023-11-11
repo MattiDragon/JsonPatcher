@@ -397,5 +397,20 @@ public class Libraries {
         public void log(LibraryBuilder.FunctionContext context, Value value) {
             context.context().log(value);
         }
+
+        @FunctionName("throw")
+        public void throw_(LibraryBuilder.FunctionContext context, Value value) {
+            throw new EvaluationException(value.toString(), context.callPos());
+        }
+
+        @FunctionName("assert")
+        public void assert_(LibraryBuilder.FunctionContext context, Value value) {
+            assert_(context, value, new Value.StringValue("Assertion failed"));
+        }
+
+        @FunctionName("assert")
+        public void assert_(LibraryBuilder.FunctionContext context, Value value, Value message) {
+            if (!value.asBoolean()) throw new EvaluationException(message.toString(), context.callPos());
+        }
     }
 }

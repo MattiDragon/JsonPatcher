@@ -4,12 +4,10 @@ import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public sealed interface Value {
+    ThreadLocal<Set<Value>> TO_STRING_RECURSION_TRACKER = ThreadLocal.withInitial(HashSet::new);
 
     boolean asBoolean();
 
@@ -43,7 +41,23 @@ public sealed interface Value {
 
         @Override
         public String toString() {
-            return value.toString();
+            if (TO_STRING_RECURSION_TRACKER.get().contains(this)) return "{...}";
+            try {
+                TO_STRING_RECURSION_TRACKER.get().add(this);
+                return value.toString();
+            } finally {
+                TO_STRING_RECURSION_TRACKER.get().remove(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return this == obj;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
         }
     }
 
@@ -54,16 +68,6 @@ public sealed interface Value {
 
         public ArrayValue() {
             this(List.of());
-        }
-
-        @Override
-        public boolean asBoolean() {
-            return !value.isEmpty();
-        }
-
-        @Override
-        public String toString() {
-            return value.toString();
         }
 
         public Value get(int index, @Nullable SourceSpan pos) {
@@ -84,6 +88,32 @@ public sealed interface Value {
             if (index < 0) return value.size() + index;
             return index;
         }
+
+        @Override
+        public boolean asBoolean() {
+            return !value.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            if (TO_STRING_RECURSION_TRACKER.get().contains(this)) return "[...]";
+            try {
+                TO_STRING_RECURSION_TRACKER.get().add(this);
+                return value.toString();
+            } finally {
+                TO_STRING_RECURSION_TRACKER.get().remove(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return this == obj;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
+        }
     }
 
     record FunctionValue(PatchFunction function) implements Value {
@@ -92,6 +122,20 @@ public sealed interface Value {
             return true;
         }
 
+        @Override
+        public boolean equals(Object obj) {
+            return this == obj;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(this);
+        }
+
+        @Override
+        public String toString() {
+            return "<function>";
+        }
     }
 
     sealed interface Primitive extends Value {}
@@ -103,7 +147,7 @@ public sealed interface Value {
         }
 
         @Override
-        public String toString() {
+        public String toString() { // TODO: check if this is what we want
             return "\"" + value + "\"";
         }
     }

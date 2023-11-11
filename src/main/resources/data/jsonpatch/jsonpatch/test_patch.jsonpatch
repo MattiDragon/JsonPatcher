@@ -5,7 +5,7 @@
 
 function modifyKey($, result) {
     $'#' = {
-        tag: "minecraft:coals",
+        tag: "minecraft:coals"
     };
 
     if (result.item == "minecraft:arrow") delete $X;

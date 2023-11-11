@@ -53,6 +53,7 @@ jar {
 publishing {
     publications.create("mavenJava", MavenPublication) {
         from components.java
+        artifactId project.archives_base_name
     }
     repositories {}
 }

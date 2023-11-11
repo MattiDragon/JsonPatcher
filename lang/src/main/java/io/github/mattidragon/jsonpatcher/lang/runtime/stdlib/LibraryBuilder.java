@@ -128,7 +128,11 @@ public class LibraryBuilder {
                 throw new IllegalStateException("Library function return type must be of subclass Value or void, %s from %s is not".formatted(method.getReturnType(), method));
             }
 
-            methods.computeIfAbsent(method.getName(), name -> new ArrayList<>()).add(method);
+            var methodName = method.getName();
+            var nameOverride = method.getAnnotation(FunctionName.class);
+            if (nameOverride != null) methodName = nameOverride.value();
+
+            methods.computeIfAbsent(methodName, name -> new ArrayList<>()).add(method);
         }
         return methods;
     }

@@ -10,6 +10,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ValueExpression
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.BlockStatement;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.UnnecessarySemicolonStatement;
+import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.LibraryBuilder;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -21,6 +22,10 @@ public class TestUtils {
 
     public static EvaluationContext createTestContext() {
         return EvaluationContext.builder().debugConsumer(EMPTY_DEBUG_CONSUMER).build();
+    }
+
+    public static LibraryBuilder.FunctionContext createTestFunctionContext() {
+        return new LibraryBuilder.FunctionContext(createTestContext(), POS);
     }
 
     public static Expression trueExpression() {
