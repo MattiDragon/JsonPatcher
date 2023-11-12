@@ -28,12 +28,14 @@ public class BinaryExpressionTests {
                         new StringValue("2"),
                         TestUtils.POS));
 
-        assertEquals(new ArrayValue(List.of(new NumberValue(1), new NumberValue(2))),
+        TestUtils.assertEquals(
+                new ArrayValue(List.of(new NumberValue(1), new NumberValue(2))),
                 op.apply(new ArrayValue(List.of(new NumberValue(1))),
                         new ArrayValue(List.of(new NumberValue(2))),
                         TestUtils.POS));
 
-        assertEquals(new ObjectValue(Map.of("a", new NumberValue(1), "b", new NumberValue(2))),
+        TestUtils.assertEquals(
+                new ObjectValue(Map.of("a", new NumberValue(1), "b", new NumberValue(2))),
                 op.apply(new ObjectValue(Map.of("a", new NumberValue(1))),
                         new ObjectValue(Map.of("b", new NumberValue(2))),
                         TestUtils.POS));
