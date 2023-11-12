@@ -40,7 +40,8 @@ public class TokenTree {
                             .add('+', SimpleToken.DOUBLE_PLUS))
             .add('-', SimpleToken.MINUS,
                     branch().add('=', SimpleToken.MINUS_ASSIGN)
-                            .add('-', SimpleToken.DOUBLE_MINUS))
+                            .add('-', SimpleToken.DOUBLE_MINUS)
+                            .add('>', SimpleToken.ARROW))
             .add('*', SimpleToken.STAR,
                     branch().add('=', SimpleToken.STAR_ASSIGN)
                             .add('*', SimpleToken.DOUBLE_STAR))

@@ -1,7 +1,7 @@
 @version "1";
 
 # Example library function
-$test = function() {
+$test = () -> {
     var list = [];
     for (var i = 0; i < 10; i++) {
         list += [i];

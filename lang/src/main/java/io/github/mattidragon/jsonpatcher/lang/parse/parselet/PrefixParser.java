@@ -3,6 +3,9 @@ package io.github.mattidragon.jsonpatcher.lang.parse.parselet;
 import io.github.mattidragon.jsonpatcher.lang.parse.*;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.*;
+import io.github.mattidragon.jsonpatcher.lang.runtime.statement.ReturnStatement;
+import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,9 +85,7 @@ public class PrefixParser {
         return new ObjectInitializerExpression(children, new SourceSpan(token.getFrom(), parser.previous().getTo()));
     }
 
-    static FunctionExpression functionExpression(Parser parser, SourcePos beginPos) {
-        parser.expect(Token.SimpleToken.BEGIN_PAREN);
-
+    static ArrayList<Optional<String>> parseArgumentList(Parser parser) {
         var arguments = new ArrayList<Optional<String>>();
         while (parser.peek().getToken() != Token.SimpleToken.END_PAREN) {
             Optional<String> optionalArgument;
@@ -111,12 +112,34 @@ public class PrefixParser {
             }
         }
         parser.expect(Token.SimpleToken.END_PAREN);
+        return arguments;
+    }
 
-        var body = StatementParser.blockStatement(parser);
-        return new FunctionExpression(body, arguments, new SourceSpan(beginPos, parser.previous().getTo()));
+    @Nullable
+    private static Expression tryParseArrowFunction(Parser parser) {
+        try {
+            var beginPos = parser.previous().getFrom();
+            var arguments = parseArgumentList(parser);
+            parser.expect(Token.SimpleToken.ARROW);
+            var arrowPos = parser.previous().getPos();
+
+            Statement body = parser.hasNext(Token.SimpleToken.BEGIN_CURLY)
+                    ? StatementParser.blockStatement(parser)
+                    : new ReturnStatement(Optional.of(parser.expression()), arrowPos);
+            return new FunctionExpression(body, arguments, new SourceSpan(beginPos, parser.previous().getTo()));
+        } catch (Parser.ParseException e) {
+            return null;
+        }
     }
 
     private static Expression parenthesis(Parser parser) {
+        var savedPos = parser.savePos();
+        var arrowFunction = tryParseArrowFunction(parser);
+        if (arrowFunction != null) {
+            return arrowFunction;
+        }
+        parser.loadPos(savedPos);
+
         var expression = parser.expression();
         parser.expect(Token.SimpleToken.END_PAREN);
         return expression;
@@ -129,7 +152,6 @@ public class PrefixParser {
         if (token.getToken() == Token.KeywordToken.TRUE) return constant(token, Value.BooleanValue.TRUE);
         if (token.getToken() == Token.KeywordToken.FALSE) return constant(token, Value.BooleanValue.FALSE);
         if (token.getToken() == Token.KeywordToken.NULL) return constant(token, Value.NullValue.NULL);
-        if (token.getToken() == Token.KeywordToken.FUNCTION) return functionExpression(parser, token.getFrom());
         if (token.getToken() == Token.SimpleToken.DOLLAR) return root(parser, token);
         if (token.getToken() == Token.SimpleToken.MINUS) return unary(parser, token, UnaryExpression.Operator.MINUS);
         if (token.getToken() == Token.SimpleToken.BANG) return unary(parser, token, UnaryExpression.Operator.NOT);

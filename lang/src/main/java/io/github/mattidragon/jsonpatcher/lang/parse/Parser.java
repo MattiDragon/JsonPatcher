@@ -17,7 +17,7 @@ import java.util.List;
 
 public class Parser {
     private final List<PositionedToken<?>> tokens;
-    private final List<ParseException> errors = new ArrayList<>();
+    private List<ParseException> errors = new ArrayList<>();
     private final PatchMetadata metadata;
     private int current = 0;
 
@@ -147,6 +147,15 @@ public class Parser {
         return hasNext() && peek().getToken() == token;
     }
 
+    public Position savePos() {
+        return new Position(current, List.copyOf(errors));
+    }
+
+    public void loadPos(Position pos) {
+        current = pos.current;
+        errors = pos.errors;
+    }
+
     /**
      * Special error to throw when we reach an error condition from which recovery doesn't make sense (end of file)
      */
@@ -170,5 +179,8 @@ public class Parser {
         protected @Nullable SourceSpan getPos() {
             return pos;
         }
+    }
+
+    public record Position(int current, List<ParseException> errors) {
     }
 }

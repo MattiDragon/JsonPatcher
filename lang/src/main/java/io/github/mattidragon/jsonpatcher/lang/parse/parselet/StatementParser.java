@@ -4,6 +4,7 @@ import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
+import io.github.mattidragon.jsonpatcher.lang.runtime.expression.FunctionExpression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Reference;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ValueExpression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.*;
@@ -97,7 +98,12 @@ public class StatementParser {
         var name = parser.expectWord().value();
         var begin = parser.previous().getFrom();
 
-        return new FunctionDeclarationStatement(name, PrefixParser.functionExpression(parser, begin));
+        parser.expect(SimpleToken.BEGIN_PAREN);
+        var arguments = PrefixParser.parseArgumentList(parser);
+        var body = blockStatement(parser);
+        var expression = new FunctionExpression(body, arguments, new SourceSpan(begin, parser.previous().getTo()));
+
+        return new FunctionDeclarationStatement(name, expression);
     }
 
     private static Statement expressionStatement(Parser parser) {
@@ -228,4 +234,5 @@ public class StatementParser {
         if (token.getToken() == KeywordToken.IMPORT) return importStatement(parser);
         return expressionStatement(parser);
     }
+
 }
