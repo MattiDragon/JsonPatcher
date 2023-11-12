@@ -109,6 +109,9 @@ public class Lexer {
                         case '"' -> string.append('"');
                         case '\'' -> string.append('\'');
                         case '\\' -> string.append('\\');
+                        case '0' -> string.append('\0');
+                        case 'x' -> string.append(readUnicodeEscape(2));
+                        case 'u' -> string.append(readUnicodeEscape(4));
                         default -> throw error("Unknown escape sequence: \\%c".formatted(escaped), 1);
                     }
                 }
@@ -119,6 +122,19 @@ public class Lexer {
 
         var token = begin == '"' ? new Token.StringToken(string.toString()) : new Token.WordToken(string.toString());
         addParsedToken(token, currentColumn - beginPos);
+    }
+
+    private char readUnicodeEscape(int length) {
+        char value = 0;
+        for (var i = 0; i < length; i++) {
+            var c = next();
+            value *= 16;
+            if (c >= '0' && c <= '9') value += (char) (c - '0');
+            else if (c >= 'a' && c <= 'f') value += (char) (c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') value += (char) (c - 'A' + 10);
+            else throw error("Invalid character in unicode escape: %c".formatted(c), 1);
+        }
+        return value;
     }
 
     public boolean hasNext() {
