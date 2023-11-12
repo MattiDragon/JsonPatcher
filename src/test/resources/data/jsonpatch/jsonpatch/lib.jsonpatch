@@ -1,6 +1,7 @@
 @version "1";
 
-$test = function () {
+# Example library function
+$test = function() {
     var list = [];
     for (var i = 0; i < 10; i++) {
         list += [i];
@@ -8,4 +9,3 @@ $test = function () {
 
     return list;
 };
-

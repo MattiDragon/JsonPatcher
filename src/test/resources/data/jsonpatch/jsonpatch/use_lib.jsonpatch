@@ -1,6 +1,7 @@
 @version "1";
 @target "minecraft:recipes/oak_planks.json";
 
+# Example usage of library
 import "jsonpatch:lib" as test;
 
 $.result.count = test.test()[5];

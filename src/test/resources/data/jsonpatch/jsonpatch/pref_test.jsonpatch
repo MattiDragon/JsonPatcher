@@ -2,4 +2,5 @@
 @target { "namespace": "minecraft" };
 @enabled false;
 
+# Don't do this. This patch is sometimes used to test performance in dev.
 while (true) {}
