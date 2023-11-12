@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "jsonpatcher_testmod",
+  "version": "${version}",
+  "name": "JsonPatcher Testmod",
+  "description": "Testmod for JsonPatcher",
+  "environment": "*"
+}

@@ -147,8 +147,8 @@ public sealed interface Value {
         }
 
         @Override
-        public String toString() { // TODO: check if this is what we want
-            return "\"" + value + "\"";
+        public String toString() {
+            return value;
         }
     }
 

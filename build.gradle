@@ -17,11 +17,36 @@ repositories {
     maven { url "https://maven.terraformersmc.com" }
 }
 
-loom.splitEnvironmentSourceSets()
-loom.accessWidenerPath.set file("src/main/resources/jsonpatcher.accesswidener")
+loom {
+    splitEnvironmentSourceSets()
+    accessWidenerPath.set file("src/main/resources/jsonpatcher.accesswidener")
 
-loom.runs.each {
-    it.vmArg("-Djsonpatcher.log.level=debug")
+    runs {
+        testmodClient {
+            client()
+            name "Testmod Client"
+            source sourceSets.test
+            runDir "run/test"
+        }
+        testmodServer {
+            server()
+            name "Testmod Server"
+            source sourceSets.test
+            runDir "run/test_server"
+        }
+        server {
+            runDir "run/server"
+        }
+    }
+
+    runs.each {
+        it.vmArg("-Djsonpatcher.log.level=debug")
+    }
+}
+
+sourceSets.test {
+    runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.client.runtimeClasspath
+    compileClasspath += sourceSets.main.compileClasspath + sourceSets.client.compileClasspath
 }
 
 dependencies {
