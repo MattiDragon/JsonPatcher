@@ -22,6 +22,6 @@ jobs:
 #      modrinth-id: ""
 #      curseforge-id: ""
       jitpack-safe-version: true
-    secrets:
-      modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-      curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+#    secrets:
+#      modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+#      curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
