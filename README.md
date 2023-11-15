@@ -1,4 +1,9 @@
 # JsonPatcher
+[![Badge showing the amount of downloads on modrinth](https://img.shields.io/badge/dynamic/json?color=2d2d2d&colorA=5da545&label=&suffix=%20downloads%20&query=downloads&url=https://api.modrinth.com/v2/project/qlXnlZLG&style=flat&logo=modrinth&logoColor=2d2d2d)](https://modrinth.com/mod/jsonpatcher)
+[![Badge showing the amount of downloads on curseforge](https://img.shields.io/badge/dynamic/json?query=value&url=https://img.shields.io/curseforge/dt/936929.json&label=&logo=curseforge&color=2d2d2d&style=flat&labelColor=F16436&logoColor=2d2d2d&suffix=%20downloads)](https://www.curseforge.com/minecraft/mc-mods/jsonpatcher)
+[![Badge linking to issues on github](https://img.shields.io/badge/dynamic/json?query=value&url=https://img.shields.io/github/issues-raw/mattidragon/jsonpatcher.json&label=&logo=github&color=2d2d2d&style=flat&labelColor=6e5494&logoColor=2d2d2d&suffix=%20issues)](https://github.com/MattiDragon/jsonpatcher/issues)
+[![Badge linking to support on discord](https://img.shields.io/discord/760524772189798431?label=&logo=discord&color=2d2d2d&style=flat&labelColor=5865f2&logoColor=2d2d2d)](https://discord.gg/26T5KK2PBv)
+
 JsonPatcher is a mod that allows you to modify json files in datapacks and resourcepacks without overriding them.
 This is primarily useful for mod developers and pack makers, but can also be used by players to modify their own packs.
 

@@ -1,20 +1,24 @@
 package io.github.mattidragon.jsonpatcher.lang.test;
 
-import io.github.mattidragon.jsonpatcher.lang.parse.SourceFile;
-import io.github.mattidragon.jsonpatcher.lang.parse.SourcePos;
-import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
+import io.github.mattidragon.jsonpatcher.lang.parse.*;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.expression.ValueExpression;
+import io.github.mattidragon.jsonpatcher.lang.runtime.function.PatchFunction;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.BlockStatement;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.UnnecessarySemicolonStatement;
 import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.LibraryBuilder;
 import org.junit.jupiter.api.AssertionFailureBuilder;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
 import java.util.function.Consumer;
+
+import static io.github.mattidragon.jsonpatcher.lang.parse.Parser.parseExpression;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestUtils {
     public static final SourceFile FILE = new SourceFile("test file", "00");
@@ -27,6 +31,43 @@ public class TestUtils {
 
     public static LibraryBuilder.FunctionContext createTestFunctionContext() {
         return new LibraryBuilder.FunctionContext(createTestContext(), POS);
+    }
+
+    public static void testCode(String code, Value expected) {
+        var result = Parser.parse(Lexer.lex(code, "test file").tokens());
+        if (!(result instanceof ParseResult.Success success)) {
+            var error = new RuntimeException("Expected successful parse");
+            ((ParseResult.Fail) result).errors().forEach(error::addSuppressed);
+            AssertionFailureBuilder.assertionFailure()
+                    .message("Expected successful parse")
+                    .cause(error)
+                    .buildAndThrow();
+            return;
+        }
+
+        var program = success.program();
+
+        var output = new Value[1];
+        var context = EvaluationContext.builder()
+                .debugConsumer(EMPTY_DEBUG_CONSUMER)
+                .variable("testResult", new Value.FunctionValue((PatchFunction.BuiltInPatchFunction) (ctx, args, pos) -> {
+                    output[0] = args.get(0);
+                    return Value.NullValue.NULL;
+                }))
+                .build();
+        program.execute(context);
+        Assertions.assertNotEquals(null, output[0], "testResult should be called");
+        assertEquals(expected, output[0]);
+    }
+
+    public static void testExpression(String code, Value expected) {
+        var expression = new Expression[1];
+        assertDoesNotThrow(() -> expression[0] = parseExpression(Lexer.lex(code, "test file").tokens()));
+        assertNotNull(expression[0]);
+
+        var context = createTestContext();
+        var result = expression[0].evaluate(context);
+        assertEquals(expected, result);
     }
 
     public static void assertEquals(Value expected, Value actual) {

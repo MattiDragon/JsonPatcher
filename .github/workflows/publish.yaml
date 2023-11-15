@@ -19,9 +19,9 @@ jobs:
     with:
       version-type: ${{ inputs.version-type }}
       minecraft-versions: ${{ inputs.minecraft-versions }}
-#      modrinth-id: ""
-#      curseforge-id: ""
+      modrinth-id: qlXnlZLG
+      curseforge-id: 936929
       jitpack-safe-version: true
-#    secrets:
-#      modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-#      curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+    secrets:
+      modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+      curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}

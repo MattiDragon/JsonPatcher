@@ -15,12 +15,12 @@ public class Lexer {
     private int currentLine = 1;
     private int currentColumn = 1;
 
-    public Lexer(String program, String filename) {
+    private Lexer(String program, String filename) {
         this.program = program;
         this.file = new SourceFile(filename, program);
     }
 
-    public Result lex() {
+    private Result lex() {
         while (hasNext()) {
             var c = next();
             if (c == ' ' || c == '\r' || c == '\n' || c == '\t') {
@@ -42,6 +42,10 @@ public class Lexer {
         return new Result(tokens);
     }
 
+    public static Result lex(String program, String filename) {
+        return new Lexer(program, filename).lex();
+    }
+
     private void skipComment() {
         while (hasNext() && peek() != '\n') {
             next();
@@ -53,16 +57,26 @@ public class Lexer {
         if (!success) throw error("Unable to parse token", 1);
     }
 
+    // TODO: Find a better way to deal with EOF in number parsing
     private void readNumber(char c) {
         var string = new StringBuilder();
         var beginPos = currentColumn - 1;
         string.append(c);
-        for (c = peek(); c >= '0' && c <= '9'; c = peek()) {
-            string.append(next());
-        }
-        if (peek() == '.') string.append(next());
-        for (c = peek(); c >= '0' && c <= '9'; c = peek()) {
-            string.append(next());
+        parse: {
+            if (!hasNext()) break parse;
+            for (c = peek(); c >= '0' && c <= '9'; c = peek()) {
+                string.append(next());
+                if (!hasNext()) break parse;
+            }
+
+            if (!hasNext()) break parse;
+            if (peek() == '.') string.append(next());
+
+            if (!hasNext()) break parse;
+            for (c = peek(); c >= '0' && c <= '9'; c = peek()) {
+                string.append(next());
+                if (!hasNext()) break parse;
+            }
         }
 
         var token = new Token.NumberToken(Double.parseDouble(string.toString()));

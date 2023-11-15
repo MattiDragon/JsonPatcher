@@ -34,9 +34,9 @@ public class PatchLoader {
 
                 try {
                     var code = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                    var lexResult = new Lexer(code, id.toString()).lex();
+                    var lexResult = Lexer.lex(code, id.toString());
 
-                    var parseResult = new Parser(lexResult.tokens()).program();
+                    var parseResult = Parser.parse(lexResult.tokens());
 
                     if (parseResult instanceof ParseResult.Fail fail) {
                         if (Config.MANAGER.get().useJavaStacktrace()) {

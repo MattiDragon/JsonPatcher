@@ -160,6 +160,10 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
                 && second instanceof Value.StringValue string2) {
                 return string1.value().equals(string2.value());
             }
+            if (first instanceof Value.BooleanValue boolean1
+                && second instanceof Value.BooleanValue boolean2) {
+                return boolean1.value() == boolean2.value();
+            }
             if (first instanceof Value.ArrayValue array1
                 && second instanceof Value.ArrayValue array2) {
                 return array1.value().equals(array2.value());
@@ -167,6 +171,10 @@ public record BinaryExpression(Expression first, Expression second, Operator op,
             if (first instanceof Value.ObjectValue object1
                 && second instanceof Value.ObjectValue object2) {
                 return object1.value().equals(object2.value());
+            }
+            if (first instanceof Value.FunctionValue function1
+                && second instanceof Value.FunctionValue function2) {
+                return function1 == function2;
             }
             return false;
         }

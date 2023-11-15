@@ -5,7 +5,7 @@ import io.github.mattidragon.jsonpatcher.lang.LangConfig;
 public class TestLangConfig implements LangConfig {
     @Override
     public boolean useJavaStacktrace() {
-        return false;
+        return true;
     }
 
     @Override

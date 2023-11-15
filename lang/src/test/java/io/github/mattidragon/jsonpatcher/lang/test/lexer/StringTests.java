@@ -13,8 +13,7 @@ public class StringTests {
         var program = """
                 "\\u0041"
                 """;
-        var lexer = new Lexer(program, "test file");
-        var tokens = lexer.lex().tokens();
+        var tokens = Lexer.lex(program, "test file").tokens();
         assertEquals(1, tokens.size(), "Expected 1 token");
         var token = tokens.get(0);
         assertTrue(token instanceof PositionedToken.StringToken, "Expected StringToken");
@@ -26,8 +25,7 @@ public class StringTests {
         var program = """
                 "\\u0gggg"
                 """;
-        var lexer = new Lexer(program, "test file");
-        assertThrowsExactly(Lexer.LexException.class, lexer::lex, "Expected exception from invalid escape");
+        assertThrowsExactly(Lexer.LexException.class, () -> Lexer.lex(program, "test file"), "Expected exception from invalid escape");
     }
 
     @Test
@@ -35,8 +33,7 @@ public class StringTests {
         var program = """
                 true
                 """;
-        var lexer = new Lexer(program, "test file");
-        var tokens = lexer.lex().tokens();
+        var tokens = Lexer.lex(program, "test file").tokens();
         assertEquals(1, tokens.size(), "Expected 1 token");
         var token = tokens.get(0);
         assertTrue(token instanceof PositionedToken.KeywordToken, "Expected KeywordToken");
@@ -48,8 +45,7 @@ public class StringTests {
         var program = """
                 'true'
                 """;
-        var lexer = new Lexer(program, "test file");
-        var tokens = lexer.lex().tokens();
+        var tokens = Lexer.lex(program, "test file").tokens();
         assertEquals(1, tokens.size(), "Expected 1 token");
         var token = tokens.get(0);
         assertTrue(token instanceof PositionedToken.WordToken, "Expected WordToken");

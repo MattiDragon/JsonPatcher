@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.lang.parse;
 
 import io.github.mattidragon.jsonpatcher.lang.PositionedException;
-import io.github.mattidragon.jsonpatcher.lang.parse.parselet.PostfixParselet;
+import io.github.mattidragon.jsonpatcher.lang.parse.parselet.PostfixParser;
 import io.github.mattidragon.jsonpatcher.lang.parse.parselet.Precedence;
 import io.github.mattidragon.jsonpatcher.lang.parse.parselet.PrefixParser;
 import io.github.mattidragon.jsonpatcher.lang.parse.parselet.StatementParser;
@@ -11,6 +11,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.expression.Expression;
 import io.github.mattidragon.jsonpatcher.lang.runtime.statement.Statement;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +22,32 @@ public class Parser {
     private final PatchMetadata metadata;
     private int current = 0;
 
-    public Parser(List<PositionedToken<?>> tokens) {
+    private Parser(List<PositionedToken<?>> tokens) {
         this.tokens = tokens;
         this.metadata = new PatchMetadata();
+    }
+
+    public static ParseResult parse(List<PositionedToken<?>> tokens) {
+        return new Parser(tokens).program();
+    }
+
+    @VisibleForTesting
+    public static Expression parseExpression(List<PositionedToken<?>> tokens) throws ParseException {
+        var parser = new Parser(tokens);
+        var errors = parser.errors;
+        Expression expression = null;
+        try {
+            expression = parser.expression();
+        } catch (EndParsingException ignored) {
+        } catch (ParseException e) {
+            errors.add(e);
+        }
+        if (!errors.isEmpty()) {
+            var error = new RuntimeException("Expected successful parse");
+            errors.forEach(error::addSuppressed);
+            throw error;
+        }
+        return expression;
     }
 
     public ParseResult program() {
@@ -65,13 +89,11 @@ public class Parser {
             left = new ErrorExpression(e);
         }
 
-        while (true) {
-            var postfix = PostfixParselet.get(peek());
-            if (postfix == null) break;
-            if (precedence.ordinal() >= postfix.precedence().ordinal()) break;
-            var postfixToken = next();
+        while (hasNext()) {
             try {
-                left = postfix.parse(this, left, postfixToken);
+                var postfix = PostfixParser.get(this, precedence, left);
+                if (postfix == null) break;
+                left = postfix;
             } catch (ParseException e) {
                 errors.add(e);
                 left = new ErrorExpression(e);
