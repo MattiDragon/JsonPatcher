@@ -15,12 +15,12 @@ import java.util.concurrent.CompletableFuture;
 public class MinecraftClientMixin {
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/ReloadableResourceManagerImpl;reload(Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Ljava/util/concurrent/CompletableFuture;Ljava/util/List;)Lnet/minecraft/resource/ResourceReload;"))
     private void setReloadDescriptionForInitialReload(RunArgs args, CallbackInfo ci) {
-        ReloadDescription.CURRENT.set(new ReloadDescription("resourcepacks", error -> {}));
+        ReloadDescription.CURRENT.set(new ReloadDescription("resourcepacks", "assets", error -> {}));
     }
 
     @Inject(method = "reloadResources(Z)Ljava/util/concurrent/CompletableFuture;", at = @At("HEAD"))
     private void setReloadDescription(boolean force, CallbackInfoReturnable<CompletableFuture<Void>> cir) {
-        ReloadDescription.CURRENT.set(new ReloadDescription("resourcepacks", error -> {
+        ReloadDescription.CURRENT.set(new ReloadDescription("resourcepacks", "assets", error -> {
             if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.sendMessage(error, false);
             }

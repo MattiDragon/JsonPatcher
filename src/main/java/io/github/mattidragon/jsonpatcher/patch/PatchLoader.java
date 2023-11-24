@@ -4,7 +4,6 @@ import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.ValueOps;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.lang.parse.Lexer;
-import io.github.mattidragon.jsonpatcher.lang.parse.ParseResult;
 import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -38,7 +37,7 @@ public class PatchLoader {
 
                     var parseResult = Parser.parse(lexResult.tokens());
 
-                    if (parseResult instanceof ParseResult.Fail fail) {
+                    if (parseResult instanceof Parser.Result.Fail fail) {
                         if (Config.MANAGER.get().useJavaStacktrace()) {
                             var error = new RuntimeException();
                             fail.errors().forEach(error::addSuppressed);
@@ -51,7 +50,7 @@ public class PatchLoader {
                         }
                         errorCount.incrementAndGet();
                     } else {
-                        var result = (ParseResult.Success) parseResult;
+                        var result = (Parser.Result.Success) parseResult;
                         var meta = result.metadata();
                         if (meta.has("enabled") && !meta.getBoolean("enabled")) {
                             return;

@@ -1,9 +1,7 @@
 package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
+import com.google.gson.*;
 import com.google.gson.stream.JsonWriter;
 import io.github.mattidragon.jsonpatcher.GsonConverter;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
@@ -12,19 +10,27 @@ import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import oshi.util.FileUtil;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class PatchingContext {
     private static final ExecutorService PATCHER = new ThreadPoolExecutor(0,
@@ -36,6 +42,7 @@ public class PatchingContext {
 
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
     private static final Gson GSON = new Gson();
+    private static final Gson DUMP_GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final ReloadDescription description;
 
     private boolean loaded = false;
@@ -73,6 +80,7 @@ public class PatchingContext {
     public void load(ResourceManager manager, Executor executor) {
         if (loaded) throw new IllegalStateException("Already loaded");
         patches = new PatchStorage(PatchLoader.load(executor, manager));
+        cleanDump();
         JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload '{}'", patches.size(), description.name());
         loaded = true;
     }
@@ -172,6 +180,8 @@ public class PatchingContext {
             GSON.toJson(json, new JsonWriter(writer));
             writer.close();
 
+            dumpIfEnabled(id, context, json);
+
             JsonPatcher.RELOAD_LOGGER.debug("Patching {}", id);
             return () -> new ByteArrayInputStream(out.toByteArray());
         } catch (JsonParseException | IOException e) {
@@ -183,6 +193,54 @@ public class PatchingContext {
         }
     }
 
+    private static void dumpIfEnabled(Identifier id, PatchingContext context, JsonElement patchedData) {
+        if (Config.MANAGER.get().dumpPatchedFiles() && context.description.dumpPath() != null) {
+            try {
+                var file = getDumpPath(context.description.dumpPath())
+                        .resolve(Path.of(id.getNamespace(), id.getPath().split("/")));
+                Files.createDirectories(file.getParent());
+                try (var writer = new OutputStreamWriter(Files.newOutputStream(file))) {
+                    DUMP_GSON.toJson(patchedData, writer);
+                }
+            } catch (IOException e) {
+                JsonPatcher.RELOAD_LOGGER.error("Failed to dump patched file {}", id, e);
+            }
+        }
+    }
+
+    private void cleanDump() {
+        if (description.dumpPath() == null) return;
+
+        var file = getDumpPath(description.dumpPath());
+        if (Files.exists(file)) {
+            var errors = new ArrayList<IOException>();
+            try (var stream = Files.walk(file)) {
+                stream.sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException e) {
+                                errors.add(e);
+                            }
+                        });
+                if (!errors.isEmpty()) {
+                    var error = new IOException("Errors while deleting dumped files");
+                    errors.forEach(error::addSuppressed);
+                    throw error;
+                }
+            } catch (IOException e) {
+                JsonPatcher.RELOAD_LOGGER.error("Failed to clean dump directory", e);
+            }
+        }
+    }
+
+    private static Path getDumpPath(String dumpLocation) {
+        return FabricLoader.getInstance().getGameDir()
+                .resolve("jsonpatcher-dump")
+                .resolve(dumpLocation);
+    }
+
     private record Stored(PatchingContext context, int count) {
+
     }
 }

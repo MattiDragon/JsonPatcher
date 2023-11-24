@@ -23,7 +23,7 @@ public class SaveLoadingMixin {
                                             Executor applyExecutor,
                                             CallbackInfoReturnable<CompletableFuture<R>> cir,
                                             @Local LifecycledResourceManager lifecycledResourceManager) {
-        var context = new PatchingContext(new ReloadDescription("dynamic registries", error -> {}));
+        var context = new PatchingContext(new ReloadDescription("dynamic registries", "data (dynreg)", error -> {}));
         context.load(lifecycledResourceManager, prepareExecutor);
         PatchingContext.set(context);
     }
@@ -45,6 +45,6 @@ public class SaveLoadingMixin {
                                                              Executor prepareExecutor,
                                                              Executor applyExecutor,
                                                              CallbackInfoReturnable<CompletableFuture<R>> cir) {
-        ReloadDescription.CURRENT.set(new ReloadDescription("datapacks (initial)", error -> {}));
+        ReloadDescription.CURRENT.set(new ReloadDescription("datapacks (initial)", "data", error -> {}));
     }
 }

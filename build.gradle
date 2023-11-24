@@ -39,14 +39,24 @@ loom {
         }
     }
 
+    mods.register("jsonpatcher_testmod") {
+        sourceSet sourceSets.test
+    }
+    mods.register("jsonpatcher") {
+        sourceSet sourceSets.main
+        sourceSet sourceSets.client
+    }
+
     runs.each {
         it.vmArg("-Djsonpatcher.log.level=debug")
     }
 }
 
 sourceSets.test {
-    runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.client.runtimeClasspath
-    compileClasspath += sourceSets.main.compileClasspath + sourceSets.client.compileClasspath
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+    runtimeClasspath += sourceSets.client.runtimeClasspath
+    compileClasspath += sourceSets.main.compileClasspath
+    compileClasspath += sourceSets.client.compileClasspath
 }
 
 dependencies {
@@ -56,7 +66,7 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
-    include(implementation(project(":lang")))
+    include(implementation("com.github.mattidragon:JsonPatcherLang:$lang_version"))
 
     // Mixin Extras
     include(modImplementation("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))
@@ -67,6 +77,9 @@ dependencies {
     annotationProcessor clientAnnotationProcessor("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
     modImplementation include("dev.isxander.yacl:yet-another-config-lib-fabric:$yacl_version")
     modCompileOnly(modLocalRuntime("com.terraformersmc:modmenu:$modmenu_version"))
+
+    // Make testmod depend on the client source set. Main is handled by gradle automatically.
+    testImplementation sourceSets.client.output
 }
 
 processResources {

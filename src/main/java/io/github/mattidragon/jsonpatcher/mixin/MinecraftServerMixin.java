@@ -21,6 +21,6 @@ public abstract class MinecraftServerMixin {
 
     @Inject(method = "method_29437", at = @At("HEAD"))
     private void setReloadDescription(DynamicRegistryManager.Immutable immutable, ImmutableList<ResourcePack> resourcePacks, CallbackInfoReturnable<CompletionStage<DataPackContents>> cir) {
-        ReloadDescription.CURRENT.set(new ReloadDescription("datapacks", error -> getPlayerManager().broadcast(error, false)));
+        ReloadDescription.CURRENT.set(new ReloadDescription("datapacks", "data", error -> getPlayerManager().broadcast(error, false)));
     }
 }
