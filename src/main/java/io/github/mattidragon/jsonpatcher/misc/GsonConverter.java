@@ -1,4 +1,4 @@
-package io.github.mattidragon.jsonpatcher;
+package io.github.mattidragon.jsonpatcher.misc;
 
 import com.google.common.collect.Sets;
 import com.google.gson.*;

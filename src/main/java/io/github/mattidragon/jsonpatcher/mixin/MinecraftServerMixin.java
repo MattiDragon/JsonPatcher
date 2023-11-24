@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.mixin;
 
 import com.google.common.collect.ImmutableList;
-import io.github.mattidragon.jsonpatcher.ReloadDescription;
+import io.github.mattidragon.jsonpatcher.misc.ReloadDescription;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.resource.ResourcePack;
 import net.minecraft.server.DataPackContents;

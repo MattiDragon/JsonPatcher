@@ -20,7 +20,7 @@
 };
 
 # Optional tag for toggling a patch on or off
-@enabled false;
+@enabled true;
 
 # Variables, declared with var or val (val is immutable)
 val sky_color = $effects.sky_color; # Access contents of the target file using $. The dot is optional for top-level elements

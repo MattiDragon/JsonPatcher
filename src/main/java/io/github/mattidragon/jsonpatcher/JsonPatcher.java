@@ -1,6 +1,7 @@
 package io.github.mattidragon.jsonpatcher;
 
 import io.github.mattidragon.jsonpatcher.config.Config;
+import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.Level;
@@ -10,7 +11,11 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class JsonPatcher implements ModInitializer {
+    private static final Set<String> SUPPORTED_VERSIONS = new HashSet<>(Set.of("1"));
     public static final String MOD_ID = "jsonpatcher";
     public static final Logger MAIN_LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final String RELOAD_LOGGER_NAME = "JsonPatcher Reload";
@@ -27,6 +32,7 @@ public class JsonPatcher implements ModInitializer {
     @Override
     public void onInitialize() {
         Config.MANAGER.get();
+        DumpManager.cleanDump("");
     }
 
     /**
@@ -59,4 +65,7 @@ public class JsonPatcher implements ModInitializer {
         }
     }
 
+    public static boolean isSupportedVersion(String version) {
+        return SUPPORTED_VERSIONS.contains(version);
+    }
 }

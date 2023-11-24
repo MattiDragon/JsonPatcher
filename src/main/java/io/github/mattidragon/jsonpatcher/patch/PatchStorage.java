@@ -119,7 +119,7 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
             throw new EvaluationException("Cannot locate library '%s'".formatted(libraryName), importPos);
         }
 
-        PatchingContext.runPatch(userLib, LIBRARY_APPLICATOR.get(), e -> {
+        Patcher.runPatch(userLib, LIBRARY_APPLICATOR.get(), e -> {
             if (e instanceof EvaluationException evaluationException) {
                 throw new EvaluationException("Failed to load library %s".formatted(libId), importPos, evaluationException);
             }

@@ -1,6 +1,6 @@
 package io.github.mattidragon.jsonpatcher.client.mixin;
 
-import io.github.mattidragon.jsonpatcher.ReloadDescription;
+import io.github.mattidragon.jsonpatcher.misc.ReloadDescription;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import org.spongepowered.asm.mixin.Mixin;

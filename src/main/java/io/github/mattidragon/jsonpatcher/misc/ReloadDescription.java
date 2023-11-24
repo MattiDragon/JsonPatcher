@@ -1,4 +1,4 @@
-package io.github.mattidragon.jsonpatcher;
+package io.github.mattidragon.jsonpatcher.misc;
 
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;

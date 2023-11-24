@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import io.github.mattidragon.jsonpatcher.ReloadDescription;
+import io.github.mattidragon.jsonpatcher.misc.ReloadDescription;
 import io.github.mattidragon.jsonpatcher.patch.PatchingContext;
 import net.minecraft.resource.LifecycledResourceManager;
 import net.minecraft.server.SaveLoading;

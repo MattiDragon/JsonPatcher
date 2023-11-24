@@ -1,4 +1,4 @@
-package io.github.mattidragon.jsonpatcher;
+package io.github.mattidragon.jsonpatcher.misc;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.DataResult;
