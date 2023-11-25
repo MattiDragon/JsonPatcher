@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -163,7 +164,8 @@ public class Patcher {
         var metaPack = packAccess.jsonpatcher$getMetaPatchPack();
         metaPack.clear();
 
-        var metaPatches = patches.getMetaPatches();
+        var metaPatches = new ArrayList<>(patches.getMetaPatches());
+        metaPatches.sort(Comparator.comparing(Patch::priority));
         var lib = new MetaPatchLibrary(manager);
         var errors = new ArrayList<RuntimeException>();
 

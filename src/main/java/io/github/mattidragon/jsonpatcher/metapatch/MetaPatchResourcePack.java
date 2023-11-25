@@ -2,14 +2,16 @@ package io.github.mattidragon.jsonpatcher.metapatch;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import net.minecraft.SharedConstants;
 import net.minecraft.resource.*;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.util.*;
 import java.util.function.Predicate;
 

@@ -109,6 +109,13 @@ public class PatchLoader {
             target = List.of();
         }
 
-        return new Patch(result.program(), id, target, meta.has("metapatch"));
+        double priority;
+        if (meta.has("priority")) {
+            priority = meta.getNumber("priority");
+        } else {
+            priority = 0;
+        }
+
+        return new Patch(result.program(), id, target, priority, meta.has("metapatch"));
     }
 }

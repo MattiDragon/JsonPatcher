@@ -97,12 +97,17 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
 
     public Collection<Patch> getPatches(Identifier id) {
         // Use a set to avoid duplicates from patches with multiple targets. Also allows us to not store which target put a patch in a bucket
-        var patches = new HashSet<>(alwaysActivePatches);
-        namespacePatches.entries().stream().filter(entry -> entry.getKey().equals(id.getNamespace())).map(Map.Entry::getValue).forEach(patches::add);
-        pathPatches.entries().stream().filter(entry -> entry.getKey().equals(id.getPath())).map(Map.Entry::getValue).forEach(patches::add);
-        directIdPatches.entries().stream().filter(entry -> entry.getKey().equals(id)).map(Map.Entry::getValue).forEach(patches::add);
-        nonTrivialPatches.stream().filter(patch -> patch.target().stream().anyMatch(target -> target.test(id))).forEach(patches::add);
-        return patches;
+        var patchSet = new HashSet<>(alwaysActivePatches);
+        namespacePatches.entries().stream().filter(entry -> entry.getKey().equals(id.getNamespace())).map(Map.Entry::getValue).forEach(patchSet::add);
+        pathPatches.entries().stream().filter(entry -> entry.getKey().equals(id.getPath())).map(Map.Entry::getValue).forEach(patchSet::add);
+        directIdPatches.entries().stream().filter(entry -> entry.getKey().equals(id)).map(Map.Entry::getValue).forEach(patchSet::add);
+        nonTrivialPatches.stream().filter(patch -> patch.target().stream().anyMatch(target -> target.test(id))).forEach(patchSet::add);
+
+        // Sort patches
+        var patchList = new ArrayList<>(patchSet);
+        patchList.sort(Comparator.comparingDouble(Patch::priority));
+
+        return patchList;
     }
 
     public Collection<Patch> getMetaPatches() {

@@ -1,0 +1,4 @@
+@version "1";
+@target "minecraft:recipes/golden_apple.json";
+
+$result.item = "minecraft:enchanted_golden_apple";

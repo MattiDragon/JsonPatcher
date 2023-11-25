@@ -5,5 +5,5 @@ import net.minecraft.util.Identifier;
 
 import java.util.List;
 
-public record Patch(Program program, Identifier id, List<PatchTarget> target, boolean isMeta) {
+public record Patch(Program program, Identifier id, List<PatchTarget> target, double priority, boolean isMeta) {
 }
