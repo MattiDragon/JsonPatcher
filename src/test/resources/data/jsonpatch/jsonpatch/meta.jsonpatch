@@ -26,4 +26,4 @@ metapatch.addFile("minecraft:recipes/test.json", {
     }
 });
 
-metapatch.addFile("minecraft:loot_tables/blocks/andesite.json", metaPatch.getFile("minecraft:loot_tables/blocks/stone.json"));
+metapatch.addFile("minecraft:loot_tables/blocks/andesite.json", metapatch.getFile("minecraft:loot_tables/blocks/stone.json"));
