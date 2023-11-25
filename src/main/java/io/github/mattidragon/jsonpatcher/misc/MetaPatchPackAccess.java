@@ -1,7 +1,7 @@
 package io.github.mattidragon.jsonpatcher.misc;
 
-import io.github.mattidragon.jsonpatcher.metapatch.MetaPatchResourcePack;
+import io.github.mattidragon.jsonpatcher.metapatch.MetapatchResourcePack;
 
 public interface MetaPatchPackAccess {
-    MetaPatchResourcePack jsonpatcher$getMetaPatchPack();
+    MetapatchResourcePack jsonpatcher$getMetaPatchPack();
 }

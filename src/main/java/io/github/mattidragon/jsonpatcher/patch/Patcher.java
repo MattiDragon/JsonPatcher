@@ -11,7 +11,7 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.LibraryBuilder;
-import io.github.mattidragon.jsonpatcher.metapatch.MetaPatchLibrary;
+import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.GsonConverter;
 import io.github.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
@@ -126,7 +126,7 @@ public class Patcher {
         builder.variable("_target", settings.targetAsValue());
         builder.variable("_isMetaPatch", settings.isMetaPatch());
         if (settings.isMetaPatch()) {
-            builder.variable("metaPatch", new LibraryBuilder(MetaPatchLibrary.class, settings.metaPatchLibrary).build());
+            builder.variable("metaPatch", new LibraryBuilder(MetapatchLibrary.class, settings.metaPatchLibrary).build());
         }
         return builder.build();
     }
@@ -166,7 +166,7 @@ public class Patcher {
 
         var metaPatches = new ArrayList<>(patches.getMetaPatches());
         metaPatches.sort(Comparator.comparing(Patch::priority));
-        var lib = new MetaPatchLibrary(manager);
+        var lib = new MetapatchLibrary(manager);
         var errors = new ArrayList<RuntimeException>();
 
         try {
@@ -197,7 +197,7 @@ public class Patcher {
         lib.apply(metaPack);
     }
 
-    public record Settings(@Nullable String target, boolean isLibrary, @Nullable MetaPatchLibrary metaPatchLibrary) {
+    public record Settings(@Nullable String target, boolean isLibrary, @Nullable MetapatchLibrary metaPatchLibrary) {
         public static Builder builder() {
             return new Builder();
         }
@@ -213,7 +213,7 @@ public class Patcher {
         public static class Builder {
             private @Nullable String target;
             private boolean isLibrary;
-            private @Nullable MetaPatchLibrary metaPatchLibrary;
+            private @Nullable MetapatchLibrary metaPatchLibrary;
 
             public Builder target(String target) {
                 this.target = target;
@@ -225,7 +225,7 @@ public class Patcher {
                 return this;
             }
 
-            public Builder metaPatchLibrary(MetaPatchLibrary metaPatchLibrary) {
+            public Builder metaPatchLibrary(MetapatchLibrary metaPatchLibrary) {
                 this.metaPatchLibrary = metaPatchLibrary;
                 return this;
             }

@@ -10,14 +10,14 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class MetaPatchSingleResourceManager implements ResourceManager {
+public class MetapatchSingleResourceManager implements ResourceManager {
     private final Identifier id;
     @Nullable
     private final ResourceManager delegate;
     private final boolean delete;
-    private final MetaPatchResourcePack metaPatchPack;
+    private final MetapatchResourcePack metaPatchPack;
 
-    public MetaPatchSingleResourceManager(Identifier id, @Nullable ResourceManager delegate, MetaPatchResourcePack metaPatchPack) {
+    public MetapatchSingleResourceManager(Identifier id, @Nullable ResourceManager delegate, MetapatchResourcePack metaPatchPack) {
         this.id = id;
         this.delegate = delegate;
         this.metaPatchPack = metaPatchPack;

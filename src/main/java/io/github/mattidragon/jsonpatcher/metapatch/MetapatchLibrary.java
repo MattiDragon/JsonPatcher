@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public class MetaPatchLibrary {
+public class MetapatchLibrary {
     @DontBind
     private final Map<Identifier, JsonObject> addedFiles = new HashMap<>();
     @DontBind
@@ -26,12 +26,12 @@ public class MetaPatchLibrary {
     @DontBind
     private final ResourceManager resourceManager;
 
-    public MetaPatchLibrary(ResourceManager resourceManager) {
+    public MetapatchLibrary(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
     }
 
     @DontBind
-    public void apply(MetaPatchResourcePack metaPack) {
+    public void apply(MetapatchResourcePack metaPack) {
         metaPack.set(addedFiles, deletedFiles);
     }
 
@@ -62,7 +62,7 @@ public class MetaPatchLibrary {
             var resource = resourceManager.getResource(id);
             if (resource.isPresent()) {
                 try {
-                    return GsonConverter.fromGson(MetaPatchResourcePack.GSON.fromJson(new InputStreamReader(resource.get().getInputStream()), JsonObject.class));
+                    return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.get().getInputStream()), JsonObject.class));
                 } catch (IllegalStateException e) {
                     throw new EvaluationException("Failed to convert from json: " + e.getMessage(), context.callPos());
                 } catch (IOException e) {

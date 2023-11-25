@@ -15,7 +15,7 @@ import java.io.OutputStreamWriter;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class MetaPatchResourcePack implements ResourcePack {
+public class MetapatchResourcePack implements ResourcePack {
     public static final Gson GSON = new Gson();
 
     public final ResourceType type;
@@ -23,7 +23,7 @@ public class MetaPatchResourcePack implements ResourcePack {
     private final Set<Identifier> deletedFiles = new HashSet<>();
     private final Set<String> namespaces = new HashSet<>();
 
-    public MetaPatchResourcePack(ResourceType type) {
+    public MetapatchResourcePack(ResourceType type) {
         this.type = type;
     }
 
