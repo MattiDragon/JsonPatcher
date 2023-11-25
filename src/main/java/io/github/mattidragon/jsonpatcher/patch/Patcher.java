@@ -124,9 +124,9 @@ public class Patcher {
         builder.debugConsumer(value -> JsonPatcher.RELOAD_LOGGER.info("Debug from {}: {}", patchId, value));
         builder.variable("_isLibrary", settings.isLibrary());
         builder.variable("_target", settings.targetAsValue());
-        builder.variable("_isMetaPatch", settings.isMetaPatch());
+        builder.variable("_isMetapatch", settings.isMetaPatch());
         if (settings.isMetaPatch()) {
-            builder.variable("metaPatch", new LibraryBuilder(MetapatchLibrary.class, settings.metaPatchLibrary).build());
+            builder.variable("metapatch", new LibraryBuilder(MetapatchLibrary.class, settings.metaPatchLibrary).build());
         }
         return builder.build();
     }
