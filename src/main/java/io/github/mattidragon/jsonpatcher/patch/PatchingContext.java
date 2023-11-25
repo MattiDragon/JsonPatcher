@@ -12,6 +12,7 @@ import java.util.concurrent.*;
 
 public class PatchingContext {
     private static final ThreadLocal<Stored> ACTIVE = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> DISABLED = ThreadLocal.withInitial(() -> false);
 
     private final ReloadDescription description;
     private boolean loaded = false;
@@ -19,6 +20,10 @@ public class PatchingContext {
 
     public PatchingContext(ReloadDescription description) {
         this.description = description;
+    }
+
+    public static Enabler disablePatching() {
+        return new Enabler();
     }
 
     public static PatchingContext get() {
@@ -55,11 +60,15 @@ public class PatchingContext {
         JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload '{}'", patches.size(), description.name());
 
         patcher = new Patcher(description, patches);
+        patcher.runMetaPatches(manager, executor);
         loaded = true;
     }
 
     public static InputSupplier<InputStream> patchInputStream(Identifier id, InputSupplier<InputStream> stream) {
         if (!id.getPath().endsWith(".json")) return stream;
+
+        if (DISABLED.get()) return stream;
+
         var context = get();
         if (context == null) {
             JsonPatcher.RELOAD_LOGGER.warn("No state set when patching {}", id, new Throwable("Stacktrace"));
@@ -71,5 +80,16 @@ public class PatchingContext {
     }
 
     private record Stored(PatchingContext context, int count) {
+    }
+
+    public static class Enabler implements AutoCloseable {
+        private Enabler() {
+            DISABLED.set(true);
+        }
+
+        @Override
+        public void close() {
+            DISABLED.set(false);
+        }
     }
 }

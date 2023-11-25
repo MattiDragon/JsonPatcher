@@ -41,6 +41,9 @@ public class PatchLoader {
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         if (errorCount.get() > 0) {
             JsonPatcher.MAIN_LOGGER.error("Failed to load {} patch(es). See logs/jsonpatch.log for details", errorCount.get());
+            if (Config.MANAGER.get().abortOnFailure()) {
+                throw new IllegalStateException("Failed to load %s patch(es). See logs/jsonpatch.log for details".formatted(errorCount.get()));
+            }
         }
         return new PatchStorage(patches);
     }
@@ -106,6 +109,6 @@ public class PatchLoader {
             target = List.of();
         }
 
-        return new Patch(result.program(), id, target);
+        return new Patch(result.program(), id, target, meta.has("metapatch"));
     }
 }

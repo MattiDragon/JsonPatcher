@@ -1,0 +1,29 @@
+@version "1";
+@metapatch null;
+
+metaPatch.deleteFile("minecraft:recipes/oak_sign.json");
+metaPatch.deleteFile("minecraft:recipes/spruce_sign.json");
+
+metaPatch.addFile("minecraft:recipes/test.json", {
+    type: "crafting_shaped",
+    category: "redstone",
+    pattern: [
+        "###",
+        "XXX",
+        "###"
+    ],
+    key: {
+        '#': {
+            item: "minecraft:oak_planks"
+        },
+        'X': {
+            item: "minecraft:stick"
+        }
+    },
+    result: {
+        item: "minecraft:stick",
+        count: 3
+    }
+});
+
+metaPatch.addFile("minecraft:loot_tables/blocks/andesite.json", metaPatch.getFile("minecraft:loot_tables/blocks/stone.json"));

@@ -13,7 +13,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-
 public class PatchStorage implements EvaluationContext.LibraryLocator {
     private static final ThreadLocal<ExecutorService> LIBRARY_APPLICATOR = ThreadLocal.withInitial(() -> Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Library Builder (%s)").build()));
 
@@ -27,6 +26,7 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
     private final List<Patch> alwaysActivePatches = new ArrayList<>();
 
     private final Map<Identifier, Patch> libraries = new HashMap<>();
+    private final List<Patch> metaPatches = new ArrayList<>();
 
     /*
     Group 1: namespaced patches
@@ -45,6 +45,8 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
     */
     public PatchStorage(List<Patch> patches) {
         for (var patch : patches) {
+            if (patch.isMeta()) metaPatches.add(patch);
+
             patch.target().forEach(target -> {
                 var simplePath = target.path().map(PatchTarget.Path::path).flatMap(either -> either.left());
                 var splitPath = target.path().map(PatchTarget.Path::path).flatMap(either -> either.right());
@@ -103,6 +105,10 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
         return patches;
     }
 
+    public Collection<Patch> getMetaPatches() {
+        return metaPatches;
+    }
+
     public int size() {
         return libraries.size();
     }
@@ -124,6 +130,6 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
                 throw new EvaluationException("Failed to load library %s".formatted(libId), importPos, evaluationException);
             }
             throw new RuntimeException("Failed to load library %s".formatted(libId), e);
-        }, this, libraryObject, null);
+        }, this, libraryObject, Patcher.Settings.builder().library().build());
     }
 }
