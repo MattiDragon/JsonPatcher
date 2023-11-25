@@ -5,6 +5,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -18,8 +19,8 @@ public class MinecraftClientMixin {
         ReloadDescription.CURRENT.set(new ReloadDescription("resourcepacks", "assets", error -> {}));
     }
 
-    @Inject(method = "reloadResources(Z)Ljava/util/concurrent/CompletableFuture;", at = @At("HEAD"))
-    private void setReloadDescription(boolean force, CallbackInfoReturnable<CompletableFuture<Void>> cir) {
+    @Inject(method = "reloadResources(ZLnet/minecraft/client/MinecraftClient$LoadingContext;)Ljava/util/concurrent/CompletableFuture;", at = @At("HEAD"))
+    private void setReloadDescription(boolean force, @Coerce Object loadingContext, CallbackInfoReturnable<CompletableFuture<Void>> cir) {
         ReloadDescription.CURRENT.set(new ReloadDescription("resourcepacks", "assets", error -> {
             if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.sendMessage(error, false);

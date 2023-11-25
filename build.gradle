@@ -76,7 +76,6 @@ dependencies {
     // Config
     modImplementation include("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
     annotationProcessor clientAnnotationProcessor("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
-    modImplementation include("dev.isxander.yacl:yet-another-config-lib-fabric:$yacl_version")
     modCompileOnly(modLocalRuntime("com.terraformersmc:modmenu:$modmenu_version"))
 
     // Make testmod depend on the client source set. Main is handled by gradle automatically.
