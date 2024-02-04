@@ -1,5 +1,5 @@
 @version "1";
-@metapatch null;
+@metapatch;
 
 metapatch.deleteFile("minecraft:recipes/oak_sign.json");
 metapatch.deleteFile("minecraft:recipes/spruce_sign.json");
