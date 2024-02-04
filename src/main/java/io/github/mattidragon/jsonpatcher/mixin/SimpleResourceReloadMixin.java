@@ -9,7 +9,6 @@ import net.minecraft.resource.ResourceReload;
 import net.minecraft.resource.ResourceReloader;
 import net.minecraft.resource.SimpleResourceReload;
 import net.minecraft.util.Unit;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-@Debug(export = true)
 @Mixin(SimpleResourceReload.class)
 public class SimpleResourceReloadMixin<S> {
 

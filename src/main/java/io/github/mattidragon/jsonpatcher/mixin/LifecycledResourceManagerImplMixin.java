@@ -6,7 +6,6 @@ import io.github.mattidragon.jsonpatcher.metapatch.MetapatchSingleResourceManage
 import io.github.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
 import net.minecraft.resource.*;
 import net.minecraft.util.Identifier;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,13 +16,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.*;
 import java.util.function.Predicate;
 
-@Debug(export = true)
 @Mixin(LifecycledResourceManagerImpl.class)
 public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     @Unique
     private MetapatchResourcePack jsonpatcher$metaPatchPack;
 
-    @Inject(method = "<init>", at = @At("RETURN"))
+    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/lang/Object;<init>()V", shift = At.Shift.AFTER, remap = false))
     private void init(ResourceType type, List<ResourcePack> packs, CallbackInfo ci) {
         jsonpatcher$metaPatchPack = new MetapatchResourcePack(type);
     }
