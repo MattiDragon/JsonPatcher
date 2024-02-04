@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'fabric-loom' version '1.5-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -68,10 +68,6 @@ dependencies {
 
 //    include(implementation("io.github.mattidragon.jsonpatch:JsonPatcher-Lang:$lang_version"))
     include(implementation("com.github.mattidragon:JsonPatcherLang:$lang_version"))
-
-    // Mixin Extras
-    include(modImplementation("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))
-    clientAnnotationProcessor(annotationProcessor("com.github.LlamaLad7.mixinextras:mixinextras-fabric:$mixin_extras_version"))
 
     // Config
     modImplementation include("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
