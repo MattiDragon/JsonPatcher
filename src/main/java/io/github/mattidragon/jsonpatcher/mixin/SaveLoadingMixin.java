@@ -28,7 +28,7 @@ public class SaveLoadingMixin {
         PatchingContext.set(context);
     }
 
-    @Inject(method = "load", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/registry/RegistryLoader;load(Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/registry/DynamicRegistryManager;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;"))
+    @Inject(method = "load", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/registry/RegistryLoader;loadFromResource(Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/registry/DynamicRegistryManager;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;"))
     private static <D, R> void removeContext(SaveLoading.ServerConfig serverConfig,
                                             SaveLoading.LoadContextSupplier<D> loadContextSupplier,
                                             SaveLoading.SaveApplierFactory<D, R> saveApplierFactory,
@@ -36,15 +36,5 @@ public class SaveLoadingMixin {
                                             Executor applyExecutor,
                                             CallbackInfoReturnable<CompletableFuture<R>> cir) {
         PatchingContext.remove();
-    }
-
-    @Inject(method = "load", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/DataPackContents;reload(Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/registry/DynamicRegistryManager$Immutable;Lnet/minecraft/resource/featuretoggle/FeatureSet;Lnet/minecraft/server/command/CommandManager$RegistrationEnvironment;ILjava/util/concurrent/Executor;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
-    private static <D, R> void setDescriptionForReload(SaveLoading.ServerConfig serverConfig,
-                                                             SaveLoading.LoadContextSupplier<D> loadContextSupplier,
-                                                             SaveLoading.SaveApplierFactory<D, R> saveApplierFactory,
-                                                             Executor prepareExecutor,
-                                                             Executor applyExecutor,
-                                                             CallbackInfoReturnable<CompletableFuture<R>> cir) {
-        ReloadDescription.CURRENT.set(new ReloadDescription("datapacks (initial)", "data", error -> {}));
     }
 }

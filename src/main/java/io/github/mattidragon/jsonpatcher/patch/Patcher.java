@@ -48,7 +48,7 @@ public class Patcher {
         this.patches = patches;
     }
 
-    private boolean hasPatches(Identifier id) {
+    public boolean hasPatches(Identifier id) {
         return patches.hasPatches(id);
     }
 

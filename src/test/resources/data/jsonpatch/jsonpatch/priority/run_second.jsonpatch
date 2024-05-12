@@ -2,4 +2,4 @@
 @target "minecraft:recipes/golden_apple.json";
 @priority -1;
 
-$result.item = "minecraft:golden_carrot";
+$result.id = "minecraft:golden_carrot";

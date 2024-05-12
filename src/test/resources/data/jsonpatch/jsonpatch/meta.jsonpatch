@@ -21,7 +21,7 @@ metapatch.addFile("minecraft:recipes/test.json", {
         }
     },
     result: {
-        item: "minecraft:stick",
+        id: "minecraft:stick",
         count: 3
     }
 });

@@ -6,7 +6,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.dynamic.Codecs;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,10 +32,10 @@ public record PatchTarget(
                         return checkedPath.map(path -> new Identifier(target.namespace.get(), path));
                     });
 
-    private static final Codec<PatchTarget> SPLIT_CODEC = Codecs.validate(RecordCodecBuilder.create(instance -> instance.group(
+    private static final Codec<PatchTarget> SPLIT_CODEC = RecordCodecBuilder.<PatchTarget>create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("namespace").forGetter(target -> target.namespace),
             Path.CODEC.optionalFieldOf("path").forGetter(target -> target.path),
-            Codecs.validate(Codec.STRING, regex -> {
+            Codec.STRING.validate(regex -> {
                 try {
                     Pattern.compile(regex);
                     return DataResult.success(regex);
@@ -44,7 +43,7 @@ public record PatchTarget(
                     return DataResult.error(() -> "Invalid regex: %s".formatted(e.getMessage()));
                 }
             }).optionalFieldOf("regex").forGetter(target -> target.regex)
-    ).apply(instance, PatchTarget::new)), target -> {
+    ).apply(instance, PatchTarget::new)).validate(target -> {
         if (target.namespace.isEmpty() && target.path.isEmpty() && target.regex.isEmpty())
             return DataResult.error(() -> "Empty targets aren't allowed");
         return DataResult.success(target);
@@ -55,7 +54,7 @@ public record PatchTarget(
 
     public static final Codec<List<PatchTarget>> LIST_CODEC = Codec.either(CODEC.listOf(), CODEC).xmap(
             either -> either.map(list -> list, List::of),
-            list -> list.size() == 1 ? Either.right(list.get(0)) : Either.left(list));
+            list -> list.size() == 1 ? Either.right(list.getFirst()) : Either.left(list));
 
     @Override
     public boolean test(Identifier identifier) {

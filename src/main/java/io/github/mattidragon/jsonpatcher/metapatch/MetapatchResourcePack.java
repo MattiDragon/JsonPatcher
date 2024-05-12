@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import net.minecraft.SharedConstants;
 import net.minecraft.resource.*;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,8 +105,11 @@ public class MetapatchResourcePack implements ResourcePack {
     }
 
     @Override
-    public String getName() {
-        return "JsonPatcher MetaPatch Resource Pack";
+    public ResourcePackInfo getInfo() {
+        return new ResourcePackInfo("jsonpatcher:meta_patch", 
+                Text.literal("JsonPatcher MetaPatch Resource Pack"), 
+                ResourcePackSource.BUILTIN, 
+                Optional.empty());
     }
 
     @Override

@@ -8,7 +8,7 @@ function modifyKey($, result) {
         tag: "minecraft:coals"
     };
 
-    if (result.item == "minecraft:arrow") delete $X;
+    if (result.id == "minecraft:arrow") delete $X;
 }
 
 # Skip the tipped arrow recipe
@@ -18,8 +18,8 @@ if ($type != "minecraft:crafting_shaped") return;
 val result = $result;
 modifyKey($key, result);
 
-if (result.item == "minecraft:arrow") {
+if (result.id == "minecraft:arrow") {
     $pattern[0] = "#";
 }
-result.count += math.abs(1 - (100 + 2));
+result.count += math.abs(-32);
 

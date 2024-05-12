@@ -3,11 +3,11 @@ package io.github.mattidragon.jsonpatcher.patch;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.ReloadDescription;
-import net.minecraft.resource.InputSupplier;
+import io.github.mattidragon.jsonpatcher.misc.ResourceAccess;
+import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 
-import java.io.*;
 import java.util.concurrent.*;
 
 public class PatchingContext {
@@ -64,19 +64,22 @@ public class PatchingContext {
         loaded = true;
     }
 
-    public static InputSupplier<InputStream> patchInputStream(Identifier id, InputSupplier<InputStream> stream) {
-        if (!id.getPath().endsWith(".json")) return stream;
-
-        if (DISABLED.get()) return stream;
-
+    public static Resource patchResource(Identifier id, Resource resource) {
+        if (!id.getPath().endsWith(".json")) return resource;
+        if (DISABLED.get()) return resource;
+        
         var context = get();
         if (context == null) {
             JsonPatcher.RELOAD_LOGGER.warn("No state set when patching {}", id, new Throwable("Stacktrace"));
-            return stream;
+            return resource;
         }
         if (!context.loaded) throw new IllegalStateException("Context not loaded");
-
-        return context.patcher.patchInputStream(id, stream);
+        if (context.patcher.hasPatches(id)) {
+            ((ResourceAccess) resource).jsonpatcher$disableKnowPack();
+            ((ResourceAccess) resource).jsonpatcher$modifyInputStreamSupplier(stream -> context.patcher.patchInputStream(id, stream));
+        }
+        
+        return resource;
     }
 
     private record Stored(PatchingContext context, int count) {

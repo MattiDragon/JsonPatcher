@@ -102,9 +102,7 @@ public class PatchLoader {
         List<PatchTarget> target;
         if (meta.has("target")) {
             target = PatchTarget.LIST_CODEC.parse(ValueOps.INSTANCE, meta.get("target"))
-                    .getOrThrow(false, error -> {
-                        throw new IllegalStateException("Failed to parse target: %s".formatted(error));
-                    });
+                    .getOrThrow(error -> new IllegalStateException("Failed to parse target: %s".formatted(error)));
         } else {
             target = List.of();
         }
