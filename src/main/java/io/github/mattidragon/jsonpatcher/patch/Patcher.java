@@ -1,6 +1,5 @@
 package io.github.mattidragon.jsonpatcher.patch;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
@@ -15,9 +14,9 @@ import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.GsonConverter;
 import io.github.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
-import io.github.mattidragon.jsonpatcher.misc.ReloadDescription;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -32,19 +31,13 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class Patcher {
-    private static final ExecutorService PATCHING_EXECUTOR = new ThreadPoolExecutor(0,
-            Integer.MAX_VALUE,
-            5,
-            TimeUnit.SECONDS,
-            new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setNameFormat("JsonPatch Patcher (%s)").build());
-
+    public static final ExecutorService PATCH_RUNNER = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("JsonPatcher-Patch-Runner").factory());
     private static final Gson GSON = new Gson();
-    private final ReloadDescription description;
+    private final ResourceType resourceType;
     private final PatchStorage patches;
 
-    public Patcher(ReloadDescription description, PatchStorage patches) {
-        this.description = description;
+    public Patcher(ResourceType resourceType, PatchStorage patches) {
+        this.resourceType = resourceType;
         this.patches = patches;
     }
 
@@ -59,7 +52,7 @@ public class Patcher {
             for (var patch : patches.getPatches(id)) {
                 var root = GsonConverter.fromGson(activeJson.getValue());
                 var timeBeforePatch = System.nanoTime();
-                var success = runPatch(patch, PATCHING_EXECUTOR, errors::add, patches, root, Settings.builder()
+                var success = runPatch(patch, PATCH_RUNNER, errors::add, patches, root, Settings.builder()
                         .target(id.toString())
                         .build());
                 var timeAfterPatch = System.nanoTime();
@@ -74,8 +67,8 @@ public class Patcher {
         if (!errors.isEmpty()) {
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while patching {}", id, error));
             var message = "Encountered %s error(s) while patching %s. See logs/jsonpatch.log for details".formatted(errors.size(), id);
-            description.errorConsumer().accept(Text.literal(message).formatted(Formatting.RED));
-            if (Config.MANAGER.get().abortOnFailure()) {
+            ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
+            if (Config.MANAGER.get().throwOnFailure()) {
                 throw new PatchingException(message);
             } else {
                 JsonPatcher.MAIN_LOGGER.error(message);
@@ -144,12 +137,13 @@ public class Patcher {
             GSON.toJson(json, new JsonWriter(writer));
             writer.close();
 
-            DumpManager.dumpIfEnabled(id, description, json);
+            DumpManager.dumpIfEnabled(id, resourceType, json);
             return () -> new ByteArrayInputStream(out.toByteArray());
         } catch (JsonParseException | IOException e) {
-            JsonPatcher.RELOAD_LOGGER.error("Failed to patch json at {}", id, e);
-            if (Config.MANAGER.get().abortOnFailure()) {
+            if (Config.MANAGER.get().throwOnFailure()) {
                 throw new RuntimeException("Failed to patch json at %s".formatted(id), e);
+            } else {
+                JsonPatcher.RELOAD_LOGGER.error("Failed to patch json at {}", id, e);
             }
             return stream;
         }
@@ -186,8 +180,8 @@ public class Patcher {
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while running meta patch", error));
             var message = "Encountered %s error(s) while running meta patches. See logs/jsonpatch.log for details".formatted(errors.size());
 
-            description.errorConsumer().accept(Text.literal(message).formatted(Formatting.RED));
-            if (Config.MANAGER.get().abortOnFailure()) {
+            ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
+            if (Config.MANAGER.get().throwOnFailure()) {
                 throw new PatchingException(message);
             } else {
                 JsonPatcher.MAIN_LOGGER.error(message);

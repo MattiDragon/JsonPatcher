@@ -2,7 +2,9 @@ package io.github.mattidragon.jsonpatcher;
 
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
+import io.github.mattidragon.jsonpatcher.patch.ErrorLogger;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +35,16 @@ public class JsonPatcher implements ModInitializer {
     public void onInitialize() {
         Config.MANAGER.get();
         DumpManager.cleanDump("");
+
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> ErrorLogger.CURRENT.set(error -> {
+            var manager = server.getPlayerManager();
+            for (var player : manager.getPlayerList()) {
+                if (manager.isOperator(player.getGameProfile())) {
+                    player.sendMessage(error);
+                }
+            }
+        }));
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ErrorLogger.CURRENT.remove());
     }
 
     /**

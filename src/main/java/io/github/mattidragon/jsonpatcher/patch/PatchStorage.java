@@ -2,7 +2,6 @@ package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
@@ -10,12 +9,8 @@ import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import net.minecraft.util.Identifier;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class PatchStorage implements EvaluationContext.LibraryLocator {
-    private static final ThreadLocal<ExecutorService> LIBRARY_APPLICATOR = ThreadLocal.withInitial(() -> Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("JsonPatch Library Builder (%s)").build()));
-
     private final Multimap<String, Patch> namespacePatches = LinkedHashMultimap.create();
     private final Multimap<String, Patch> pathPatches = LinkedHashMultimap.create();
 
@@ -61,7 +56,7 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
                     return;
                 }
 
-                // Full id patches will be somewhat command and thus receive their own bucket
+                // Full id patches will be somewhat common and thus receive their own bucket
                 if (target.namespace().isPresent() && simplePath.isPresent()) {
                     var id = Identifier.tryParse(target.namespace().get() + ":" + simplePath.get());
                     if (id == null) return; // Invalid id, can't match anything
@@ -130,7 +125,7 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
             throw new EvaluationException("Cannot locate library '%s'".formatted(libraryName), importPos);
         }
 
-        Patcher.runPatch(userLib, LIBRARY_APPLICATOR.get(), e -> {
+        Patcher.runPatch(userLib, Patcher.PATCH_RUNNER, e -> {
             if (e instanceof EvaluationException evaluationException) {
                 throw new EvaluationException("Failed to load library %s".formatted(libId), importPos, evaluationException);
             }

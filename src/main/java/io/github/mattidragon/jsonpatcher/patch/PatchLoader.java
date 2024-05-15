@@ -1,13 +1,15 @@
 package io.github.mattidragon.jsonpatcher.patch;
 
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
-import io.github.mattidragon.jsonpatcher.misc.ValueOps;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.lang.parse.Lexer;
 import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
+import io.github.mattidragon.jsonpatcher.misc.ValueOps;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,9 +42,11 @@ public class PatchLoader {
         }
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         if (errorCount.get() > 0) {
-            JsonPatcher.MAIN_LOGGER.error("Failed to load {} patch(es). See logs/jsonpatch.log for details", errorCount.get());
-            if (Config.MANAGER.get().abortOnFailure()) {
-                throw new IllegalStateException("Failed to load %s patch(es). See logs/jsonpatch.log for details".formatted(errorCount.get()));
+            var message = "Failed to load %s patch(es). See logs/jsonpatch.log for details".formatted(errorCount.get());
+            ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
+            JsonPatcher.MAIN_LOGGER.error(message);
+            if (Config.MANAGER.get().throwOnFailure()) {
+                throw new IllegalStateException(message);
             }
         }
         return new PatchStorage(patches);

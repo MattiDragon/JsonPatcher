@@ -16,6 +16,9 @@
     "main": [
       "io.github.mattidragon.jsonpatcher.JsonPatcher"
     ],
+    "client": [
+      "io.github.mattidragon.jsonpatcher.client.JsonPatcherClient"
+    ],
     "preLaunch": [
       "io.github.mattidragon.jsonpatcher.JsonPatcherPreLaunch"
     ]
