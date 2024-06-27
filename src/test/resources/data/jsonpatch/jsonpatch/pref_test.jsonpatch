@@ -1,6 +1,9 @@
 @version "1";
-@target { "namespace": "minecraft" };
-@enabled false;
+@target "minecraft:recipes/diamond_pickaxe.json";
+@enabled true;
 
-# Don't do this. This patch is sometimes used to test performance in dev.
-while (true) {}
+if ($type != "minecraft:crafting_shaped") return;
+
+foreach (i in [2]*500) {
+    $result.count = 1;
+}

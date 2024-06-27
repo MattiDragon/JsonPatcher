@@ -1,6 +1,6 @@
 package io.github.mattidragon.jsonpatcher.patch;
 
-import io.github.mattidragon.jsonpatcher.lang.LangConfig;
+import io.github.mattidragon.jsonpatcher.config.ConfigProvider;
 
 public class PatchingException extends RuntimeException {
     public PatchingException(String message) {
@@ -13,13 +13,13 @@ public class PatchingException extends RuntimeException {
 
     @Override
     public synchronized Throwable fillInStackTrace() {
-        if (LangConfig.INSTANCE.useJavaStacktrace()) return super.fillInStackTrace();
+        if (ConfigProvider.INSTANCE.useJavaStacktrace()) return super.fillInStackTrace();
         return this;
     }
 
     @Override
     public synchronized Throwable getCause() {
-        if (LangConfig.INSTANCE.useJavaStacktrace()) return super.getCause();
+        if (ConfigProvider.INSTANCE.useJavaStacktrace()) return super.getCause();
 
         return null;
     }

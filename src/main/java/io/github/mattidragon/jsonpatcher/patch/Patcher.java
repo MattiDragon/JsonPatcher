@@ -6,6 +6,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
+import io.github.mattidragon.jsonpatcher.config.ConfigProvider;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
 import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
@@ -111,7 +112,7 @@ public class Patcher {
     }
 
     private static EvaluationContext buildContext(Identifier patchId, EvaluationContext.LibraryLocator libraryLocator, Value.ObjectValue root, Settings settings) {
-        var builder = EvaluationContext.builder();
+        var builder = EvaluationContext.builder(ConfigProvider.INSTANCE);
         builder.root(root);
         builder.libraryLocator(libraryLocator);
         builder.debugConsumer(value -> JsonPatcher.RELOAD_LOGGER.info("Debug from {}: {}", patchId, value));

@@ -43,7 +43,7 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     
     @ModifyReturnValue(method = "getAllResources", at = @At("RETURN"))
     private List<Resource> injectResourcesIntoGetAll(List<Resource> original, Identifier id) {
-        if (jsonpatcher$metaPatchPack.getDeletedFiles().contains(id)) {
+        if (jsonpatcher$metaPatchPack.isDeleted(id)) {
             return new ArrayList<>();
         }
         var list = new ArrayList<>(original);
@@ -55,7 +55,7 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     
     @ModifyReturnValue(method = "getResource", at = @At("RETURN"))
     private Optional<Resource> injectResourcesIntoGet(Optional<Resource> original, Identifier id) {
-        if (jsonpatcher$metaPatchPack.getDeletedFiles().contains(id)) {
+        if (jsonpatcher$metaPatchPack.isDeleted(id)) {
             return Optional.empty();
         }
         return Optional.ofNullable(jsonpatcher$metaPatchPack.makeResource(id))
@@ -69,7 +69,7 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     @ModifyReturnValue(method = "findResources", at = @At("RETURN"))
     private Map<Identifier, Resource> injectResourcesIntoFind(Map<Identifier, Resource> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
         map.putAll(jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate));
-        jsonpatcher$metaPatchPack.getDeletedFiles().forEach(map::remove);
+        map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
         map.forEach(jsonpatcher$context::patchResource);
         return map;
     }
@@ -78,7 +78,7 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     private Map<Identifier, List<Resource>> injectResourcesIntoFindAll(Map<Identifier, List<Resource>> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
         jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate)
                 .forEach((id, resource) -> map.computeIfAbsent(id, i -> new ArrayList<>()).add(resource));
-        jsonpatcher$metaPatchPack.getDeletedFiles().forEach(map::remove);
+        map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
         map.forEach((id, resources) -> resources.forEach(resource -> jsonpatcher$context.patchResource(id, resource)));
         return map;
     }

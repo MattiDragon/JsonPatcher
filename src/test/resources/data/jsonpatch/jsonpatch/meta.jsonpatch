@@ -1,8 +1,9 @@
 @version "1";
 @metapatch;
 
-metapatch.deleteFile("minecraft:recipes/oak_sign.json");
-metapatch.deleteFile("minecraft:recipes/spruce_sign.json");
+metapatch.deleteFile("minecraft:recipes/diamond_boots.json");
+
+metapatch.deleteFiles({namespace: "minecraft", path: {start: "recipes/", end: "_sign.json"}});
 
 metapatch.addFile("minecraft:recipes/test.json", {
     type: "crafting_shaped",

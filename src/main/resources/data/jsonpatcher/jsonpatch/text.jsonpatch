@@ -1,0 +1,323 @@
+@version "1";
+@metapatch;
+
+#| module text
+#| Contains utilities for working with minecraft text objects.
+#|
+#| More information can be found on the [minecraft wiki page](https://minecraft.wiki/w/Raw_JSON_text_format).
+
+val HEX_DIGITS = "ABCDEFabcdef012345679".chars();
+val ALL_COLORS = ["black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white"];
+val TEXT_TYPE_IDS = ["text", "translatable", "score", "selector", "keybind"];
+val TEXT_TYPE_KEYS = ["text", "translate", "score", "selector", "keybind"];
+
+function isId(id) {
+    if (!(id is string)) return false;
+    return id.matches("([a-z0-9_.-]+:)?[a-z0-9_.\\-\\/]+");
+}
+
+function isHexString(value) {
+    if (!(value is string)) return false;
+    return value.matches("#[a-zA-Z0-9]{6}");
+}
+
+#| type TextBuilder: object
+#| A modifiable text object with methods to change settings.
+#| Can be converted to json using the `toJson` function.
+#|
+#| More information can be found on the [minecraft wiki page](https://minecraft.wiki/w/Raw_JSON_text_format).
+function makeBuilder(type, content, settings = {}) {
+    var bold = null;
+    var italic = null;
+    var obfuscated = null;
+    var underlined = null;
+    var strikethrough = null;
+    var font = null;
+    var color = null;
+    val children = [];
+    var insertion = null;
+    var clickEvent = null;
+    var hoverEvent = null;
+    
+    if ("bold" in settings) bold = settings.bold;
+    if ("italic" in settings) italic = settings.italic;
+    if ("obfuscated" in settings) obfuscated = settings.obfuscated;
+    if ("underlined" in settings) underlined = settings.underlined;
+    if ("strikethrough" in settings) strikethrough = settings.strikethrough;
+    if ("insertion" in settings) insertion = settings.insertion;
+    if ("font" in settings) font = settings.font;
+    if ("color" in settings) color = settings.color;
+    if ("clickEvent" in settings) clickEvent = settings.clickEvent;
+    if ("hoverEvent" in settings) hoverEvent = settings.hoverEvent;
+    
+    val object = {
+        #| value TextBuilder.toJson: () -> object
+        #| Converts the builder to json for passing to minecraft
+        toJson: () -> {
+            var json = {};
+            
+            if (type == "text") {
+                json.text = content;
+            } else if (type == "translate") {
+                json.translate = content.translate;
+                if ("fallback" in content) json.fallback = content.fallback;
+                if ("with" in content) json.with = content.with.map(text -> text.toJson());
+            } else if (type == "score") {
+                json.score = content;
+            } else if (type == "selector") {
+                json.selector = content.selector;
+                if ("separator" in content) json.separator = content.separator.toJson();
+            } else if (type == "keybind") {
+                json.keybind = content;
+            } else if (type == "nbt") {
+                foreach (key in objects.keys(content)) {
+                    json[key] = content[key];
+                }
+            }
+            
+            if (bold != null) json.bold = bold;
+            if (italic != null) json.italic = italic;
+            if (obfuscated != null) json.obfuscated = obfuscated;
+            if (underlined != null) json.underlined = underlined;
+            if (strikethrough != null) json.strikethrough = strikethrough;
+            if (insertion != null) json.insertion = insertion;
+            if (font != null) json.font = font;
+            if (color != null) json.color = color;
+            if (clickEvent != null) json.clickEvent = clickEvent;
+            if (hoverEvent != null) json.hoverEvent = hoverEvent;
+            
+            if (children.length > 0) json.extra = children.map((builder) -> builder.toJson());
+            return json;
+        },
+        #| value TextBuilder.bold: (value?: boolean | null) -> TextBuilder
+        #| Sets the `bold` property of this builder and returns self.
+        #| If a boolean is passed the property is set. If null it passed it is cleared.
+        bold: (value = true) -> {
+            debug.assert(value is boolean || value is null, "value of bold() must be boolean or null");
+            bold = value;
+            return object;
+        },
+        #| value TextBuilder.italic: (value?: boolean | null) -> TextBuilder
+        #| Sets the `italic` property of this builder and returns self.
+        #| If a boolean is passed the property is set. If null it passed it is cleared.
+        italic: (value = true) -> {
+            debug.assert(value is boolean || value is null, "value of italic() must be boolean or null");
+            italic = value;
+            return object;
+        },
+        #| value TextBuilder.obfuscated: (value?: boolean | null) -> TextBuilder
+        #| Sets the `obfuscated` property of this builder and returns self.
+        #| If a boolean is passed the property is set. If null it passed it is cleared.
+        obfuscated: (value = true) -> {
+            debug.assert(value is boolean || value is null, "value of obfuscated() must be boolean or null");
+            obfuscated = value;
+            return object;
+        },
+        #| value TextBuilder.underlined: (value?: boolean | null) -> TextBuilder
+        #| Sets the `underlined` property of this builder and returns self.
+        #| If a boolean is passed the property is set. If null it passed it is cleared.
+        underlined: (value = true) -> {
+            debug.assert(value is boolean || value is null, "value of underlined() must be boolean or null");
+            underlined = value;
+            return object;
+        },
+        #| value TextBuilder.strikethrough: (value?: boolean | null) -> TextBuilder
+        #| Sets the `strikethrough` property of this builder and returns self.
+        #| If a boolean is passed the property is set. If null it passed it is cleared.
+        strikethrough: (value = true) -> {
+            debug.assert(value is boolean || value is null, "value of strikethrough() must be boolean or null");
+            strikethrough = value;
+            return object;
+        },
+        #| value TextBuilder.font: (value: string | null) -> TextBuilder
+        #| Sets the font of this builder and returns self.
+        #| The font should be a valid identifier or null to clear it.
+        font: (value) -> {
+            debug.assert(isId(value) || value is null, "value of font() must be valid identifier or null");
+            font = value;
+            return object;
+        },
+        #| value TextBuilder.color: (value: string | null) -> TextBuilder
+        #| Sets the color of this builder and returns self.
+        #| The font should be a color string, a hex color with a prefix of `#`, or null to clear it.
+        color: (value) -> {
+            debug.assert(value in ALL_COLORS || isHexString(value) || value is null, "invalid color: " + strings.asString(value));
+            color = value;
+            return object;
+        },
+        #| value TextBuilder.insertion: (value: string | null) -> TextBuilder
+        #| Sets the insertion of this builder and returns self.
+        #| The allows for inserting text into the chat field from some contexts.
+        #| Pass in `null` to clear.
+        insertion: (value) -> {
+            debug.assert(value is string || value is null, "insertion must be string or null");
+            insertion = value;
+            return object;
+        },
+        #| value TextBuilder.append: (children*: TextBuilder) -> TextBuilder
+        #| Adds children to this builder and returns self.
+        #| The children must also be text builders.
+        append: (newChildren*) -> {
+            foreach (child in newChildren) {
+                debug.assert("toJson" in child, "appended child must be text builder");
+                children.push(child);
+            }
+            return object;
+        },
+        #| value TextBuilder.clickEvent: (action: string, value: string) -> TextBuilder
+        #| Sets the click event of this builder and returns self. See the minecraft wiki page for more details.
+        clickEvent: (action, value) -> {
+            debug.assert(action in ["open_url", "open_file", "run_command", "suggest_command", "change_page", "copy_to_clipboard"], "Unexpected clickEvent action");
+            debug.assert(value is string, "clickEvent value must be string");
+            clickEvent = {action: action, value: value};
+            return object;
+        },
+        #| value TextBuilder.hoverEvent: (action: string, contents: any) -> TextBuilder
+        #| Sets the hover event of this builder and returns self. See the minecraft wiki page for more details.
+        hoverEvent: (action, contents) -> {
+            debug.assert(action in ["show_text", "show_item", "show_entity"], "Unexpected hoverEvent action");
+            var contentsOut = contents;
+            if (action == "show_text") {
+                debug.assert("toJson" in contents, "Contents must be json builder");
+                contentsOut = contents.toJson();
+            } else if (action == "show_entity" && "name" in contents) {
+                debug.assert("toJson" in contents.name, "Name must be json builder");
+                contentsOut = {type: contents.type, name: content.name.toJson(), id: contents.id};
+            }
+            
+            clickEvent = {action: action, contents: contentsOut};
+            return object;
+        }
+    };
+    return object;
+}
+
+#| value text.literal: (text: string) -> TextBuilder
+#| Creates a text builder with literal contents.
+$literal = (text) -> {
+    debug.assert(text is string, "Literal text must be string");
+    return makeBuilder("text", text);
+};
+
+#| value text.translatable: (key: string, args*: TextBuilder) -> TextBuilder
+#| Creates a text builder with translatable content.
+$translatable = (key, args*) -> {
+    debug.assert(key is string, "Translation key must be string");
+    return makeBuilder("translate", {translate: key, with: args});
+};
+
+#| value text.translatableWithFallback: (key: string, fallback: string, args*: TextBuilder) -> TextBuilder
+#| Creates a text builder with translatable content and fallback text for when the key isn't present.
+$translatableWithFallback = (key, fallback, args*) -> {
+    debug.assert(key is string, "Translation key must be string");
+    debug.assert(fallback is string, "Fallback must be string");
+    return makeBuilder("translate", {translate: key, fallback: fallback, with: args});
+};
+
+#| value text.score: (name: string, objective: string) -> TextBuilder
+#| Creates a text builder with scoreboard value contents.
+$score = (name, objective) -> {
+    debug.assert(name is string, "Scoreboard name must be string");
+    debug.assert(objective is string, "Scoreboard objective must be string");
+    return makeBuilder("score", {name: name, objective: objective});
+};
+
+#| value text.selector: (selector: string, separator?: TextBuilder | null) -> TextBuilder
+#| Creates a text that displays selected entity names.
+$selector = (selector, separator = null) -> {
+    debug.assert(selector is string, "Selector must be string");
+    debug.assert(separator == null || "toJson" in separator, "Separator must be text builder");
+    val content = {selector: selector};
+    if (separator != null) content.separator = separator;
+    return makeBuilder("selector", content);
+};
+
+#| value text.keybind: (key: string) -> TextBuilder
+#| Creates a text that displays the value of an active keybind.
+$keybind = (key) -> {
+    debug.assert(key is string, "Key must be string");
+    return makeBuilder("keybind", key);
+};
+
+#| value text.nbt: function
+#| *Nbt text is currently not supported due to its complexity, please manually build it and use the `parse` function.* 
+$nbt = (args*) -> {
+    debug.throw("Constructing nbt isn't supported yet. Please use the parse function instead.");
+};
+
+#| value text.parse: (text: string | array | object) -> TextBuilder
+#| Parses json text into a text builder for convenient editing.
+$parse = (value) -> {
+    if (value is string) {
+        return $literal(value);
+    } else if (value is array) {
+        return makeBuilder("none", null).children(value.map($parse));
+    } else if (value is object) {
+        var type = null;
+        if ("type" in value) {
+            type = value.type;
+            debug.assert(type in TEXT_TYPE_IDS, "Text type must be valid");
+        } else {
+            foreach (key in objects.keys(value)) {
+                if (key in TEXT_TYPE_KEYS) {
+                    type = TEXT_TYPE_IDS[TEXT_TYPE_KEYS.indexOf(key)];
+                    break;
+                }
+            }
+        }
+        
+        var content = null;
+        if (type == "text") {
+            debug.assert("text" in value, "Expected key 'text' in json text");
+            content = value.text;
+        } else if (type == "translatable") {
+            debug.assert("translate" in value, "Expected key 'translate' in json text");
+            content = {translate: value.translate};
+            if ("with" in value) {
+                debug.assert(value.with is array, "'with' must be array");
+                content.with = value.with.map($parse);
+            }
+            if ("fallback" in value) {
+                debug.assert(value.fallback is string, "'fallback' must be string");
+                content.fallback = value.fallback;
+            }
+        } else if (type == "score") {
+            debug.assert("score" in value, "Expected key 'score' in json text");
+            content = value.score;
+        } else if (type == "selector") {
+            debug.assert("selector" in value, "Expected key 'selector' in json text");
+            content = {selector: value.selector};
+            if ("separator" in value) {
+                content.separator = $parse(value.separator);
+            }
+        } else if (type == "keybind") {
+            debug.assert("keybind" in value, "Expected key 'keybind' in json text");
+            content = value.keybind;
+        } else if (type == "nbt") {
+            content = {};
+            foreach (key in ["source", "nbt", "interpret", "separator", "block", "entity", "storage"]) {
+                if (key in value) {
+                    content[key] = value[key];
+                }
+            }
+        } else if (type != null) {
+            debug.throw("Unexpected type id: '" + strings.asString(type) + "'");
+        }
+        
+        val settings = {};
+        if ("bold" in value) settings.bold = value.bold;
+        if ("italic" in value) settings.italic = value.italic;
+        if ("obfuscated" in value) settings.obfuscated = value.obfuscated;
+        if ("underlined" in value) settings.underlined = value.underlined;
+        if ("strikethrough" in value) settings.strikethrough = value.strikethrough;
+        if ("insertion" in value) settings.insertion = value.insertion;
+        if ("font" in value) settings.font = value.font;
+        if ("color" in value) settings.color = value.color;
+        if ("clickEvent" in value) settings.clickEvent = value.clickEvent;
+        if ("hoverEvent" in value) settings.hoverEvent = value.hoverEvent;
+        
+        return makeBuilder(type, content, settings);
+    } else {
+        debug.throw("Cannot parse text from '" + strings.asString(value) + "'");
+    }
+};

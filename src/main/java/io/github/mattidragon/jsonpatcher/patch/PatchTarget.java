@@ -49,11 +49,10 @@ public record PatchTarget(
         return DataResult.success(target);
     });
 
-    public static final Codec<PatchTarget> CODEC = Codec.either(ID_CODEC, SPLIT_CODEC)
-            .xmap(either -> either.map(Function.identity(), Function.identity()), Either::right);
+    public static final Codec<PatchTarget> CODEC = Codec.withAlternative(ID_CODEC, SPLIT_CODEC);
 
     public static final Codec<List<PatchTarget>> LIST_CODEC = Codec.either(CODEC.listOf(), CODEC).xmap(
-            either -> either.map(list -> list, List::of),
+            either -> either.map(Function.identity(), List::of),
             list -> list.size() == 1 ? Either.right(list.getFirst()) : Either.left(list));
 
     @Override

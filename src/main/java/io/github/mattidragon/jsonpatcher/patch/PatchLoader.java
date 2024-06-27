@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatcher.patch;
 
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
+import io.github.mattidragon.jsonpatcher.config.ConfigProvider;
 import io.github.mattidragon.jsonpatcher.lang.parse.Lexer;
 import io.github.mattidragon.jsonpatcher.lang.parse.Parser;
 import io.github.mattidragon.jsonpatcher.misc.ValueOps;
@@ -59,15 +60,15 @@ public class PatchLoader {
 
         try {
             var code = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            var lexResult = Lexer.lex(code, id.toString());
+            var lexResult = Lexer.lex(ConfigProvider.INSTANCE, code, id.toString());
 
-            var parseResult = Parser.parse(lexResult.tokens());
+            var parseResult = Parser.parse(ConfigProvider.INSTANCE, lexResult.tokens());
 
-            if (parseResult instanceof Parser.Result.Fail fail) {
-                logParseError(entry, fail, id);
+            if (!parseResult.errors().isEmpty()) {
+                logParseError(entry, parseResult.errors(), id);
                 errorCount.incrementAndGet();
             } else {
-                return validateAndBuild(id, (Parser.Result.Success) parseResult);
+                return validateAndBuild(id, parseResult);
             }
         } catch (IOException | Lexer.LexException | IllegalStateException e) {
             JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);
@@ -79,13 +80,13 @@ public class PatchLoader {
         return null;
     }
 
-    private static void logParseError(Map.Entry<Identifier, Resource> entry, Parser.Result.Fail fail, Identifier id) {
+    private static void logParseError(Map.Entry<Identifier, Resource> entry, List<Parser.ParseException> errors, Identifier id) {
         if (Config.MANAGER.get().useJavaStacktrace()) {
             var error = new RuntimeException();
-            fail.errors().forEach(error::addSuppressed);
+            errors.forEach(error::addSuppressed);
             JsonPatcher.RELOAD_LOGGER.error("Failed to parse patch {} from {}:", id, entry.getKey(), error);
         } else {
-            JsonPatcher.RELOAD_LOGGER.error("Failed to parse patch {} from {}:\n{}", id, entry.getKey(), fail.errors()
+            JsonPatcher.RELOAD_LOGGER.error("Failed to parse patch {} from {}:\n{}", id, entry.getKey(), errors
                     .stream()
                     .map(Parser.ParseException::toString)
                     .collect(Collectors.joining("\n")));
@@ -93,7 +94,7 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch validateAndBuild(Identifier id, Parser.Result.Success result) {
+    private static Patch validateAndBuild(Identifier id, Parser.Result result) {
         var meta = result.metadata();
         if (meta.has("enabled") && !meta.getBoolean("enabled")) {
             return null;

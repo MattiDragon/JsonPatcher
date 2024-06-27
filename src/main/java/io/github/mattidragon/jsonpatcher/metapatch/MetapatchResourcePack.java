@@ -21,7 +21,7 @@ public class MetapatchResourcePack implements ResourcePack {
 
     public final ResourceType type;
     private final Map<Identifier, JsonObject> files = new HashMap<>();
-    private final Set<Identifier> deletedFiles = new HashSet<>();
+    private final List<FileFilter> filters = new ArrayList<>();
     private final Set<String> namespaces = new HashSet<>();
 
     public MetapatchResourcePack(ResourceType type) {
@@ -30,21 +30,27 @@ public class MetapatchResourcePack implements ResourcePack {
 
     public void clear() {
         files.clear();
-        deletedFiles.clear();
+        filters.clear();
         namespaces.clear();
     }
 
-    public void set(Map<Identifier, JsonObject> files, Collection<Identifier> deletedFiles) {
+    public void set(Map<Identifier, JsonObject> files, List<FileFilter> deletedFiles) {
         this.files.clear();
         this.files.putAll(files);
-        this.deletedFiles.clear();
-        this.deletedFiles.addAll(deletedFiles);
+        this.filters.clear();
+        this.filters.addAll(deletedFiles);
         namespaces.clear();
         files.keySet().forEach(id -> namespaces.add(id.getNamespace()));
     }
 
-    public Set<Identifier> getDeletedFiles() {
-        return deletedFiles;
+    public boolean isDeleted(Identifier id) {
+        // The last filter added will get priority
+        for (var filter : filters.reversed()) {
+            if (filter.target().test(id)) {
+                return !filter.allow();
+            }
+        }
+        return false;
     }
 
     public Map<Identifier, Resource> findResources(String startingPath, Predicate<Identifier> allowedPathPredicate) {

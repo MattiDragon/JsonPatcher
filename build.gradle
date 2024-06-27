@@ -14,7 +14,7 @@ repositories {
     }
     maven { url "https://maven.isxander.dev/releases" }
     maven { url "https://maven.terraformersmc.com" }
-//    mavenLocal()
+    mavenLocal()
 }
 
 loom {
@@ -67,7 +67,8 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
 //    include(implementation("io.github.mattidragon.jsonpatch:JsonPatcher-Lang:$lang_version"))
-    include(implementation("com.github.mattidragon:JsonPatcherLang:$lang_version"))
+    include(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcher-Lang:$lang_version"))
+    include(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcher-Docs:$lang_version"))
 
     // Config
     modImplementation include("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")

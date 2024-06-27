@@ -9,4 +9,3 @@ $test = () -> {
 
     return list;
 };
-error
