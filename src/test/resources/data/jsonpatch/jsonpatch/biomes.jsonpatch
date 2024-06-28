@@ -32,7 +32,7 @@ $effects.water_color = sky_color;
 
 # This code removed the ore_dirt feature from all biomes
 foreach (step in $features) {
-    step.removeIf((feature) => feature == "minecraft:ore_dirt");
+    step.removeIf((feature) -> feature == "minecraft:ore_dirt");
 }
 
 # Lots of other language features are implemented:

@@ -8,5 +8,9 @@
 #| value metapatch.deleteFile: (path: string) -> void
 #| Deletes the file at the specified path.
 
+#| value metapatch.deleteFiles: (path: string | array | object) -> void
+#| Deletes files matching the specified target selector.
+#| The syntax of the selector is the same as is used in the `@target` metadata.
+
 #| value metapatch.getFile: (path: string) -> object
 #| Reads the file at the specified path and returns its content as json.

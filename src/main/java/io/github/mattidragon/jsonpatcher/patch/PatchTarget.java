@@ -29,7 +29,7 @@ public record PatchTarget(
                             return DataResult.error(() -> "Can't serialize to id form without path");
 
                         var checkedPath = target.path.get().path.map(DataResult::success, pair -> DataResult.<String>error(() -> "Can't serialize split path to id form"));
-                        return checkedPath.map(path -> new Identifier(target.namespace.get(), path));
+                        return checkedPath.map(path -> Identifier.of(target.namespace.get(), path));
                     });
 
     private static final Codec<PatchTarget> SPLIT_CODEC = RecordCodecBuilder.<PatchTarget>create(instance -> instance.group(

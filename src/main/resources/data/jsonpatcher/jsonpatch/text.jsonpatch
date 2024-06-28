@@ -1,5 +1,4 @@
 @version "1";
-@metapatch;
 
 #| module text
 #| Contains utilities for working with minecraft text objects.
@@ -61,7 +60,7 @@ function makeBuilder(type, content, settings = {}) {
             } else if (type == "translate") {
                 json.translate = content.translate;
                 if ("fallback" in content) json.fallback = content.fallback;
-                if ("with" in content) json.with = content.with.map(text -> text.toJson());
+                if ("with" in content) json.with = content.with.map((text) -> text.toJson());
             } else if (type == "score") {
                 json.score = content;
             } else if (type == "selector") {

@@ -1,11 +1,11 @@
 @version "1";
 @metapatch;
 
-metapatch.deleteFile("minecraft:recipes/diamond_boots.json");
+metapatch.deleteFile("minecraft:recipe/diamond_boots.json");
 
-metapatch.deleteFiles({namespace: "minecraft", path: {start: "recipes/", end: "_sign.json"}});
+metapatch.deleteFiles({namespace: "minecraft", path: {start: "recipe/", end: "_sign.json"}});
 
-metapatch.addFile("minecraft:recipes/test.json", {
+metapatch.addFile("minecraft:recipe/test.json", {
     type: "crafting_shaped",
     category: "redstone",
     pattern: [
@@ -27,4 +27,4 @@ metapatch.addFile("minecraft:recipes/test.json", {
     }
 });
 
-metapatch.addFile("minecraft:loot_tables/blocks/andesite.json", metapatch.getFile("minecraft:loot_tables/blocks/stone.json"));
+metapatch.addFile("minecraft:loot_table/blocks/andesite.json", metapatch.getFile("minecraft:loot_table/blocks/stone.json"));
