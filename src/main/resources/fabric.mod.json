@@ -26,7 +26,10 @@
   "accessWidener" : "jsonpatcher.accesswidener",
   "mixins": [
     "jsonpatcher.mixins.json",
-    "client.jsonpatcher.mixins.json"
+    {
+      "config": "client.jsonpatcher.mixins.json",
+      "environment": "client"
+    }
   ],
   "depends": {
     "fabricloader": ">=0.15.11",
