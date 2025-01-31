@@ -4,15 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.minecraft.SharedConstants;
 import net.minecraft.resource.*;
-import net.minecraft.resource.metadata.ResourceMetadataReader;
+import net.minecraft.resource.metadata.ResourceMetadataSerializer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -103,11 +100,10 @@ public class MetapatchResourcePack implements ResourcePack {
 
     @Nullable
     @Override
-    public <T> T parseMetadata(ResourceMetadataReader<T> metaReader) {
+    public <T> T parseMetadata(ResourceMetadataSerializer<T> metadataSerializer) throws IOException {
         var metadata = getMetadata(type);
         var stream = new ByteArrayInputStream(metadata.getBytes());
-
-        return AbstractFileResourcePack.parseMetadata(metaReader, stream);
+        return AbstractFileResourcePack.parseMetadata(metadataSerializer, stream);
     }
 
     @Override

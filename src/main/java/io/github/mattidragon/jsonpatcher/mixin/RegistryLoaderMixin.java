@@ -14,18 +14,14 @@ import java.util.Map;
 
 @Mixin(RegistryLoader.class)
 public abstract class RegistryLoaderMixin {
-    @WrapOperation(method = "loadFromNetwork(Ljava/util/Map;Lnet/minecraft/resource/ResourceFactory;Lnet/minecraft/registry/DynamicRegistryManager;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;", 
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/registry/RegistryLoader;load(Lnet/minecraft/registry/RegistryLoader$RegistryLoadable;Lnet/minecraft/registry/DynamicRegistryManager;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;"))
+    @WrapOperation(method = "loadFromNetwork(Ljava/util/Map;Lnet/minecraft/resource/ResourceFactory;Ljava/util/List;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/registry/RegistryLoader;load(Lnet/minecraft/registry/RegistryLoader$RegistryLoadable;Ljava/util/List;Ljava/util/List;)Lnet/minecraft/registry/DynamicRegistryManager$Immutable;"))
     private static DynamicRegistryManager.Immutable disablePatchingForNetworkRegistries(@Coerce Object loadable,
-                                                                                        DynamicRegistryManager baseRegistryManager,
+                                                                                        List<RegistryWrapper.Impl<?>> registries,
                                                                                         List<RegistryLoader.Entry<?>> entries,
-                                                                                        Operation<DynamicRegistryManager.Immutable> original,
-                                                                                        Map<RegistryKey<? extends Registry<?>>, List<SerializableRegistries.SerializedRegistryEntry>> data,
-                                                                                        ResourceFactory factory,
-                                                                                        DynamicRegistryManager registryManager,
-                                                                                        List<RegistryLoader.Entry<?>> entries2) {
+                                                                                        Operation<DynamicRegistryManager.Immutable> original) {
         try (var __ = PatchingContext.disablePatching()) {
-            return original.call(loadable, baseRegistryManager, entries);
+            return original.call(loadable, registries, entries);
         }
     }
 }
