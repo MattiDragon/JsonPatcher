@@ -2,7 +2,7 @@ package io.github.mattidragon.jsonpatcher.misc;
 
 import com.google.common.collect.Sets;
 import com.google.gson.*;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
+import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
 
 import java.util.Set;
 
@@ -20,8 +20,8 @@ public class GsonConverter {
             }
             if (value instanceof Value.ObjectValue objectValue) return toGson(objectValue);
             if (value instanceof Value.ArrayValue arrayValue) return toGson(arrayValue);
-            if (value instanceof Value.NumberValue numberValue) return new JsonPrimitive(numberValue.value());
-            if (value instanceof Value.StringValue stringValue) return new JsonPrimitive(stringValue.value());
+            if (value instanceof Value.NumberValue(var num)) return new JsonPrimitive(num);
+            if (value instanceof Value.StringValue(var s)) return new JsonPrimitive(s);
             if (value instanceof Value.BooleanValue booleanValue) return new JsonPrimitive(booleanValue.value());
             if (value instanceof Value.NullValue) return JsonNull.INSTANCE;
             throw new IllegalStateException("Can't convert %s to gson".formatted(value));

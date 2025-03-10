@@ -1,3 +1,4 @@
+/*
 package io.github.mattidragon.jsonpatcher.metapatch;
 
 import com.google.gson.JsonObject;
@@ -53,9 +54,9 @@ public class MetapatchLibrary {
             if (isDeleted(id)) {
                 filters.add(new FileFilter(
                         new PatchTarget(
-                                Optional.of(id.getNamespace()), 
-                                Optional.of(new PatchTarget.Path(Either.left(id.getPath()))), 
-                                Optional.empty()), 
+                                Optional.of(id.getNamespace()),
+                                Optional.of(new PatchTarget.Path(Either.left(id.getPath()))),
+                                Optional.empty()),
                         true));
             }
             addedFiles.put(id, GsonConverter.toGson(file));
@@ -103,3 +104,4 @@ public class MetapatchLibrary {
         return Value.NullValue.NULL;
     }
 }
+*/

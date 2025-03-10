@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class JsonPatcher implements ModInitializer {
-    private static final Set<String> SUPPORTED_VERSIONS = new HashSet<>(Set.of("1"));
+    private static final Set<String> SUPPORTED_VERSIONS = new HashSet<>(Set.of("2"));
     public static final String MOD_ID = "jsonpatcher";
     public static final Logger MAIN_LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final String RELOAD_LOGGER_NAME = "JsonPatcher Reload";

@@ -4,19 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
+import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
-import io.github.mattidragon.jsonpatcher.config.ConfigProvider;
-import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
-import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
-import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.LibraryBuilder;
-import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.GsonConverter;
-import io.github.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
 import net.minecraft.resource.InputSupplier;
-import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -27,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -83,20 +75,17 @@ public class Patcher {
      * @param patch The patch to run.
      * @param executor An executor to run the patch on, required to run on another thread for timeout to work
      * @param errorConsumer A consumer the receives errors from the patch.
-     *                      Errors are either {@link EvaluationException EvaluationExceptions} for errors within the patch,
-     *                      or {@link RuntimeException RuntimeExceptions} for timeouts and other errors not from the patch itself
      * @param patchStorage A patch storage for resolution of libraries
      * @param root The root object for the patch context, will be modified
      * @return {@code true} if the patch completed successfully. If {@code false} the {@code errorConsumer} should have received an error.
      */
     public static boolean runPatch(Patch patch, Executor executor, Consumer<RuntimeException> errorConsumer, PatchStorage patchStorage, Value.ObjectValue root, Settings settings) {
         try {
-            var context = buildContext(patch.id(), patchStorage, root, settings);
-            CompletableFuture.runAsync(() -> patch.program().execute(context), executor)
+            CompletableFuture.runAsync(() -> patch.program().run(root), executor)
                     .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof EvaluationException cause) {
+            if (e.getCause() instanceof RuntimeException cause) {
                 errorConsumer.accept(cause);
             } else if (e.getCause() instanceof StackOverflowError cause) {
                 errorConsumer.accept(new PatchingException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
@@ -111,7 +100,7 @@ public class Patcher {
         return false;
     }
 
-    private static EvaluationContext buildContext(Identifier patchId, EvaluationContext.LibraryLocator libraryLocator, Value.ObjectValue root, Settings settings) {
+/*    private static EvaluationContext buildContext(Identifier patchId, EvaluationContext.LibraryLocator libraryLocator, Value.ObjectValue root, Settings settings) {
         var builder = EvaluationContext.builder(ConfigProvider.INSTANCE);
         builder.root(root);
         builder.libraryLocator(libraryLocator);
@@ -123,7 +112,7 @@ public class Patcher {
             builder.variable("metapatch", new LibraryBuilder(MetapatchLibrary.class, settings.metaPatchLibrary).build());
         }
         return builder.build();
-    }
+    }*/
 
     public InputSupplier<InputStream> patchInputStream(Identifier id, InputSupplier<InputStream> stream) {
         if (!hasPatches(id)) return stream;
@@ -150,49 +139,49 @@ public class Patcher {
         }
     }
 
-    public void runMetaPatches(ResourceManager manager, Executor executor) {
-        if (!(manager instanceof MetaPatchPackAccess packAccess)) {
-            JsonPatcher.MAIN_LOGGER.error("Failed to run meta patches: resource manager doesn't expose meta pack");
-            return;
-        }
+//    public void runMetaPatches(ResourceManager manager, Executor executor) {
+//        if (!(manager instanceof MetaPatchPackAccess packAccess)) {
+//            JsonPatcher.MAIN_LOGGER.error("Failed to run meta patches: resource manager doesn't expose meta pack");
+//            return;
+//        }
+//
+//        var metaPack = packAccess.jsonpatcher$getMetaPatchPack();
+//        metaPack.clear();
+//
+//        var metaPatches = new ArrayList<>(patches.getMetaPatches());
+//        metaPatches.sort(Comparator.comparing(Patch::priority));
+//        var lib = new MetapatchLibrary(manager);
+//        var errors = new ArrayList<RuntimeException>();
+//
+//        try {
+//            for (var patch : metaPatches) {
+//                var timeBeforePatch = System.nanoTime();
+//                runPatch(patch, executor, errors::add, patches, new Value.ObjectValue(), Settings.builder()
+//                        .metaPatchLibrary(lib)
+//                        .build());
+//                var timeAfterPatch = System.nanoTime();
+//                JsonPatcher.RELOAD_LOGGER.debug("Ran meta patch {} in {}ms", patch.id(), (timeAfterPatch - timeBeforePatch) / 1e6);
+//            }
+//        } catch (RuntimeException e) {
+//            errors.add(e);
+//        }
+//
+//        if (!errors.isEmpty()) {
+//            errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while running meta patch", error));
+//            var message = "Encountered %s error(s) while running meta patches. See logs/jsonpatch.log for details".formatted(errors.size());
+//
+//            ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
+//            if (Config.MANAGER.get().throwOnFailure()) {
+//                throw new PatchingException(message);
+//            } else {
+//                JsonPatcher.MAIN_LOGGER.error(message);
+//            }
+//        }
+//
+//        lib.apply(metaPack);
+//    }
 
-        var metaPack = packAccess.jsonpatcher$getMetaPatchPack();
-        metaPack.clear();
-
-        var metaPatches = new ArrayList<>(patches.getMetaPatches());
-        metaPatches.sort(Comparator.comparing(Patch::priority));
-        var lib = new MetapatchLibrary(manager);
-        var errors = new ArrayList<RuntimeException>();
-
-        try {
-            for (var patch : metaPatches) {
-                var timeBeforePatch = System.nanoTime();
-                runPatch(patch, executor, errors::add, patches, new Value.ObjectValue(), Settings.builder()
-                        .metaPatchLibrary(lib)
-                        .build());
-                var timeAfterPatch = System.nanoTime();
-                JsonPatcher.RELOAD_LOGGER.debug("Ran meta patch {} in {}ms", patch.id(), (timeAfterPatch - timeBeforePatch) / 1e6);
-            }
-        } catch (RuntimeException e) {
-            errors.add(e);
-        }
-
-        if (!errors.isEmpty()) {
-            errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while running meta patch", error));
-            var message = "Encountered %s error(s) while running meta patches. See logs/jsonpatch.log for details".formatted(errors.size());
-
-            ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
-            if (Config.MANAGER.get().throwOnFailure()) {
-                throw new PatchingException(message);
-            } else {
-                JsonPatcher.MAIN_LOGGER.error(message);
-            }
-        }
-
-        lib.apply(metaPack);
-    }
-
-    public record Settings(@Nullable String target, boolean isLibrary, @Nullable MetapatchLibrary metaPatchLibrary) {
+    public record Settings(@Nullable String target, boolean isLibrary/*, @Nullable MetapatchLibrary metaPatchLibrary*/) {
         public static Builder builder() {
             return new Builder();
         }
@@ -201,14 +190,14 @@ public class Patcher {
             return target == null ? Value.NullValue.NULL : new Value.StringValue(target);
         }
 
-        public boolean isMetaPatch() {
-            return metaPatchLibrary != null;
-        }
+//        public boolean isMetaPatch() {
+//            return metaPatchLibrary != null;
+//        }
 
         public static class Builder {
             private @Nullable String target;
             private boolean isLibrary;
-            private @Nullable MetapatchLibrary metaPatchLibrary;
+//            private @Nullable MetapatchLibrary metaPatchLibrary;
 
             public Builder target(String target) {
                 this.target = target;
@@ -220,13 +209,13 @@ public class Patcher {
                 return this;
             }
 
-            public Builder metaPatchLibrary(MetapatchLibrary metaPatchLibrary) {
-                this.metaPatchLibrary = metaPatchLibrary;
-                return this;
-            }
+//            public Builder metaPatchLibrary(MetapatchLibrary metaPatchLibrary) {
+//                this.metaPatchLibrary = metaPatchLibrary;
+//                return this;
+//            }
 
             public Settings build() {
-                return new Settings(target, isLibrary, metaPatchLibrary);
+                return new Settings(target, isLibrary/*, metaPatchLibrary*/);
             }
         }
     }

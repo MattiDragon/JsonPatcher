@@ -2,16 +2,11 @@ package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
-import io.github.mattidragon.jsonpatcher.lang.LangConfig;
-import io.github.mattidragon.jsonpatcher.lang.parse.SourceSpan;
-import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
-import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
 import net.minecraft.util.Identifier;
 
 import java.util.*;
 
-public class PatchStorage implements EvaluationContext.LibraryLocator {
+public final class PatchStorage {
     private final Multimap<String, Patch> namespacePatches = LinkedHashMultimap.create();
     private final Multimap<String, Patch> pathPatches = LinkedHashMultimap.create();
 
@@ -112,25 +107,5 @@ public class PatchStorage implements EvaluationContext.LibraryLocator {
 
     public int size() {
         return libraries.size();
-    }
-
-    @Override
-    public void loadLibrary(String libraryName, Value.ObjectValue libraryObject, SourceSpan importPos, LangConfig config) {
-        var libId = Identifier.tryParse(libraryName);
-        if (libId == null) {
-            throw new EvaluationException(config, "Invalid library name '%s'".formatted(libraryName), importPos);
-        }
-
-        var userLib = libraries.get(libId);
-        if (userLib == null) {
-            throw new EvaluationException(config, "Cannot locate library '%s'".formatted(libraryName), importPos);
-        }
-
-        Patcher.runPatch(userLib, Patcher.PATCH_RUNNER, e -> {
-            if (e instanceof EvaluationException evaluationException) {
-                throw new EvaluationException(config, "Failed to load library %s".formatted(libId), importPos, evaluationException);
-            }
-            throw new RuntimeException("Failed to load library %s".formatted(libId), e);
-        }, this, libraryObject, Patcher.Settings.builder().library().build());
     }
 }
