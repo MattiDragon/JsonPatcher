@@ -18,13 +18,15 @@ public class GsonConverter {
             if (!TO_GSON_RECURSION_TRACKER.get().add(value)) {
                 throw new IllegalStateException("recursive value tree");
             }
-            if (value instanceof Value.ObjectValue objectValue) return toGson(objectValue);
-            if (value instanceof Value.ArrayValue arrayValue) return toGson(arrayValue);
-            if (value instanceof Value.NumberValue(var num)) return new JsonPrimitive(num);
-            if (value instanceof Value.StringValue(var s)) return new JsonPrimitive(s);
-            if (value instanceof Value.BooleanValue booleanValue) return new JsonPrimitive(booleanValue.value());
-            if (value instanceof Value.NullValue) return JsonNull.INSTANCE;
-            throw new IllegalStateException("Can't convert %s to gson".formatted(value));
+            return switch (value) {
+                case Value.ObjectValue objectValue -> toGson(objectValue);
+                case Value.ArrayValue arrayValue -> toGson(arrayValue);
+                case Value.NumberValue(var num) -> new JsonPrimitive(num);
+                case Value.StringValue(var s) -> new JsonPrimitive(s);
+                case Value.BooleanValue booleanValue -> new JsonPrimitive(booleanValue.value());
+                case Value.NullValue.NULL -> JsonNull.INSTANCE;
+                case null, default -> throw new IllegalStateException("Can't convert %s to gson".formatted(value));
+            };
         } finally {
             TO_GSON_RECURSION_TRACKER.get().remove(value);
         }
@@ -51,15 +53,15 @@ public class GsonConverter {
             if (!FROM_GSON_RECURSION_TRACKER.get().add(json)) {
                 throw new IllegalStateException("recursive gson json tree");
             }
-            if (json instanceof JsonObject jsonObject) return fromGson(jsonObject);
-            if (json instanceof JsonArray jsonArray) return fromGson(jsonArray);
-            if (json instanceof JsonPrimitive primitive) {
-                if (primitive.isBoolean()) return Value.BooleanValue.of(primitive.getAsBoolean());
-                if (primitive.isNumber()) return new Value.NumberValue(primitive.getAsNumber().doubleValue());
-                if (primitive.isString()) return new Value.StringValue(primitive.getAsString());
-            }
-            if (json instanceof JsonNull) return Value.NullValue.NULL;
-            throw new IllegalStateException("Can't convert %s to value".formatted(json));
+            return switch (json) {
+                case JsonObject jsonObject -> fromGson(jsonObject);
+                case JsonArray jsonArray -> fromGson(jsonArray);
+                case JsonPrimitive primitive when primitive.isBoolean() -> Value.BooleanValue.of(primitive.getAsBoolean());
+                case JsonPrimitive primitive when primitive.isNumber() -> new Value.NumberValue(primitive.getAsNumber().doubleValue());
+                case JsonPrimitive primitive when primitive.isString() -> new Value.StringValue(primitive.getAsString());
+                case JsonNull jsonNull -> Value.NullValue.NULL;
+                case null, default -> throw new IllegalStateException("Can't convert %s to value".formatted(json));
+            };
         } finally {
             FROM_GSON_RECURSION_TRACKER.get().remove(json);
         }

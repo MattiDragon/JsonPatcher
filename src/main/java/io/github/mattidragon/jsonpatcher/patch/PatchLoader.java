@@ -22,7 +22,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
-import oshi.util.Memoizer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,6 +40,7 @@ public class PatchLoader {
         var futures = new ArrayList<CompletableFuture<Void>>();
         var patches = Collections.synchronizedList(new ArrayList<Patch>());
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT); // TODO: offer config
+        environment.bootstrap();
 
         var errorCount = new AtomicInteger(0);
         var warnCount = new AtomicInteger(0);

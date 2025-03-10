@@ -1,12 +1,10 @@
-/*
 package io.github.mattidragon.jsonpatcher.metapatch;
 
 import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Either;
-import io.github.mattidragon.jsonpatcher.lang.runtime.EvaluationException;
-import io.github.mattidragon.jsonpatcher.lang.runtime.Value;
-import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.DontBind;
-import io.github.mattidragon.jsonpatcher.lang.runtime.stdlib.LibraryBuilder;
+import dev.mattidragon.jsonpatcher.lang.runtime_shared.PlatformContext;
+import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
+import dev.mattidragon.jsonpatcher.lang.runtime_shared.stdlib.DontBind;
 import io.github.mattidragon.jsonpatcher.misc.GsonConverter;
 import io.github.mattidragon.jsonpatcher.misc.ValueOps;
 import io.github.mattidragon.jsonpatcher.patch.PatchTarget;
@@ -16,6 +14,7 @@ import net.minecraft.util.Identifier;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.util.*;
 
 @SuppressWarnings("unused")
@@ -47,27 +46,23 @@ public class MetapatchLibrary {
         return false;
     }
 
-    public void addFile(LibraryBuilder.FunctionContext context, Value.StringValue idString, Value.ObjectValue file) {
-        var id = Identifier.tryParse(idString.value());
-        if (id == null) throw new EvaluationException(context.context().config(), "Invalid identifier: " + idString.value(), context.callPos());
-        try {
-            if (isDeleted(id)) {
-                filters.add(new FileFilter(
-                        new PatchTarget(
-                                Optional.of(id.getNamespace()),
-                                Optional.of(new PatchTarget.Path(Either.left(id.getPath()))),
-                                Optional.empty()),
-                        true));
-            }
-            addedFiles.put(id, GsonConverter.toGson(file));
-        } catch (IllegalStateException e) {
-            throw new EvaluationException(context.context().config(), "Failed to convert to json: " + e.getMessage(), context.callPos());
+    public void addFile(PlatformContext context, Value.StringValue idString, Value.ObjectValue file) {
+        var id = Identifier.of(idString.value());
+
+        // Add filter to undo deletion if necessary
+        if (isDeleted(id)) {
+            filters.add(new FileFilter(
+                    new PatchTarget(
+                            Optional.of(id.getNamespace()),
+                            Optional.of(new PatchTarget.Path(Either.left(id.getPath()))),
+                            Optional.empty()),
+                    true));
         }
+        addedFiles.put(id, GsonConverter.toGson(file));
     }
 
-    public void deleteFile(LibraryBuilder.FunctionContext context, Value.StringValue idString) {
-        var id = Identifier.tryParse(idString.value());
-        if (id == null) throw new EvaluationException(context.context().config(), "Invalid identifier: " + idString.value(), context.callPos());
+    public void deleteFile(PlatformContext context, Value.StringValue idString) {
+        var id = Identifier.of(idString.value());
 
         filters.add(new FileFilter(
                 new PatchTarget(
@@ -77,31 +72,42 @@ public class MetapatchLibrary {
                 false));
     }
 
-    public void deleteFiles(LibraryBuilder.FunctionContext context, Value value) {
+    public void deleteFiles(PlatformContext context, Value value) {
         var target = PatchTarget.CODEC.decode(ValueOps.INSTANCE, value)
-                .getOrThrow(error -> new EvaluationException(context.context().config(), "Failed to parse target: " + error, context.callPos()))
+                .getOrThrow(error -> new IllegalStateException("Failed to parse target: " + error))
                 .getFirst();
         filters.add(new FileFilter(target, false));
     }
 
-    public Value getFile(LibraryBuilder.FunctionContext context, Value.StringValue idString) {
-        var id = Identifier.tryParse(idString.value());
-        if (id == null) throw new EvaluationException(context.context().config(), "Invalid identifier: " + idString.value(), context.callPos());
+    public Value getFile(PlatformContext context, Value.StringValue idString) {
+        var id = Identifier.of(idString.value());
 
         try (var __ = PatchingContext.disablePatching()) {
             var resource = resourceManager.getResource(id);
             if (resource.isPresent()) {
-                try {
-                    return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.get().getInputStream()), JsonObject.class));
-                } catch (IllegalStateException e) {
-                    throw new EvaluationException(context.context().config(), "Failed to convert from json: " + e.getMessage(), context.callPos());
-                } catch (IOException e) {
-                    throw new EvaluationException(context.context().config(), "Failed to read file: " + e.getMessage(), context.callPos());
-                }
+                return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.get().getInputStream()), JsonObject.class));
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
 
         return Value.NullValue.NULL;
     }
+
+    public Value getFiles(PlatformContext context, Value.StringValue idString) {
+        var id = Identifier.of(idString.value());
+
+        var array = new Value.ArrayValue();
+        try (var __ = PatchingContext.disablePatching()) {
+            var resources = resourceManager.getAllResources(id);
+            for (var resource : resources) {
+                var value = GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.getInputStream()), JsonObject.class));
+                array.value().add(value);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        return array;
+    }
 }
-*/

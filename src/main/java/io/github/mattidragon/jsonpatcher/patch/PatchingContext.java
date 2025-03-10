@@ -33,7 +33,7 @@ public class PatchingContext {
         JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload {}", patches.size(), resourceType.name());
 
         patcher = new Patcher(resourceType, patches);
-//        patcher.runMetaPatches(manager, Patcher.PATCH_RUNNER);
+        patcher.runMetaPatches(manager, Patcher.PATCH_RUNNER);
         loaded = true;
     }
 
