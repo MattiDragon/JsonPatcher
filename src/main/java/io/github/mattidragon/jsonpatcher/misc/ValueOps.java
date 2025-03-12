@@ -3,7 +3,7 @@ package io.github.mattidragon.jsonpatcher.misc;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
+import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

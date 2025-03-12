@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
+import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
@@ -19,7 +19,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import org.apache.commons.lang3.mutable.MutableObject;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -178,44 +177,5 @@ public class Patcher {
         }
 
         lib.apply(metaPack);
-    }
-
-    public record Settings(@Nullable String target, boolean isLibrary, @Nullable MetapatchLibrary metaPatchLibrary) {
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public Value targetAsValue() {
-            return target == null ? Value.NullValue.NULL : new Value.StringValue(target);
-        }
-
-        public boolean isMetaPatch() {
-            return metaPatchLibrary != null;
-        }
-
-        public static class Builder {
-            private @Nullable String target;
-            private boolean isLibrary;
-            private @Nullable MetapatchLibrary metaPatchLibrary;
-
-            public Builder target(String target) {
-                this.target = target;
-                return this;
-            }
-
-            public Builder library() {
-                this.isLibrary = true;
-                return this;
-            }
-
-            public Builder metaPatchLibrary(MetapatchLibrary metaPatchLibrary) {
-                this.metaPatchLibrary = metaPatchLibrary;
-                return this;
-            }
-
-            public Settings build() {
-                return new Settings(target, isLibrary, metaPatchLibrary);
-            }
-        }
     }
 }

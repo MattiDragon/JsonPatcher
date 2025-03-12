@@ -2,7 +2,7 @@ package io.github.mattidragon.jsonpatcher.misc;
 
 import com.google.common.collect.Sets;
 import com.google.gson.*;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
+import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 
 import java.util.Set;
 

@@ -11,7 +11,7 @@ import dev.mattidragon.jsonpatcher.lang.runtime.bytecode.compiler.CompilerOption
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironment;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.Library;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.LibraryGroup;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
+import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.misc.MetadataOps;
@@ -33,10 +33,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class PatchLoader {
-    private static final ResourceFinder finder = new ResourceFinder("jsonpatch", ".jsonpatch");
+    private static final ResourceFinder FINDER = new ResourceFinder("jsonpatch", ".jsonpatch");
 
     public static PatchStorage load(Executor executor, ResourceManager manager) {
-        var files = finder.findResources(manager);
+        var files = FINDER.findResources(manager);
         var futures = new ArrayList<CompletableFuture<Void>>();
         var patches = Collections.synchronizedList(new ArrayList<Patch>());
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT); // TODO: offer config
@@ -71,7 +71,7 @@ public class PatchLoader {
 
     @Nullable
     private static Patch loadPatch(Map.Entry<Identifier, Resource> entry, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount) {
-        var id = finder.toResourceId(entry.getKey());
+        var id = FINDER.toResourceId(entry.getKey());
         var resource = entry.getValue();
 
         try {

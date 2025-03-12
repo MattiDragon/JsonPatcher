@@ -2,9 +2,9 @@ package io.github.mattidragon.jsonpatcher.metapatch;
 
 import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Either;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.PlatformContext;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.Value;
-import dev.mattidragon.jsonpatcher.lang.runtime_shared.stdlib.DontBind;
+import dev.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
+import dev.mattidragon.jsonpatcher.lang.runtime.lib.builder.DontBind;
+import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import io.github.mattidragon.jsonpatcher.misc.GsonConverter;
 import io.github.mattidragon.jsonpatcher.misc.ValueOps;
 import io.github.mattidragon.jsonpatcher.patch.PatchTarget;
@@ -46,7 +46,7 @@ public class MetapatchLibrary {
         return false;
     }
 
-    public void addFile(PlatformContext context, Value.StringValue idString, Value.ObjectValue file) {
+    public void addFile(EvaluationContext context, Value.StringValue idString, Value.ObjectValue file) {
         var id = Identifier.of(idString.value());
 
         // Add filter to undo deletion if necessary
@@ -61,7 +61,7 @@ public class MetapatchLibrary {
         addedFiles.put(id, GsonConverter.toGson(file));
     }
 
-    public void deleteFile(PlatformContext context, Value.StringValue idString) {
+    public void deleteFile(EvaluationContext context, Value.StringValue idString) {
         var id = Identifier.of(idString.value());
 
         filters.add(new FileFilter(
@@ -72,14 +72,14 @@ public class MetapatchLibrary {
                 false));
     }
 
-    public void deleteFiles(PlatformContext context, Value value) {
+    public void deleteFiles(EvaluationContext context, Value value) {
         var target = PatchTarget.CODEC.decode(ValueOps.INSTANCE, value)
                 .getOrThrow(error -> new IllegalStateException("Failed to parse target: " + error))
                 .getFirst();
         filters.add(new FileFilter(target, false));
     }
 
-    public Value getFile(PlatformContext context, Value.StringValue idString) {
+    public Value getFile(EvaluationContext context, Value.StringValue idString) {
         var id = Identifier.of(idString.value());
 
         try (var __ = PatchingContext.disablePatching()) {
@@ -94,7 +94,7 @@ public class MetapatchLibrary {
         return Value.NullValue.NULL;
     }
 
-    public Value getFiles(PlatformContext context, Value.StringValue idString) {
+    public Value getFiles(EvaluationContext context, Value.StringValue idString) {
         var id = Identifier.of(idString.value());
 
         var array = new Value.ArrayValue();
