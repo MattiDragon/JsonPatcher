@@ -152,9 +152,10 @@ public class PatchLoader {
 
         var className = "jsonpatch/"
                         + id.getNamespace().replace("-|\\.", "_")
+                        + "/"
                         + id.getPath().replace("-|\\.", "_");
         // TODO: allow reflection when patches can be trusted
-        var added = environment.addProgram(result.program(), result.treeMetadata(), id.toString(), className, Set.of(LibraryGroup.DEFAULT));
+        var added = environment.addProgram(result.program(), result.treeMetadata(), id.toString(), className, Set.of(LibraryGroup.DEFAULT, LibraryGroup.REFLECTION));
 
         if (libraryMetadata != null) {
             Supplier<Value.ObjectValue> supplier = () -> {

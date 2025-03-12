@@ -1,3 +1,8 @@
+# DISABLED FOR MIGRATION
+@enabled false;
+# UNMIGRATED CODE BELOW
+
+
 @version "1";
 @target "minecraft:recipes/golden_apple.json";
 

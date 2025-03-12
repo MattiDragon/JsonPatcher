@@ -3,8 +3,10 @@ package io.github.mattidragon.jsonpatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.patch.ErrorLogger;
+import io.github.mattidragon.jsonpatcher.remap.MappingsLoader;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -13,10 +15,12 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
 public class JsonPatcher implements ModInitializer {
+    public static final Path DATA_DIR = FabricLoader.getInstance().getGameDir().resolve("jsonpatcher");
     private static final Set<String> SUPPORTED_VERSIONS = new HashSet<>(Set.of("2"));
     public static final String MOD_ID = "jsonpatcher";
     public static final Logger MAIN_LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -33,6 +37,7 @@ public class JsonPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        MappingsLoader.init();
         Config.MANAGER.get();
         DumpManager.cleanDump("");
 

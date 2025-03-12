@@ -1,5 +1,10 @@
+# DISABLED FOR MIGRATION
+@enabled false;
+# UNMIGRATED CODE BELOW
+
+
 @version "1";
 @target {
     "regex": ".*:recipes/.*"
 };
-@enabled true;
+#@enabled true;

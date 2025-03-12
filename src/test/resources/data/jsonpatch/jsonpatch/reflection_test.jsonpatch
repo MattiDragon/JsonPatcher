@@ -1,0 +1,8 @@
+@version "2";
+@target "minecraft:recipe/diamond_pickaxe.json";
+
+import "reflection";
+
+val ResourceLocation = reflection.findClass("net.minecraft.resources.ResourceLocation");
+
+debug.log(ResourceLocation.withDefaultNamespace("hell0"));
