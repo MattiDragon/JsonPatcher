@@ -1,11 +1,13 @@
 package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.base.Suppliers;
+import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.error.Diagnostic;
 import dev.mattidragon.jsonpatcher.lang.error.DiagnosticsBuilder;
 import dev.mattidragon.jsonpatcher.lang.parse.Lexer;
 import dev.mattidragon.jsonpatcher.lang.parse.Parser;
 import dev.mattidragon.jsonpatcher.lang.parse.metadata.MetadataNull;
+import dev.mattidragon.jsonpatcher.lang.parse.metadata.MetadataString;
 import dev.mattidragon.jsonpatcher.lang.runtime.bytecode.CompilationException;
 import dev.mattidragon.jsonpatcher.lang.runtime.bytecode.compiler.CompilerOptions;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironment;
@@ -91,13 +93,15 @@ public class PatchLoader {
 
             var lexResult = Lexer.lex(code, id.toString(), diagnosticsBuilder);
             var parseResult = Parser.parse(lexResult.tokens(), diagnosticsBuilder);
+            
+            var built = validateAndBuild(id, parseResult, environment, diagnosticsBuilder);
 
             var diagnostics = diagnosticsBuilder.build();
             var errors = diagnostics.errors();
             var warnings = diagnostics.warnings();
 
             if (!errors.isEmpty()) {
-                JsonPatcher.RELOAD_LOGGER.warn("Failed to load patch {} from {}:\n{}", id, entry.getKey(), errors
+                JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}:\n{}", id, entry.getKey(), errors
                         .stream()
                         .map(Diagnostic::toDisplay)
                         .collect(Collectors.joining("\n")));
@@ -112,7 +116,7 @@ public class PatchLoader {
             }
 
             if (errors.isEmpty()) {
-                return validateAndBuild(id, parseResult, environment);
+                return built;
             }
         } catch (IOException | CompilationException | IllegalStateException e) {
             JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);
@@ -125,22 +129,52 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch validateAndBuild(Identifier id, Parser.Result result, EvaluationEnvironment environment) {
+    private static Patch validateAndBuild(Identifier id, Parser.Result result, EvaluationEnvironment environment, DiagnosticsBuilder diagnosticsBuilder) {
         var roles = new HashSet<String>();
 
+        var treeMeta = result.treeMetadata();
         var meta = result.metadata();
         if (meta.has("enabled") && !meta.getBoolean("enabled")) {
             return null;
         }
 
-        if (!JsonPatcher.isSupportedVersion(meta.getString("version"))) {
-            throw new IllegalStateException("Unsupported patch version '%s'".formatted(meta.getString("version")));
+        if (!meta.has("version") || !(meta.get("version") instanceof MetadataString(var version))) {
+            var pos = meta.has("version")
+                    ? treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null)
+                    : null;
+            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                    pos,
+                    "Unsupported patch version '%s'".formatted(meta.getString("version")),
+                    Diagnostic.Kind.ERROR,
+                    0
+            ));
+            return null;
+        }
+        if (!JsonPatcher.isSupportedVersion(version)) {
+            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                    treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null),
+                    "Unsupported patch version '%s'".formatted(meta.getString("version")),
+                    Diagnostic.Kind.ERROR,
+                    1
+            ));
+            return null;
         }
 
         List<PatchTarget> target;
         if (meta.has("target")) {
-            target = PatchTarget.LIST_CODEC.parse(MetadataOps.INSTANCE, meta.get("target"))
-                    .getOrThrow(error -> new IllegalStateException("Failed to parse target: %s".formatted(error)));
+            var dataResult = PatchTarget.LIST_CODEC.parse(MetadataOps.INSTANCE, meta.get("target"));
+            if (dataResult.isSuccess()) {
+                target = dataResult.getOrThrow();
+            } else {
+                target = List.of();
+                diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                        treeMeta.get(meta.get("target"), MetadataKey.MAIN_POS).orElse(null),
+                        "Failed to parse target: %s".formatted(dataResult.error().orElseThrow().message()),
+                        Diagnostic.Kind.ERROR,
+                        2
+                ));
+            }
+
             roles.add("patch");
         } else {
             target = List.of();
@@ -159,8 +193,17 @@ public class PatchLoader {
             if (data instanceof MetadataNull) {
                 libraryMetadata = LibraryMetadata.DEFAULT;
             } else {
-                libraryMetadata = LibraryMetadata.CODEC.parse(MetadataOps.INSTANCE, data)
-                        .getOrThrow(error -> new IllegalStateException("Failed to parse library metadata: %s".formatted(error)));
+                var dataResult = LibraryMetadata.CODEC.parse(MetadataOps.INSTANCE, data);
+                if (dataResult.isSuccess()) {
+                    libraryMetadata = dataResult.getOrThrow();
+                } else {
+                    diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                            treeMeta.get(data, MetadataKey.MAIN_POS).orElse(null),
+                            "Failed to parse library metadata: %s".formatted(dataResult.error().orElseThrow().message()),
+                            Diagnostic.Kind.ERROR,
+                            3
+                    ));
+                }
             }
             roles.add("library");
         }
@@ -168,14 +211,24 @@ public class PatchLoader {
         var isMetapatch = meta.has("metapatch");
         if (isMetapatch) {
             if (!(meta.get("metapatch") instanceof MetadataNull)) {
-                throw new IllegalStateException("Metapatch metadata should be empty");
+                diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                        treeMeta.get(meta.get("metapatch"), MetadataKey.MAIN_POS).orElse(null),
+                        "Metapatch metadata should be empty",
+                        Diagnostic.Kind.ERROR,
+                        4
+                ));
             }
             roles.add("metapatch");
         }
 
         if (roles.size() > 1) {
-            throw new IllegalStateException("A single patch may only have one role. %s has %s: %s"
-                    .formatted(id, roles.size(), String.join(", ", roles)));
+            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                    null,
+                    "A single patch may only have one role. %s has %s: %s"
+                            .formatted(id, roles.size(), String.join(", ", roles)),
+                    Diagnostic.Kind.ERROR,
+                    5
+            ));
         }
 
         var className = "jsonpatch/"
