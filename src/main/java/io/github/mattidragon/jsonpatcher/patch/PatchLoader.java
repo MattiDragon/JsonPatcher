@@ -19,11 +19,13 @@ import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
+import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.MetadataOps;
 import io.github.mattidragon.jsonpatcher.misc.ModLibraryGroups;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -41,12 +43,15 @@ import java.util.stream.Collectors;
 public class PatchLoader {
     private static final ResourceFinder FINDER = new ResourceFinder("jsonpatch", ".jsonpatch");
 
-    public static PatchStorage load(Executor executor, ResourceManager manager) {
+    public static PatchStorage load(Executor executor, ResourceManager manager, ResourceType resourceType) {
         var files = FINDER.findResources(manager);
         var futures = new ArrayList<CompletableFuture<Void>>();
         var patches = Collections.synchronizedList(new ArrayList<Patch>());
 
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT); // TODO: offer config
+        if (Config.MANAGER.get().dumpCompiledPatches()) {
+            environment.enableDumping(DumpManager.getDumpPath("classes/" + resourceType.getDirectory()));
+        }
         environment.bootstrap();
         var metapatchLibrary = new MetapatchLibrary(manager);
         environment.addLibrary(new Library(
@@ -54,6 +59,7 @@ public class PatchLoader {
                 "metapatch",
                 Suppliers.memoize(() -> new LibraryBuilder(MetapatchLibrary.class, metapatchLibrary).build())
         ));
+
 
         var errorCount = new AtomicInteger(0);
         var warnCount = new AtomicInteger(0);

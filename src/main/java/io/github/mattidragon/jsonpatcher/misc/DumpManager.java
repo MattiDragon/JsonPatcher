@@ -61,9 +61,9 @@ public class DumpManager {
         }
     }
 
-    private static Path getDumpPath(String dumpLocation) {
+    public static Path getDumpPath(String dumpLocation) {
         return FabricLoader.getInstance().getGameDir()
-                .resolve("jsonpatcher-dump")
+                .resolve("jsonpatcher/dump")
                 .resolve(dumpLocation);
     }
 }

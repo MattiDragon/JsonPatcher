@@ -1,9 +1,4 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
-
-
-@version "1";
+@version "2";
 @target "minecraft:lang/en_us.json";
 
 # Set the ender pearl's name to "Void Pearl"

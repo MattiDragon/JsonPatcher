@@ -10,7 +10,7 @@
     "homepage": "https://modrinth.com/mod/jsonpatcher"
   },
   "license": "MIT",
-  "icon": "assets/jsonpatch/icon.png",
+  "icon": "assets/jsonpatcher/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [

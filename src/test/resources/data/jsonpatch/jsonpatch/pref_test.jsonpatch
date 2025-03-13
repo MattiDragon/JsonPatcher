@@ -1,11 +1,6 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
-
-
-@version "1";
+@version "2";
 @target "minecraft:recipes/diamond_pickaxe.json";
-#@enabled true;
+@enabled false;
 
 if ($type != "minecraft:crafting_shaped") return;
 

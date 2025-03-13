@@ -1,8 +1,3 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
-
-
 # JsonPatcher Format Demo
 # Syntax still subject to change
 
@@ -10,7 +5,7 @@
 # The value is formatted as json (with some quirks due to using the jsonpatcher lexer)
 
 # Mandatory version tag (for compatibility breaking changes in the future)
-@version "1";
+@version "2";
 
 # Target tag specifies the target file(s) to patch
 # You can specify multiple targets in an array and

@@ -1,9 +1,4 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
-
-
-@version "1";
+@version "2";
 @target "minecraft:recipes/golden_apple.json";
 
 $result.id = "minecraft:enchanted_golden_apple";

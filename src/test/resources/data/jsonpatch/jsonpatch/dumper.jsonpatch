@@ -1,10 +1,7 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
+# This script patches all recipes to force them to dump
 
-
-@version "1";
+@version "2";
 @target {
-    "regex": ".*:recipes/.*"
+    "regex": ".*:recipe/.*"
 };
-#@enabled true;
+@enabled false;
