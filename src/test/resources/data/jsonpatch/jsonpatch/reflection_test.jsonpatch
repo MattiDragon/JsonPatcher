@@ -3,12 +3,5 @@
 
 import "reflection";
 
-for (var i = 0; i < 100; i++) {
-    val ResourceLocation = reflection.findClass("net.minecraft.resources.ResourceLocation");
-    ResourceLocation.withDefaultNamespace("hell0");
-}
-#
-#reflection.findClass("net.minecraft.resources.ResourceLocation");
-#reflection.findClass("com.mojang.blaze3d.FieldsAreNonnullByDefault");
-#reflection.findClass("net.minecraft.world.level.biome.Biome");
-#reflection.findClass("net.minecraft.world.level.biome.Climate");
+val ResourceLocation = reflection.findClass("net.minecraft.resources.ResourceLocation");
+debug.log(ResourceLocation.withDefaultNamespace("hell0"));

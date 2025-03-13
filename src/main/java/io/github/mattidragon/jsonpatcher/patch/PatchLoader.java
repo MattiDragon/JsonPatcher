@@ -52,6 +52,7 @@ public class PatchLoader {
         if (Config.MANAGER.get().dumpCompiledPatches()) {
             environment.enableDumping(DumpManager.getDumpPath("classes/" + resourceType.getDirectory()));
         }
+        environment.enableLogging(value -> JsonPatcher.RELOAD_LOGGER.info("Debug message from patch: {}", value));
         environment.bootstrap();
         var metapatchLibrary = new MetapatchLibrary(manager);
         environment.addLibrary(new Library(
@@ -237,7 +238,7 @@ public class PatchLoader {
             ));
         }
 
-        var className = "jsonpatch/"
+        var className = "jsonpatcher_patches/"
                         + id.getNamespace().replace("-|\\.", "_")
                         + "/"
                         + id.getPath().replace("-|\\.", "_");
