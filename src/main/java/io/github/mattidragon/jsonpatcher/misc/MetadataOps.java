@@ -18,13 +18,13 @@ public class MetadataOps implements DynamicOps<MetadataElement> {
 
     @Override
     public MetadataElement empty() {
-        return MetadataNull.INSTANCE;
+        return new MetadataNull();
     }
 
     @Override
     public <U> U convertTo(DynamicOps<U> outOps, MetadataElement input) {
         return switch (input) {
-            case MetadataNull.INSTANCE -> outOps.empty();
+            case MetadataNull() -> outOps.empty();
             case MetadataBoolean(boolean value) -> outOps.createBoolean(value);
             case MetadataNumber(double value) -> outOps.createNumeric(value);
             case MetadataString(String value) -> outOps.createString(value);
@@ -59,6 +59,19 @@ public class MetadataOps implements DynamicOps<MetadataElement> {
     @Override
     public MetadataElement createString(String value) {
         return new MetadataString(value);
+    }
+
+    @Override
+    public DataResult<Boolean> getBooleanValue(MetadataElement input) {
+        if (input instanceof MetadataBoolean(boolean value)) {
+            return DataResult.success(value);
+        }
+        return DataResult.error(() -> "Not a boolean: " + input);
+    }
+
+    @Override
+    public MetadataElement createBoolean(boolean value) {
+        return new MetadataBoolean(value);
     }
 
     @Override

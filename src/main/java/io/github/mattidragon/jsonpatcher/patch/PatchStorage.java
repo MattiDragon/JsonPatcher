@@ -2,6 +2,7 @@ package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import net.minecraft.util.Identifier;
 
 import java.util.*;
@@ -18,6 +19,7 @@ public final class PatchStorage {
 
     private final Map<Identifier, Patch> libraries = new HashMap<>();
     private final List<Patch> metaPatches = new ArrayList<>();
+    private final MetapatchLibrary metapatchLibrary;
 
     /*
     Group 1: namespaced patches
@@ -34,7 +36,9 @@ public final class PatchStorage {
     |namespace    |XXX   XXX   |
     |regex        |xxxxxx      |
     */
-    public PatchStorage(List<Patch> patches) {
+    public PatchStorage(List<Patch> patches, MetapatchLibrary metapatchLibrary) {
+        this.metapatchLibrary = metapatchLibrary;
+
         for (var patch : patches) {
             if (patch.isMeta()) metaPatches.add(patch);
 
@@ -107,5 +111,9 @@ public final class PatchStorage {
 
     public int size() {
         return libraries.size();
+    }
+
+    public MetapatchLibrary metapatchLibrary() {
+        return metapatchLibrary;
     }
 }

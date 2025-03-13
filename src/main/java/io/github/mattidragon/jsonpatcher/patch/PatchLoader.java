@@ -11,10 +11,14 @@ import dev.mattidragon.jsonpatcher.lang.runtime.bytecode.compiler.CompilerOption
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironment;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.Library;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.LibraryGroup;
+import dev.mattidragon.jsonpatcher.lang.runtime.environment.ProgramData;
+import dev.mattidragon.jsonpatcher.lang.runtime.lib.builder.LibraryBuilder;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
+import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.MetadataOps;
+import io.github.mattidragon.jsonpatcher.misc.ModLibraryGroups;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -39,8 +43,15 @@ public class PatchLoader {
         var files = FINDER.findResources(manager);
         var futures = new ArrayList<CompletableFuture<Void>>();
         var patches = Collections.synchronizedList(new ArrayList<Patch>());
+
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT); // TODO: offer config
         environment.bootstrap();
+        var metapatchLibrary = new MetapatchLibrary(manager);
+        environment.addLibrary(new Library(
+                ModLibraryGroups.METAPATCH,
+                "metapatch",
+                Suppliers.memoize(() -> new LibraryBuilder(MetapatchLibrary.class, metapatchLibrary).build())
+        ));
 
         var errorCount = new AtomicInteger(0);
         var warnCount = new AtomicInteger(0);
@@ -66,7 +77,7 @@ public class PatchLoader {
             ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.YELLOW));
             JsonPatcher.MAIN_LOGGER.warn(message);
         }
-        return new PatchStorage(patches);
+        return new PatchStorage(patches, metapatchLibrary);
     }
 
     @Nullable
@@ -115,6 +126,8 @@ public class PatchLoader {
 
     @Nullable
     private static Patch validateAndBuild(Identifier id, Parser.Result result, EvaluationEnvironment environment) {
+        var roles = new HashSet<String>();
+
         var meta = result.metadata();
         if (meta.has("enabled") && !meta.getBoolean("enabled")) {
             return null;
@@ -128,6 +141,7 @@ public class PatchLoader {
         if (meta.has("target")) {
             target = PatchTarget.LIST_CODEC.parse(MetadataOps.INSTANCE, meta.get("target"))
                     .getOrThrow(error -> new IllegalStateException("Failed to parse target: %s".formatted(error)));
+            roles.add("patch");
         } else {
             target = List.of();
         }
@@ -142,20 +156,43 @@ public class PatchLoader {
         @Nullable LibraryMetadata libraryMetadata = null;
         if (meta.has("library")) {
             var data = meta.get("library");
-            if (data == MetadataNull.INSTANCE) {
+            if (data instanceof MetadataNull) {
                 libraryMetadata = LibraryMetadata.DEFAULT;
             } else {
                 libraryMetadata = LibraryMetadata.CODEC.parse(MetadataOps.INSTANCE, data)
                         .getOrThrow(error -> new IllegalStateException("Failed to parse library metadata: %s".formatted(error)));
             }
+            roles.add("library");
+        }
+
+        var isMetapatch = meta.has("metapatch");
+        if (isMetapatch) {
+            if (!(meta.get("metapatch") instanceof MetadataNull)) {
+                throw new IllegalStateException("Metapatch metadata should be empty");
+            }
+            roles.add("metapatch");
+        }
+
+        if (roles.size() > 1) {
+            throw new IllegalStateException("A single patch may only have one role. %s has %s: %s"
+                    .formatted(id, roles.size(), String.join(", ", roles)));
         }
 
         var className = "jsonpatch/"
                         + id.getNamespace().replace("-|\\.", "_")
                         + "/"
                         + id.getPath().replace("-|\\.", "_");
+
+        var builder = ProgramData.builder(result)
+                .scriptName(id.toString())
+                .className(className);
+
+        if (isMetapatch) builder.allowLibraryGroup(ModLibraryGroups.METAPATCH);
         // TODO: allow reflection when patches can be trusted
-        var added = environment.addProgram(result.program(), result.treeMetadata(), id.toString(), className, Set.of(LibraryGroup.DEFAULT, LibraryGroup.REFLECTION));
+        // TODO: remove reflection from untrusted code
+        builder.allowLibraryGroup(LibraryGroup.REFLECTION);
+
+        var added = environment.addProgram(builder.build());
 
         if (libraryMetadata != null) {
             Supplier<Value.ObjectValue> supplier = () -> {
@@ -170,6 +207,6 @@ public class PatchLoader {
             environment.addLibrary(library);
         }
 
-        return new Patch(added, id, target, priority, meta.has("metapatch"));
+        return new Patch(added, id, target, priority, isMetapatch);
     }
 }

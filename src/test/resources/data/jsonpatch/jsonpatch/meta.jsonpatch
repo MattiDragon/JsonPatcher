@@ -1,10 +1,7 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
-
-
-@version "1";
+@version "2";
 @metapatch;
+
+import "metapatch";
 
 metapatch.deleteFile("minecraft:recipe/diamond_boots.json");
 

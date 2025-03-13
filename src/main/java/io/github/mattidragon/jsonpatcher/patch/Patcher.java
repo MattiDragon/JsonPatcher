@@ -147,10 +147,10 @@ public class Patcher {
 
         var metaPack = packAccess.jsonpatcher$getMetaPatchPack();
         metaPack.clear();
+        patches.metapatchLibrary().clear();
 
         var metaPatches = new ArrayList<>(patches.getMetaPatches());
         metaPatches.sort(Comparator.comparing(Patch::priority));
-        var lib = new MetapatchLibrary(manager);
         var errors = new ArrayList<RuntimeException>();
 
         try {
@@ -175,7 +175,6 @@ public class Patcher {
                 JsonPatcher.MAIN_LOGGER.error(message);
             }
         }
-
-        lib.apply(metaPack);
+        patches.metapatchLibrary().apply(metaPack);
     }
 }

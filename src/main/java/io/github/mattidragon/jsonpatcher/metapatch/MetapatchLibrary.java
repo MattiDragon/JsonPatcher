@@ -36,6 +36,12 @@ public class MetapatchLibrary {
     }
 
     @DontBind
+    public void clear() {
+        addedFiles.clear();
+        filters.clear();
+    }
+
+    @DontBind
     private boolean isDeleted(Identifier id) {
         // The last filter added will get priority
         for (var filter : filters.reversed()) {
