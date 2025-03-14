@@ -1,0 +1,6 @@
+@version "2";
+@library;
+
+$testFunc = () -> {
+    return 100;
+}

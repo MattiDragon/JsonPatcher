@@ -7,7 +7,6 @@ import com.google.gson.stream.JsonWriter;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import io.github.mattidragon.jsonpatcher.JsonPatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
-import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.GsonConverter;
 import io.github.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
@@ -79,7 +78,7 @@ public class Patcher {
      * @param root The root object for the patch context, will be modified
      * @return {@code true} if the patch completed successfully. If {@code false} the {@code errorConsumer} should have received an error.
      */
-    public static boolean runPatch(Patch patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root) {
+    public static boolean runPatch(BasePatch patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root) {
         try {
             CompletableFuture.runAsync(() -> patch.program().run(root), executor)
                     .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -88,14 +87,14 @@ public class Patcher {
             if (e.getCause() instanceof RuntimeException cause) {
                 errorConsumer.accept(cause);
             } else if (e.getCause() instanceof StackOverflowError cause) {
-                errorConsumer.accept(new PatchingException("Stack overflow while applying patch %s".formatted(patch.id()), cause));
+                errorConsumer.accept(new PatchingException("Stack overflow while applying patch %s".formatted(patch.name()), cause));
             } else {
-                errorConsumer.accept(new RuntimeException("Unexpected error while applying patch %s".formatted(patch.id()), e));
+                errorConsumer.accept(new RuntimeException("Unexpected error while applying patch %s".formatted(patch.name()), e));
             }
         } catch (InterruptedException e) {
-            errorConsumer.accept(new PatchingException("Async error while applying patch %s".formatted(patch.id()), e));
+            errorConsumer.accept(new PatchingException("Async error while applying patch %s".formatted(patch.name()), e));
         } catch (TimeoutException e) {
-            errorConsumer.accept(new PatchingException("Timeout while applying patch %s. Check for infinite loops and increase the timeout in the config.".formatted(patch.id()), e));
+            errorConsumer.accept(new PatchingException("Timeout while applying patch %s. Check for infinite loops and increase the timeout in the config.".formatted(patch.name()), e));
         }
         return false;
     }

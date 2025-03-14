@@ -12,7 +12,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 @FieldsAreNonnullByDefault
-record PatchLoaderDiagnostic(@Nullable SourceSpan pos, String message, Kind kind, int code) implements Diagnostic {
+public record PatchLoaderDiagnostic(@Nullable SourceSpan pos, String message, Kind kind, int code) implements Diagnostic {
     @Override
     public @Nullable ProgramNode node() {
         return null;

@@ -24,6 +24,7 @@ import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.MetadataOps;
 import io.github.mattidragon.jsonpatcher.misc.ModLibraryGroups;
+import io.github.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
 import io.github.mattidragon.jsonpatcher.trust.TrustChecker;
 import io.github.mattidragon.jsonpatcher.trust.TrustLevel;
 import net.minecraft.resource.Resource;
@@ -64,7 +65,7 @@ public class PatchLoader {
                 "metapatch",
                 Suppliers.memoize(() -> new LibraryBuilder(MetapatchLibrary.class, metapatchLibrary).build())
         ));
-
+        GlobalPatchLoader.getGlobalLibs().forEach(environment::addLibrary);
 
         var errorCount = new AtomicInteger(0);
         var warnCount = new AtomicInteger(0);
@@ -167,9 +168,9 @@ public class PatchLoader {
         }
 
         var className = "jsonpatcher_patches/"
-                        + id.getNamespace().replace("-|\\.", "_")
+                        + id.getNamespace().replaceAll("[-.]", "_")
                         + "/"
-                        + id.getPath().replace("-|\\.", "_");
+                        + id.getPath().replaceAll("[-.]", "_");
 
         var builder = ProgramData.builder(result)
                 .scriptName(id.toString())
@@ -180,6 +181,7 @@ public class PatchLoader {
             builder.allowLibraryGroup(LibraryGroup.REFLECTION);
         }
 
+        // TODO: compilation exception will cause diagnostics to be ignored, fix
         var added = environment.addProgram(builder.build());
 
         if (libraryMetadata != null) {
@@ -214,7 +216,7 @@ public class PatchLoader {
         return isMetapatch;
     }
 
-    private static @Nullable LibraryMetadata getLibraryMetadata(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta, HashSet<String> roles) {
+    public static @Nullable LibraryMetadata getLibraryMetadata(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta, HashSet<String> roles) {
         if (meta.has("library")) {
             var data = meta.get("library");
             if (data instanceof MetadataNull) {
@@ -237,7 +239,7 @@ public class PatchLoader {
         return null;
     }
 
-    private static boolean validateVersion(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta) {
+    public static boolean validateVersion(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta) {
         if (!meta.has("version") || !(meta.get("version") instanceof MetadataString(var version))) {
             var pos = meta.has("version")
                     ? treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null)
@@ -285,7 +287,7 @@ public class PatchLoader {
         return target;
     }
 
-    private static double getPriority(PatchMetadata meta) {
+    public static double getPriority(PatchMetadata meta) {
         double priority;
         if (meta.has("priority")) {
             priority = meta.getNumber("priority");

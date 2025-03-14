@@ -3,6 +3,8 @@ package io.github.mattidragon.jsonpatcher;
 import io.github.mattidragon.jsonpatcher.config.Config;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.patch.ErrorLogger;
+import io.github.mattidragon.jsonpatcher.patch.global.GlobalPatch;
+import io.github.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
 import io.github.mattidragon.jsonpatcher.remap.MappingsLoader;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -50,6 +52,10 @@ public class JsonPatcher implements ModInitializer {
             }
         }));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> ErrorLogger.CURRENT.remove());
+
+        GlobalPatchLoader.setupDirs();
+        GlobalPatchLoader.loadGlobalPatches();
+        GlobalPatchLoader.runEntrypoint(GlobalPatch.Entrypoint.MAIN);
     }
 
     /**

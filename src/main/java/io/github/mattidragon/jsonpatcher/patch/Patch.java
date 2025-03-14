@@ -13,5 +13,9 @@ public record Patch(
         double priority,
         boolean isMeta,
         TrustLevel trustLevel
-) {
+) implements BasePatch {
+    @Override
+    public String name() {
+        return id.toString();
+    }
 }
