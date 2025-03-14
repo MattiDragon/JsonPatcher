@@ -27,7 +27,7 @@ public class PatchingContext {
     public void load(ResourceManager manager) {
         if (loaded) throw new IllegalStateException("Already loaded");
 
-        var patches = PatchLoader.load(Patcher.PATCH_RUNNER, manager, resourceType);
+        var patches = PatchLoader.loadPatches(Patcher.PATCH_RUNNER, manager, resourceType);
         DumpManager.cleanDump(resourceType.getDirectory());
 
         JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload {}", patches.size(), resourceType.name());

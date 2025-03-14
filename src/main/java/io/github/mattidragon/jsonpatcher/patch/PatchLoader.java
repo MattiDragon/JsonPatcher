@@ -2,12 +2,14 @@ package io.github.mattidragon.jsonpatcher.patch;
 
 import com.google.common.base.Suppliers;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
+import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
 import dev.mattidragon.jsonpatcher.lang.error.Diagnostic;
 import dev.mattidragon.jsonpatcher.lang.error.DiagnosticsBuilder;
 import dev.mattidragon.jsonpatcher.lang.parse.Lexer;
 import dev.mattidragon.jsonpatcher.lang.parse.Parser;
 import dev.mattidragon.jsonpatcher.lang.parse.metadata.MetadataNull;
 import dev.mattidragon.jsonpatcher.lang.parse.metadata.MetadataString;
+import dev.mattidragon.jsonpatcher.lang.parse.metadata.PatchMetadata;
 import dev.mattidragon.jsonpatcher.lang.runtime.bytecode.CompilationException;
 import dev.mattidragon.jsonpatcher.lang.runtime.bytecode.compiler.CompilerOptions;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironment;
@@ -45,7 +47,7 @@ import java.util.stream.Collectors;
 public class PatchLoader {
     private static final ResourceFinder FINDER = new ResourceFinder("jsonpatch", ".jsonpatch");
 
-    public static PatchStorage load(Executor executor, ResourceManager manager, ResourceType resourceType) {
+    public static PatchStorage loadPatches(Executor executor, ResourceManager manager, ResourceType resourceType) {
         var files = FINDER.findResources(manager);
         var futures = new ArrayList<CompletableFuture<Void>>();
         var patches = Collections.synchronizedList(new ArrayList<Patch>());
@@ -148,88 +150,11 @@ public class PatchLoader {
             return null;
         }
 
-        if (!meta.has("version") || !(meta.get("version") instanceof MetadataString(var version))) {
-            var pos = meta.has("version")
-                    ? treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null)
-                    : null;
-            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                    pos,
-                    "Unsupported patch version '%s'".formatted(meta.getString("version")),
-                    Diagnostic.Kind.ERROR,
-                    0
-            ));
-            return null;
-        }
-        if (!JsonPatcher.isSupportedVersion(version)) {
-            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                    treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null),
-                    "Unsupported patch version '%s'".formatted(meta.getString("version")),
-                    Diagnostic.Kind.ERROR,
-                    1
-            ));
-            return null;
-        }
-
-        List<PatchTarget> target;
-        if (meta.has("target")) {
-            var dataResult = PatchTarget.LIST_CODEC.parse(MetadataOps.INSTANCE, meta.get("target"));
-            if (dataResult.isSuccess()) {
-                target = dataResult.getOrThrow();
-            } else {
-                target = List.of();
-                diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                        treeMeta.get(meta.get("target"), MetadataKey.MAIN_POS).orElse(null),
-                        "Failed to parse target: %s".formatted(dataResult.error().orElseThrow().message()),
-                        Diagnostic.Kind.ERROR,
-                        2
-                ));
-            }
-
-            roles.add("patch");
-        } else {
-            target = List.of();
-        }
-
-        double priority;
-        if (meta.has("priority")) {
-            priority = meta.getNumber("priority");
-        } else {
-            priority = 0;
-        }
-
-        @Nullable LibraryMetadata libraryMetadata = null;
-        if (meta.has("library")) {
-            var data = meta.get("library");
-            if (data instanceof MetadataNull) {
-                libraryMetadata = LibraryMetadata.DEFAULT;
-            } else {
-                var dataResult = LibraryMetadata.CODEC.parse(MetadataOps.INSTANCE, data);
-                if (dataResult.isSuccess()) {
-                    libraryMetadata = dataResult.getOrThrow();
-                } else {
-                    diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                            treeMeta.get(data, MetadataKey.MAIN_POS).orElse(null),
-                            "Failed to parse library metadata: %s".formatted(dataResult.error().orElseThrow().message()),
-                            Diagnostic.Kind.ERROR,
-                            3
-                    ));
-                }
-            }
-            roles.add("library");
-        }
-
-        var isMetapatch = meta.has("metapatch");
-        if (isMetapatch) {
-            if (!(meta.get("metapatch") instanceof MetadataNull)) {
-                diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                        treeMeta.get(meta.get("metapatch"), MetadataKey.MAIN_POS).orElse(null),
-                        "Metapatch metadata should be empty",
-                        Diagnostic.Kind.ERROR,
-                        4
-                ));
-            }
-            roles.add("metapatch");
-        }
+        if (!validateVersion(diagnosticsBuilder, meta, treeMeta)) return null;
+        var target = getTargets(diagnosticsBuilder, meta, treeMeta, roles);
+        var priority = getPriority(meta);
+        var libraryMetadata = getLibraryMetadata(diagnosticsBuilder, meta, treeMeta, roles);
+        var isMetapatch = isIsMetapatch(diagnosticsBuilder, meta, treeMeta, roles);
 
         if (roles.size() > 1) {
             diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
@@ -271,5 +196,102 @@ public class PatchLoader {
         }
 
         return new Patch(added, id, target, priority, isMetapatch, trust);
+    }
+
+    private static boolean isIsMetapatch(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta, HashSet<String> roles) {
+        var isMetapatch = meta.has("metapatch");
+        if (isMetapatch) {
+            if (!(meta.get("metapatch") instanceof MetadataNull)) {
+                diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                        treeMeta.get(meta.get("metapatch"), MetadataKey.MAIN_POS).orElse(null),
+                        "Metapatch metadata should be empty",
+                        Diagnostic.Kind.ERROR,
+                        4
+                ));
+            }
+            roles.add("metapatch");
+        }
+        return isMetapatch;
+    }
+
+    private static @Nullable LibraryMetadata getLibraryMetadata(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta, HashSet<String> roles) {
+        if (meta.has("library")) {
+            var data = meta.get("library");
+            if (data instanceof MetadataNull) {
+                return LibraryMetadata.DEFAULT;
+            } else {
+                var dataResult = LibraryMetadata.CODEC.parse(MetadataOps.INSTANCE, data);
+                if (dataResult.isSuccess()) {
+                    return dataResult.getOrThrow();
+                } else {
+                    diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                            treeMeta.get(data, MetadataKey.MAIN_POS).orElse(null),
+                            "Failed to parse library metadata: %s".formatted(dataResult.error().orElseThrow().message()),
+                            Diagnostic.Kind.ERROR,
+                            3
+                    ));
+                }
+            }
+            roles.add("library");
+        }
+        return null;
+    }
+
+    private static boolean validateVersion(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta) {
+        if (!meta.has("version") || !(meta.get("version") instanceof MetadataString(var version))) {
+            var pos = meta.has("version")
+                    ? treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null)
+                    : null;
+            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                    pos,
+                    "Unsupported patch version '%s'".formatted(meta.getString("version")),
+                    Diagnostic.Kind.ERROR,
+                    0
+            ));
+            return false;
+        }
+        if (!JsonPatcher.isSupportedVersion(version)) {
+            diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                    treeMeta.get(meta.get("version"), MetadataKey.MAIN_POS).orElse(null),
+                    "Unsupported patch version '%s'".formatted(meta.getString("version")),
+                    Diagnostic.Kind.ERROR,
+                    1
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    private static List<PatchTarget> getTargets(DiagnosticsBuilder diagnosticsBuilder, PatchMetadata meta, TreeMetadata treeMeta, HashSet<String> roles) {
+        List<PatchTarget> target;
+        if (meta.has("target")) {
+            var dataResult = PatchTarget.LIST_CODEC.parse(MetadataOps.INSTANCE, meta.get("target"));
+            if (dataResult.isSuccess()) {
+                target = dataResult.getOrThrow();
+            } else {
+                target = List.of();
+                diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
+                        treeMeta.get(meta.get("target"), MetadataKey.MAIN_POS).orElse(null),
+                        "Failed to parse target: %s".formatted(dataResult.error().orElseThrow().message()),
+                        Diagnostic.Kind.ERROR,
+                        2
+                ));
+            }
+
+            roles.add("patch");
+        } else {
+            target = List.of();
+        }
+        return target;
+    }
+
+    private static double getPriority(PatchMetadata meta) {
+        double priority;
+        if (meta.has("priority")) {
+            priority = meta.getNumber("priority");
+        } else {
+            priority = 0;
+        }
+        return priority;
     }
 }
