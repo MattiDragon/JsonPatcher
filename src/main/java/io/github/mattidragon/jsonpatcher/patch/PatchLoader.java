@@ -80,7 +80,7 @@ public class PatchLoader {
         }
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         if (errorCount.get() > 0) {
-            var message = "Failed to load %s patch(es). See logs/jsonpatch.log for details".formatted(errorCount.get());
+            var message = "Failed to load %s patch(es). See jsonpatcher/jsonpatcher.log for details".formatted(errorCount.get());
             ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
             JsonPatcher.MAIN_LOGGER.error(message);
             if (Config.MANAGER.get().throwOnFailure()) {
@@ -88,7 +88,7 @@ public class PatchLoader {
             }
         }
         if (warnCount.get() > 0) {
-            var message = "Encountered warnings while loading %s patch(es). See logs/jsonpatch.log for details".formatted(warnCount.get());
+            var message = "Encountered warnings while loading %s patch(es). See jsonpatcher/jsonpatcher.log for details".formatted(warnCount.get());
             ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.YELLOW));
             JsonPatcher.MAIN_LOGGER.warn(message);
         }

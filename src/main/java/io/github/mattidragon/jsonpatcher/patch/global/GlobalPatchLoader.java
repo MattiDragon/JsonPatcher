@@ -237,7 +237,7 @@ public class GlobalPatchLoader {
         Files.createDirectories(scriptsDir);
         Files.writeString(scriptsDir.resolve("README.md"), """
                 # JsonPatcher global scripts
-                Any jsonpatch scripts placed here will be loaded on startup.
+                Any jsonpatcher scripts placed here will be loaded on startup.
                 
                 If a script has the `@library` meta tag it will be available to all patches
                 from elsewhere with a prefix of `scripts::` for imports.

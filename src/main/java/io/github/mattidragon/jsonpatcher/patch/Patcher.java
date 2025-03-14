@@ -59,7 +59,7 @@ public class Patcher {
         }
         if (!errors.isEmpty()) {
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while patching {}", id, error));
-            var message = "Encountered %s error(s) while patching %s. See logs/jsonpatch.log for details".formatted(errors.size(), id);
+            var message = "Encountered %s error(s) while patching %s. See jsonpatcher/jsonpatcher.log for details".formatted(errors.size(), id);
             ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
             if (Config.MANAGER.get().throwOnFailure()) {
                 throw new PatchingException(message);
@@ -165,7 +165,7 @@ public class Patcher {
 
         if (!errors.isEmpty()) {
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while running meta patch", error));
-            var message = "Encountered %s error(s) while running meta patches. See logs/jsonpatch.log for details".formatted(errors.size());
+            var message = "Encountered %s error(s) while running meta patches. See jsonpatcher/jsonpatcher.log for details".formatted(errors.size());
 
             ErrorLogger.CURRENT.get().accept(Text.literal(message).formatted(Formatting.RED));
             if (Config.MANAGER.get().throwOnFailure()) {

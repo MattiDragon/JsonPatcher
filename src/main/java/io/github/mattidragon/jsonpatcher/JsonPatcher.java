@@ -70,7 +70,7 @@ public class JsonPatcher implements ModInitializer {
 
             var appender = RandomAccessFileAppender.newBuilder()
                     .setName("JsonPatcherFile")
-                    .setFileName("logs/jsonpatcher.log")
+                    .setFileName("jsonpatcher/jsonpatcher.log")
                     .setLayout(PatternLayout.newBuilder().withPattern("[%d{HH:mm:ss}] [%t/%level] (%logger) %msg{nolookups}%n").build())
                     .setAppend(false)
                     .build();
