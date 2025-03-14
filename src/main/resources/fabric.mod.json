@@ -14,10 +14,10 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.mattidragon.jsonpatcher.JsonPatcher"
+      "dev.mattidragon.jsonpatcher.JsonPatcher"
     ],
     "client": [
-      "io.github.mattidragon.jsonpatcher.client.JsonPatcherClient"
+      "dev.mattidragon.jsonpatcher.client.JsonPatcherClient"
     ]
   },
   "accessWidener" : "jsonpatcher.accesswidener",
