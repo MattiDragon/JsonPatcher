@@ -1,5 +1,5 @@
 package io.github.mattidragon.jsonpatcher.trust;
 
-public interface TrustProvidingPack {
+public interface TrustProvider {
     TrustLevel jsonpatcher$trustLevel();
 }

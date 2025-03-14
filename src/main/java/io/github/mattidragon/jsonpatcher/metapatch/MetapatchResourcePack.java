@@ -3,7 +3,7 @@ package io.github.mattidragon.jsonpatcher.metapatch;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.github.mattidragon.jsonpatcher.trust.TrustLevel;
-import io.github.mattidragon.jsonpatcher.trust.TrustProvidingPack;
+import io.github.mattidragon.jsonpatcher.trust.TrustProvider;
 import net.minecraft.SharedConstants;
 import net.minecraft.resource.*;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
@@ -18,7 +18,7 @@ import java.io.OutputStreamWriter;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class MetapatchResourcePack implements ResourcePack, TrustProvidingPack {
+public class MetapatchResourcePack implements ResourcePack, TrustProvider {
     public static final Gson GSON = new Gson();
 
     public final ResourceType type;

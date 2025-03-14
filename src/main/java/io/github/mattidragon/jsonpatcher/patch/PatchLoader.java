@@ -22,6 +22,8 @@ import io.github.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import io.github.mattidragon.jsonpatcher.misc.DumpManager;
 import io.github.mattidragon.jsonpatcher.misc.MetadataOps;
 import io.github.mattidragon.jsonpatcher.misc.ModLibraryGroups;
+import io.github.mattidragon.jsonpatcher.trust.TrustChecker;
+import io.github.mattidragon.jsonpatcher.trust.TrustLevel;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -65,9 +67,9 @@ public class PatchLoader {
         var errorCount = new AtomicInteger(0);
         var warnCount = new AtomicInteger(0);
         for (var entry : files.entrySet()) {
-            var trust = entry.getValue().getPack();
+            var trust = TrustChecker.getTrust(entry.getValue().getPack());
             futures.add(CompletableFuture.runAsync(() -> {
-                var patch = loadPatch(entry, environment, errorCount, warnCount);
+                var patch = loadPatch(entry, environment, errorCount, warnCount, trust);
                 if (patch != null) {
                     patches.add(patch);
                 }
@@ -91,7 +93,7 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch loadPatch(Map.Entry<Identifier, Resource> entry, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount) {
+    private static Patch loadPatch(Map.Entry<Identifier, Resource> entry, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount, TrustLevel trust) {
         var id = FINDER.toResourceId(entry.getKey());
         var resource = entry.getValue();
 
@@ -102,7 +104,7 @@ public class PatchLoader {
             var lexResult = Lexer.lex(code, id.toString(), diagnosticsBuilder);
             var parseResult = Parser.parse(lexResult.tokens(), diagnosticsBuilder);
             
-            var built = validateAndBuild(id, parseResult, environment, diagnosticsBuilder);
+            var built = validateAndBuild(id, parseResult, environment, diagnosticsBuilder, trust);
 
             var diagnostics = diagnosticsBuilder.build();
             var errors = diagnostics.errors();
@@ -137,7 +139,7 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch validateAndBuild(Identifier id, Parser.Result result, EvaluationEnvironment environment, DiagnosticsBuilder diagnosticsBuilder) {
+    private static Patch validateAndBuild(Identifier id, Parser.Result result, EvaluationEnvironment environment, DiagnosticsBuilder diagnosticsBuilder, TrustLevel trust) {
         var roles = new HashSet<String>();
 
         var treeMeta = result.treeMetadata();
@@ -249,9 +251,9 @@ public class PatchLoader {
                 .className(className);
 
         if (isMetapatch) builder.allowLibraryGroup(ModLibraryGroups.METAPATCH);
-        // TODO: allow reflection when patches can be trusted
-        // TODO: remove reflection from untrusted code
-        builder.allowLibraryGroup(LibraryGroup.REFLECTION);
+        if (trust.ordinal() >= Config.MANAGER.get().reflectionMinTrustLevel().ordinal()) {
+            builder.allowLibraryGroup(LibraryGroup.REFLECTION);
+        }
 
         var added = environment.addProgram(builder.build());
 
@@ -268,6 +270,6 @@ public class PatchLoader {
             environment.addLibrary(library);
         }
 
-        return new Patch(added, id, target, priority, isMetapatch);
+        return new Patch(added, id, target, priority, isMetapatch, trust);
     }
 }
