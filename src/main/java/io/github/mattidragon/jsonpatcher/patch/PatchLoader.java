@@ -65,6 +65,7 @@ public class PatchLoader {
         var errorCount = new AtomicInteger(0);
         var warnCount = new AtomicInteger(0);
         for (var entry : files.entrySet()) {
+            var trust = entry.getValue().getPack();
             futures.add(CompletableFuture.runAsync(() -> {
                 var patch = loadPatch(entry, environment, errorCount, warnCount);
                 if (patch != null) {

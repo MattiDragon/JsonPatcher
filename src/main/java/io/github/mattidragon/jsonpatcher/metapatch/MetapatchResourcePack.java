@@ -2,6 +2,8 @@ package io.github.mattidragon.jsonpatcher.metapatch;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import io.github.mattidragon.jsonpatcher.trust.TrustLevel;
+import io.github.mattidragon.jsonpatcher.trust.TrustProvidingPack;
 import net.minecraft.SharedConstants;
 import net.minecraft.resource.*;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
@@ -16,7 +18,7 @@ import java.io.OutputStreamWriter;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class MetapatchResourcePack implements ResourcePack {
+public class MetapatchResourcePack implements ResourcePack, TrustProvidingPack {
     public static final Gson GSON = new Gson();
 
     public final ResourceType type;
@@ -141,5 +143,12 @@ public class MetapatchResourcePack implements ResourcePack {
             return new Resource(this, supplier);
         }
         return null;
+    }
+
+    @Override
+    public TrustLevel jsonpatcher$trustLevel() {
+        // Metapatching can be done by untrusted code
+        // Patches should never load from this pack, but just to be safe:
+        return TrustLevel.UNTRUSTED;
     }
 }

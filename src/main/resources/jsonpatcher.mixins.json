@@ -6,7 +6,10 @@
   "mixins": [
     "LifecycledResourceManagerImplMixin",
     "RegistryLoaderMixin",
-    "ResourceMixin"
+    "ResourceMixin",
+    "trust.ModResourcePackMixin",
+    "trust.OverlayResourcePackMixin",
+    "trust.ResourcePackMixin"
   ],
   "injectors": {
     "defaultRequire": 1
