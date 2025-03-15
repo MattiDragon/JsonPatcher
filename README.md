@@ -7,6 +7,11 @@
 JsonPatcher is a mod that allows you to modify json files in datapacks and resourcepacks without overriding them.
 This is primarily useful for mod developers and pack makers, but can also be used by players to modify their own packs.
 
+## V2 Disclaimer
+JsonPatcher v2 is currently in beta. V2 introduces a bunch of new features including global patches for mods and modpacks.
+There's currently no documentation available for v2 as it had to be rushed out for BlanketCon '25. Parts of the v1 docs
+may be correct, but expect things not to work perfectly.
+
 ## Usage
 <details>
 <summary>Gradle dependency (for mod developers)</summary>
@@ -27,8 +32,8 @@ dependencies {
 </details>
 
 To begin using jsonpatcher, just create a file with the `.jsonpatch` extension 
-in the `data/<namespace>/jsonpatcher` directory of your datapack 
-or `assets/<namespace>/jsonpatcher` directory of your resourcepack.
+in the `data/<namespace>/jsonpatch` directory of your datapack 
+or `assets/<namespace>/jsonpatch` directory of your resourcepack.
 
 You'll want to begin your patch with a `@version` meta tag like this. 
 This will let jsonpatcher know that your patch will work with this version. 
