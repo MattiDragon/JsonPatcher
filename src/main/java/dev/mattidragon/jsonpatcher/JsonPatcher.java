@@ -3,6 +3,7 @@ package dev.mattidragon.jsonpatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.patch.ErrorLogger;
+import dev.mattidragon.jsonpatcher.patch.global.GlobalDirSetup;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatch;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
 import dev.mattidragon.jsonpatcher.remap.MappingsLoader;
@@ -53,7 +54,7 @@ public class JsonPatcher implements ModInitializer {
         }));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> ErrorLogger.CURRENT.remove());
 
-        GlobalPatchLoader.setupDirs();
+        GlobalDirSetup.setupDirs();
         GlobalPatchLoader.loadGlobalPatches();
         GlobalPatchLoader.runEntrypoint(GlobalPatch.Entrypoint.MAIN);
     }
