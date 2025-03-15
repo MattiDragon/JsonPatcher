@@ -52,6 +52,15 @@ loom {
     }
 }
 
+configurations.register('langInclude') {
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+    }
+
+    // MC ships ASM, so we can't
+    exclude(group: "org.ow2.asm")
+}
+
 sourceSets.test {
     runtimeClasspath += sourceSets.main.runtimeClasspath
     runtimeClasspath += sourceSets.client.runtimeClasspath
@@ -66,12 +75,10 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
-    include(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Runtime:$lang_version"))
-    include(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Compiler:$lang_version"))
-    include("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Ast:$lang_version")
-    include("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Analysis:$lang_version")
-    include("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Parser:$lang_version")
-    include(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcher-Docs:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Runtime:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Compiler:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Parser:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Stdlib:$lang_version"))
 
     include(implementation("net.fabricmc:mapping-io:$mapping_io_version"))
 
@@ -109,6 +116,15 @@ jar {
     from("LICENSE") {
         rename { "${it}_$archives_base_name"}
     }
+}
+
+import net.fabricmc.loom.build.nesting.NestableJarGenerationTask
+tasks.named("processIncludeJars", NestableJarGenerationTask) {
+    // For some reason 'from' overwrites the jar ids instead of adding the them
+    // so we have to make a backup and restore old ones
+    var oldIds = jarIds.get()
+    from(configurations.langInclude)
+    jarIds.putAll(oldIds)
 }
 
 publishing {
