@@ -1,6 +1,8 @@
 package dev.mattidragon.jsonpatcher.patch.global;
 
 import com.google.common.base.Suppliers;
+import dev.mattidragon.jsonpatcher.JsonPatcher;
+import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
 import dev.mattidragon.jsonpatcher.lang.error.Diagnostic;
@@ -16,8 +18,6 @@ import dev.mattidragon.jsonpatcher.lang.runtime.environment.Library;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.LibraryGroup;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.ProgramData;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
-import dev.mattidragon.jsonpatcher.JsonPatcher;
-import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.patch.PatchLoader;
 import dev.mattidragon.jsonpatcher.patch.PatchLoaderDiagnostic;
 import dev.mattidragon.jsonpatcher.patch.Patcher;
@@ -29,12 +29,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class GlobalPatchLoader {
     private static List<Library> globalLibs = new ArrayList<>();
     private static List<GlobalPatch> globalPatches = new ArrayList<>();
+    private static final AtomicInteger errorCount = new AtomicInteger();
+    private static final AtomicInteger warnCount = new AtomicInteger();
 
     private static List<GlobalPatchSource> findSources() {
         var sources = new ArrayList<GlobalPatchSource>();
@@ -51,6 +54,8 @@ public class GlobalPatchLoader {
         // Allocating new lists keeps previous ones valid. This prevents threading issues
         globalLibs = new ArrayList<>();
         globalPatches = new ArrayList<>();
+        warnCount.set(0);
+        errorCount.set(0);
 
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT);
         if (Config.MANAGER.get().dumpCompiledPatches()) {
@@ -64,6 +69,12 @@ public class GlobalPatchLoader {
         }
 
         JsonPatcher.RELOAD_LOGGER.info("Loaded {} global patches. ({} libraries)", globalPatches.size(), getGlobalLibs().size());
+        if (warnCount.get() > 0) {
+            JsonPatcher.RELOAD_LOGGER.warn("Encountered {} warnings while loading global patches. See jsonpatcher/jsonpatcher.log for details.", warnCount.get());
+        }
+        if (errorCount.get() > 0) {
+            JsonPatcher.RELOAD_LOGGER.error("Encountered {} errors while loading global patches. See jsonpatcher/jsonpatcher.log for details.", errorCount.get());
+        }
     }
 
     // Synchronized to block access while reloading
@@ -102,12 +113,17 @@ public class GlobalPatchLoader {
         try (var stream = Files.walk(source.path())) {
             var files = stream.filter(Files::isRegularFile).toList();
             for (var file : files) {
-                var id = source.idPrefix() + ":" + file.relativize(source.path())
-                        .toString()
+                if (!file.toString().endsWith(".jsonpatch")) {
+                    continue;
+                }
+
+                var fileName = source.path().relativize(file).toString();
+                var id = source.idPrefix() + ":" + fileName
+                        .substring(0, fileName.length() - ".jsonpatch".length())
                         .replace(file.getFileSystem().getSeparator(), "/")
                         .replaceFirst("^\\./", "");
                 var code = Files.readString(file);
-                var patch = loadPath(id, code, source.trustLevel(), environment);
+                var patch = loadPatch(id, code, source.trustLevel(), environment);
                 if (patch == null) continue;
                 patches.add(patch);
             }
@@ -117,7 +133,7 @@ public class GlobalPatchLoader {
         return patches;
     }
 
-    private static @Nullable GlobalPatch loadPath(String id, String code, TrustLevel trust, EvaluationEnvironment environment) {
+    private static @Nullable GlobalPatch loadPatch(String id, String code, TrustLevel trust, EvaluationEnvironment environment) {
         var diagnosticsBuilder = new DiagnosticsBuilder();
 
         var lexResult = Lexer.lex(code, id, diagnosticsBuilder);
@@ -156,24 +172,31 @@ public class GlobalPatchLoader {
                     Diagnostic.Kind.ERROR,
                     20
             ));
-            return null;
+            added = null;
         }
 
         var diagnostics = diagnosticsBuilder.build();
         var errors = diagnostics.errors();
         if (!errors.isEmpty()) {
-            JsonPatcher.MAIN_LOGGER.error("Errors while loading global patch {}:\n{}", id, errors.stream().map(Diagnostic::toDisplay).collect(Collectors.joining("\n")));
+            JsonPatcher.RELOAD_LOGGER.error("Errors while loading global patch {}:\n{}", id, errors.stream().map(Diagnostic::toDisplay).collect(Collectors.joining("\n")));
+            errorCount.incrementAndGet();
             return null;
         }
         var warnings = diagnostics.warnings();
         if (!warnings.isEmpty()) {
-            JsonPatcher.MAIN_LOGGER.warn("Warnings while loading global patch {}:\n{}", id, warnings.stream().map(Diagnostic::toDisplay).collect(Collectors.joining("\n")));
+            JsonPatcher.RELOAD_LOGGER.warn("Warnings while loading global patch {}:\n{}", id, warnings.stream().map(Diagnostic::toDisplay).collect(Collectors.joining("\n")));
+            warnCount.incrementAndGet();
+        }
+
+        if (added == null) {
+            return null;
         }
 
         if (libraryMetadata != null) {
+            var finalAdded = added;
             Supplier<Value.ObjectValue> supplier = () -> {
                 var obj = new Value.ObjectValue();
-                added.run(obj);
+                finalAdded.run(obj);
                 return obj;
             };
             if (libraryMetadata.shared()) {
@@ -192,14 +215,14 @@ public class GlobalPatchLoader {
     }
 
     private static @Nullable GlobalPatch.Entrypoint getEntrypointMeta(PatchMetadata meta, TreeMetadata treeMeta, DiagnosticsBuilder diagnosticsBuilder, Set<String> roles) {
-        if (!meta.has("entrypoint")) return null;
+        if (!meta.has("init")) return null;
 
-        roles.add("entrypoint");
+        roles.add("init");
 
-        if (!(meta.get("entrypoint") instanceof MetadataString(var string))) {
+        if (!(meta.get("init") instanceof MetadataString(var string))) {
             diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                    treeMeta.get(meta.get("entrypoint"), MetadataKey.MAIN_POS).orElse(null),
-                    "Entrypoint must be set to string",
+                    treeMeta.get(meta.get("init"), MetadataKey.MAIN_POS).orElse(null),
+                    "@init must be set to string",
                     Diagnostic.Kind.ERROR,
                     21
             ));
@@ -211,7 +234,7 @@ public class GlobalPatchLoader {
             case "client" -> GlobalPatch.Entrypoint.CLIENT;
             default -> {
                 diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
-                        treeMeta.get(meta.get("entrypoint"), MetadataKey.MAIN_POS).orElse(null),
+                        treeMeta.get(meta.get("init"), MetadataKey.MAIN_POS).orElse(null),
                         "Invalid entrypoint: " + string,
                         Diagnostic.Kind.ERROR,
                         22

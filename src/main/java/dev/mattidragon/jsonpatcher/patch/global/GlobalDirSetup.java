@@ -29,7 +29,7 @@ public class GlobalDirSetup {
                 Any jsonpatcher scripts placed here will be loaded on startup.
                 
                 If a script has the `@library` meta tag it will be available to all patches
-                from elsewhere with a prefix of `scripts::` for imports.
+                from elsewhere with a prefix of `scripts:global:` for imports.
                 
                 If a script has the `@init "main";` meta tag it will be executed during mod init.
                 If it has the `@init "client";` meta tag it will be executed during client mod init.
