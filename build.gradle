@@ -75,10 +75,10 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
-    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Runtime:$lang_version"))
-    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Compiler:$lang_version"))
-    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Parser:$lang_version"))
-    langInclude(implementation("com.github.mattidragon.jsonpatcherlang:JsonPatcherLang-Stdlib:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Runtime:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Compiler:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Parser:$lang_version"))
+    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Stdlib:$lang_version"))
 
     include(implementation("net.fabricmc:mapping-io:$mapping_io_version"))
 
