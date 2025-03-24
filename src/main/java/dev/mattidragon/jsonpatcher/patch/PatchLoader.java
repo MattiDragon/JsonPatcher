@@ -192,8 +192,13 @@ public class PatchLoader {
             builder.allowLibraryGroup(LibraryGroup.REFLECTION);
         }
 
-        // TODO: compilation exception will cause diagnostics to be ignored, fix
-        var added = environment.addProgram(builder.build());
+        EvaluationEnvironment.AddedProgram added;
+        try {
+            added = environment.addProgram(builder.build());
+        } catch (CompilationException e) {
+            e.getErrors().forEach(diagnosticsBuilder::addDiagnostic);
+            return null;
+        }
 
         if (libraryMetadata != null) {
             Supplier<Value.ObjectValue> supplier = () -> {
