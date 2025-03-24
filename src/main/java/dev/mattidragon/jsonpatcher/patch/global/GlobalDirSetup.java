@@ -13,6 +13,7 @@ public class GlobalDirSetup {
     public static void setupDirs() {
         try {
             setupScriptsDir();
+            setupGlobalPatchesDir();
             dumpDocsDir();
         } catch (IOException e) {
             throw new IllegalStateException("Failed to setup jsonpatcher files", e);
@@ -50,6 +51,27 @@ public class GlobalDirSetup {
                 
                 debug.assert(id1.equals(id2));
                 debug.log("Logging from example global script: " + strings.asString(id1));
+                """);
+    }
+
+    private static void setupGlobalPatchesDir() throws IOException {
+        var dir = JsonPatcher.DATA_DIR.resolve("global_patches");
+        var exists = Files.exists(dir);
+
+        Files.createDirectories(dir.resolve("data"));
+        Files.createDirectories(dir.resolve("assets"));
+
+        if (exists) return;
+        Files.writeString(dir.resolve("README.md"), """
+                # JsonPatcher global patches
+                This directory is intended as a convenient place for modpack developers to place patches.
+                Patches from here are automatically loaded together with patches from data- and resourcepacks.
+                Scripts are loaded straight from the `data` and `assets` subdirectories,
+                for datapack and resourcepack patching respectively.
+                
+                Scripts here have modpack level trust, so they get access to reflection by default.
+                Be careful not to make permanent changes to the game state however, as these scripts will run on every
+                reload like normal patches.
                 """);
     }
 

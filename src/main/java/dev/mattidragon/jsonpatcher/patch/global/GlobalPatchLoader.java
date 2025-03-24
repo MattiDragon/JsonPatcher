@@ -59,7 +59,7 @@ public class GlobalPatchLoader {
 
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT);
         if (Config.MANAGER.get().dumpCompiledPatches()) {
-            environment.enableDumping(JsonPatcher.DATA_DIR.resolve("dump").resolve("global"));
+            environment.enableDumping(JsonPatcher.DATA_DIR.resolve("dump").resolve("classes").resolve("global"));
         }
         environment.enableLogging(v -> JsonPatcher.RELOAD_LOGGER.debug("Debug from global patch: {}", v));
         environment.bootstrap();

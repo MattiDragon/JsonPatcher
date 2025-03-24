@@ -1,6 +1,8 @@
 package dev.mattidragon.jsonpatcher.patch;
 
 import com.google.common.base.Suppliers;
+import dev.mattidragon.jsonpatcher.JsonPatcher;
+import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
 import dev.mattidragon.jsonpatcher.lang.error.Diagnostic;
@@ -18,16 +20,15 @@ import dev.mattidragon.jsonpatcher.lang.runtime.environment.LibraryGroup;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.ProgramData;
 import dev.mattidragon.jsonpatcher.lang.runtime.lib.builder.LibraryBuilder;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
-import dev.mattidragon.jsonpatcher.JsonPatcher;
-import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.misc.MetadataOps;
 import dev.mattidragon.jsonpatcher.misc.ModLibraryGroups;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
+import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchScanner;
 import dev.mattidragon.jsonpatcher.trust.TrustChecker;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import net.minecraft.resource.Resource;
+import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
@@ -37,8 +38,12 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,12 +77,21 @@ public class PatchLoader {
         for (var entry : files.entrySet()) {
             var trust = TrustChecker.getTrust(entry.getValue().getPack());
             futures.add(CompletableFuture.runAsync(() -> {
-                var patch = loadPatch(entry, environment, errorCount, warnCount, trust);
+                var patch = loadPatch(FINDER.toResourceId(entry.getKey()), entry.getKey(), entry.getValue()::getInputStream, environment, errorCount, warnCount, trust);
                 if (patch != null) {
                     patches.add(patch);
                 }
             }, executor));
         }
+        for (var entry : GlobalPatchScanner.scan(resourceType).entrySet()) {
+            futures.add(CompletableFuture.runAsync(() -> {
+                var patch = loadPatch(entry.getKey().withPath(path -> "/" + path.substring(path.indexOf('/', 1) + 1)), entry.getKey(), entry.getValue(), environment, errorCount, warnCount, TrustLevel.MODPACK);
+                if (patch != null) {
+                    patches.add(patch);
+                }
+            }, executor));
+        }
+
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         if (errorCount.get() > 0) {
             var message = "Failed to load %s patch(es). See jsonpatcher/jsonpatcher.log for details".formatted(errorCount.get());
@@ -96,12 +110,9 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch loadPatch(Map.Entry<Identifier, Resource> entry, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount, TrustLevel trust) {
-        var id = FINDER.toResourceId(entry.getKey());
-        var resource = entry.getValue();
-
+    private static Patch loadPatch(Identifier id, Identifier location, InputSupplier<InputStream> streamSupplier, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount, TrustLevel trust) {
         try {
-            var code = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            var code = new String(streamSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
             var diagnosticsBuilder = new DiagnosticsBuilder();
 
             var lexResult = Lexer.lex(code, id.toString(), diagnosticsBuilder);
@@ -114,14 +125,14 @@ public class PatchLoader {
             var warnings = diagnostics.warnings();
 
             if (!errors.isEmpty()) {
-                JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}:\n{}", id, entry.getKey(), errors
+                JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}:\n{}", id, location, errors
                         .stream()
                         .map(Diagnostic::toDisplay)
                         .collect(Collectors.joining("\n")));
                 errorCount.incrementAndGet();
             }
             if (!warnings.isEmpty()) {
-                JsonPatcher.RELOAD_LOGGER.warn("Warnings while loading patch {} from {}:\n{}", id, entry.getKey(), warnings
+                JsonPatcher.RELOAD_LOGGER.warn("Warnings while loading patch {} from {}:\n{}", id, location, warnings
                         .stream()
                         .map(Diagnostic::toDisplay)
                         .collect(Collectors.joining("\n")));
@@ -132,7 +143,7 @@ public class PatchLoader {
                 return built;
             }
         } catch (IOException | CompilationException | IllegalStateException e) {
-            JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, entry.getKey(), e);
+            JsonPatcher.RELOAD_LOGGER.error("Failed to load patch {} from {}", id, location, e);
             errorCount.incrementAndGet();
         } catch (RuntimeException e) {
             JsonPatcher.RELOAD_LOGGER.error("Unexpected error while loading patches", e);
