@@ -100,11 +100,8 @@ public class GlobalPatchLoader {
         }
 
         if (!errors.isEmpty()) {
-            var error = errors.getFirst();
-            for (var e : errors.subList(1, errors.size())) {
-                error.addSuppressed(e);
-            }
-            JsonPatcher.MAIN_LOGGER.error("Errors while running entrypoint patches for {}", entrypoint, error);
+            errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while running entrypoint patches for {} entrypoint", entrypoint, error));
+            JsonPatcher.MAIN_LOGGER.error("Encountered {} errors while running entrypoint patches for {}", errors.size(), entrypoint);
         }
     }
 
