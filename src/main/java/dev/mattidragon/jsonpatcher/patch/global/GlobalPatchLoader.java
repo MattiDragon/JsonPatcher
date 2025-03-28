@@ -101,7 +101,12 @@ public class GlobalPatchLoader {
 
         if (!errors.isEmpty()) {
             errors.forEach(error -> JsonPatcher.RELOAD_LOGGER.error("Error while running entrypoint patches for {} entrypoint", entrypoint, error));
-            JsonPatcher.MAIN_LOGGER.error("Encountered {} errors while running entrypoint patches for {}", errors.size(), entrypoint);
+
+            if (Config.MANAGER.get().throwOnFailure()) {
+                throw new RuntimeException("Encountered %s error(s) while running entrypoint patches for %s. See jsonpatcher/jsonpatcher.log for details".formatted(errors.size(), entrypoint));
+            } else {
+                JsonPatcher.MAIN_LOGGER.error("Encountered {} error(s) while running entrypoint patches for {}. See jsonpatcher/jsonpatcher.log for details", errors.size(), entrypoint);
+            }
         }
     }
 

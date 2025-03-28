@@ -182,6 +182,8 @@ public class PatchLoader {
                         + id.getNamespace().replaceAll("[-.]", "_")
                         + "/"
                         + id.getPath().replaceAll("[-.]", "_");
+        // Remove slashes followed by another as that's illegal in class names
+        className = className.replaceAll("/(?=/)", "");
 
         var builder = ProgramData.builder(result)
                 .scriptName(id.toString())
