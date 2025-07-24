@@ -1,4 +1,4 @@
 @version "2";
-@target "minecraft:recipes/golden_apple.json";
+@target "minecraft:recipe/golden_apple.json";
 
 $result.id = "minecraft:enchanted_golden_apple";

@@ -97,6 +97,9 @@ public final class PatchStorage {
         pathPatches.entries().stream().filter(entry -> entry.getKey().equals(id.getPath())).map(Map.Entry::getValue).forEach(patchSet::add);
         directIdPatches.entries().stream().filter(entry -> entry.getKey().equals(id)).map(Map.Entry::getValue).forEach(patchSet::add);
         nonTrivialPatches.stream().filter(patch -> patch.target().stream().anyMatch(target -> target.test(id))).forEach(patchSet::add);
+        namespaceFilteredPatches.get(id.getNamespace()).stream()
+                .filter(patch -> patch.target().stream().anyMatch(target -> target.test(id)))
+                .forEach(patchSet::add);
 
         // Sort patches
         var patchList = new ArrayList<>(patchSet);

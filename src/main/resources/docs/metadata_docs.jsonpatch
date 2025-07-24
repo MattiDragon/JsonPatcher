@@ -1,0 +1,87 @@
+#| metadata script.priority: number
+#| Specifies in which order scripts are loaded.
+#| Scripts with higher priority run after scripts with lower priority.
+#| The default priority is 0.
+#|
+#| Note that priority only applies between scripts that are ran for the same reason.
+#| For example, you cannot change the ordering between a `"client"` init script and a `"main"` init script.
+
+
+#| metadata script.enabled: boolean
+#| The `@enabled` metadata tag can be used to disable scripts.
+#| When set to `false`, the script will not run at all and in some cases not even parsed.
+#| This is useful for debugging, providing an alternative to commenting out code.
+
+
+#| metadata patch.target: patch.PatchTarget | patch.PatchTarget[]
+#| Specifies which files a patch modifies. 
+#| When this metadata is found on scripts loaded from suitable locations,
+#| they are loaded as patches and get to modify json files.
+#|
+#| Can either be set to a single target, or an array of targets.
+#| When set to an array, files are patched when any of the targets match.
+#| @requires any(libgroup("+minecraft-data"), libgroup("+minecraft-assets"))
+
+#| typealias patch.PatchTarget: string | ObjectTarget
+#| A single target can be a string or an object.
+#| When set to a string the whole path of the file must match it exactly.
+#| When set to an object, the path is matched against the properties of the object.
+#| See `patch.ObjectTarget` for details.
+
+#| type patch.ObjectTarget: object
+#| An object describing an advanced target.
+#| All present properties must match for this target to match.
+
+#| property patch.ObjectTarget.namespace: string
+#| The namespace of the file, matched exactly.
+#| @optional
+
+#| property patch.ObjectTarget.regex: string
+#| A regular expression to match the entire path of the file including namespace.
+#| @optional
+
+#| property patch.ObjectTarget.path: string | patch.TargetPath
+#| Either a string to match the path of the file exactly,
+#| or an object describing the path as a beginning and end.
+#| @optional
+
+#| type patch.TargetPath: object
+#| An object describing the path of the file as a beginning and end.
+#| The beginning is matched against the start of the path,
+#| and the end is matched against the end of the path.
+#| Both properties must be present and must match exactly.
+
+#| property patch.TargetPath.begin: string
+#| The beginning of the path, matched against the start of the path.
+#| Can be set to an empty string to always match.
+
+#| property patch.TargetPath.end: string
+#| The end of the path, matched against the end of the path.
+#| Can be set to an empty string to always match.
+
+
+#| metadata script.init: string
+#| Makes a script execute while the game is loading.
+#| Depending on the value, scripts are executed at different points in time:
+#| - `"main"`: Causes the script to run during mod init.
+#| - `"client"`: Causes the script to run during client init.
+#| - *Any other value is considered invalid*
+#| @requires libgroup("+jsonpatcher:global_scripts")
+
+
+#| metadata script.library: null | script.LibraryMetadata
+#| Makes a global script available as a library to other global scripts as well as regular patches.
+#|
+#| If the global script is loaded from the `jsonpatcher/scripts` folder within the minecraftinstance folder,
+#| the library location gains the `scripts:global:` prefix. If the script is loaded from within a mod, 
+#| it gains the `mod:MOD_ID:` prefix, where `MOD_ID` is the mod's id. For example `mod:jsonpatcher:example`.
+#| 
+#| This is not applicable to, and won't do anything for, regular patches.
+#| They are already always available as libraries to each other.
+#| @requires libgroup("+jsonpatcher:global_scripts")
+
+#| type script.LibraryMetadata: object
+
+#| property script.LibraryMetadata.shared: boolean
+#| @optional
+

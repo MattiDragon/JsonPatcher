@@ -41,7 +41,7 @@ public class GlobalPatchLoader {
 
     private static List<GlobalPatchSource> findSources() {
         var sources = new ArrayList<GlobalPatchSource>();
-        sources.add(new GlobalPatchSource( "scripts:global", JsonPatcher.DATA_DIR.resolve("scripts"), TrustLevel.MODPACK));
+        sources.add(new GlobalPatchSource("scripts:global", JsonPatcher.DATA_DIR.resolve("scripts"), TrustLevel.MODPACK));
         for (var mod : FabricLoader.getInstance().getAllMods()) {
             mod.findPath("jsonpatcher/scripts")
                     .ifPresent(path ->

@@ -2,6 +2,7 @@ package dev.mattidragon.jsonpatcher.metapatch;
 
 import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Pair;
 import dev.mattidragon.jsonpatcher.lang.runtime.EvaluationContext;
 import dev.mattidragon.jsonpatcher.lang.runtime.lib.builder.DontBind;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
@@ -9,6 +10,7 @@ import dev.mattidragon.jsonpatcher.misc.GsonConverter;
 import dev.mattidragon.jsonpatcher.misc.ValueOps;
 import dev.mattidragon.jsonpatcher.patch.PatchTarget;
 import dev.mattidragon.jsonpatcher.patch.PatchingContext;
+import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 
@@ -52,6 +54,11 @@ public class MetapatchLibrary {
         return false;
     }
 
+    @DontBind
+    private static Value.ObjectValue valueFromResource(Resource resource) throws IOException {
+        return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.getInputStream()), JsonObject.class));
+    }
+
     public void addFile(EvaluationContext context, Value.StringValue idString, Value.ObjectValue file) {
         var id = Identifier.of(idString.value());
 
@@ -78,8 +85,8 @@ public class MetapatchLibrary {
                 false));
     }
 
-    public void deleteFiles(EvaluationContext context, Value value) {
-        var target = PatchTarget.CODEC.decode(ValueOps.INSTANCE, value)
+    public void deleteFiles(EvaluationContext context, Value targetValue) {
+        var target = PatchTarget.CODEC.decode(ValueOps.INSTANCE, targetValue)
                 .getOrThrow(error -> new IllegalStateException("Failed to parse target: " + error))
                 .getFirst();
         filters.add(new FileFilter(target, false));
@@ -91,7 +98,7 @@ public class MetapatchLibrary {
         try (var __ = PatchingContext.disablePatching()) {
             var resource = resourceManager.getResource(id);
             if (resource.isPresent()) {
-                return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.get().getInputStream()), JsonObject.class));
+                return valueFromResource(resource.get());
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -107,13 +114,45 @@ public class MetapatchLibrary {
         try (var __ = PatchingContext.disablePatching()) {
             var resources = resourceManager.getAllResources(id);
             for (var resource : resources) {
-                var value = GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.getInputStream()), JsonObject.class));
-                array.value().add(value);
+                array.value().add(valueFromResource(resource));
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
 
         return array;
+    }
+
+    public Value searchFiles(EvaluationContext context, Value targetValue) {
+        var target = PatchTarget.CODEC.decode(ValueOps.INSTANCE, targetValue)
+                .getOrThrow(error -> new IllegalStateException("Failed to parse target: " + error))
+                .getFirst();
+
+        var startingPath = "";
+        if (target.path().isPresent()) {
+            startingPath = target.path()
+                    .get()
+                    .path()
+                    .map(p -> p, Pair::getFirst);
+        }
+        // Remove last path segment, as minecraft treats it differently
+        var slashIndex = startingPath.lastIndexOf('/');
+        if (slashIndex != -1) {
+            startingPath = startingPath.substring(0, slashIndex);
+        }
+
+        var out = new Value.ObjectValue();
+        try (var __ = PatchingContext.disablePatching()) {
+            var found = resourceManager.findResources(startingPath, target);
+            for (var entry : found.entrySet()) {
+                var id = entry.getKey();
+                var resource = entry.getValue();
+                out.value().put(id.toString(), valueFromResource(resource));
+            }
+        } catch (Exception e) {
+            throw new UncheckedIOException(new IOException("Failed to search files", e));
+        }
+
+        return out;
     }
 }

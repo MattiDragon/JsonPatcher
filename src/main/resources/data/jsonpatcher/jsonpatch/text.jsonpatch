@@ -1,16 +1,11 @@
-# DISABLED FOR MIGRATION
-@enabled false;
-# UNMIGRATED CODE BELOW
+@version "2";
 
-
-@version "1";
-
-#| module text
+#| library text at "jsonpatcher:text"
 #| Contains utilities for working with minecraft text objects.
 #|
 #| More information can be found on the [minecraft wiki page](https://minecraft.wiki/w/Raw_JSON_text_format).
+#| @requires libgroup("+minecraft-data")
 
-val HEX_DIGITS = "ABCDEFabcdef012345679".chars();
 val ALL_COLORS = ["black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white"];
 val TEXT_TYPE_IDS = ["text", "translatable", "score", "selector", "keybind"];
 val TEXT_TYPE_KEYS = ["text", "translate", "score", "selector", "keybind"];
@@ -30,17 +25,31 @@ function isHexString(value) {
 #| Can be converted to json using the `toJson` function.
 #|
 #| More information can be found on the [minecraft wiki page](https://minecraft.wiki/w/Raw_JSON_text_format).
+# @@arg type     string
+# @@arg content  string | object | null
+# @@arg settings object
 function makeBuilder(type, content, settings = {}) {
+    # @@type boolean | null
     var bold = null;
+    # @@type boolean | null
     var italic = null;
+    # @@type boolean | null
     var obfuscated = null;
+    # @@type boolean | null
     var underlined = null;
+    # @@type boolean | null
     var strikethrough = null;
+    # @@type string | null
     var font = null;
+    # @@type string | null
     var color = null;
+    # @@type TextBuilder[]
     val children = [];
+    # @@type string | null
     var insertion = null;
+    # @@type object | null
     var clickEvent = null;
+    # @@type object | null
     var hoverEvent = null;
     
     if ("bold" in settings) bold = settings.bold;
@@ -53,12 +62,13 @@ function makeBuilder(type, content, settings = {}) {
     if ("color" in settings) color = settings.color;
     if ("clickEvent" in settings) clickEvent = settings.clickEvent;
     if ("hoverEvent" in settings) hoverEvent = settings.hoverEvent;
-    
+
+    # @@type TextBuilder
     val object = {
-        #| value TextBuilder.toJson: () -> object
+        #| property TextBuilder.toJson: () -> object
         #| Converts the builder to json for passing to minecraft
         toJson: () -> {
-            var json = {};
+            val json = {};
             
             if (type == "text") {
                 json.text = content;
@@ -93,7 +103,7 @@ function makeBuilder(type, content, settings = {}) {
             if (children.length > 0) json.extra = children.map((builder) -> builder.toJson());
             return json;
         },
-        #| value TextBuilder.bold: (value?: boolean | null) -> TextBuilder
+        #| property TextBuilder.bold: (value: {boolean | null}?) -> TextBuilder
         #| Sets the `bold` property of this builder and returns self.
         #| If a boolean is passed the property is set. If null it passed it is cleared.
         bold: (value = true) -> {
@@ -101,7 +111,7 @@ function makeBuilder(type, content, settings = {}) {
             bold = value;
             return object;
         },
-        #| value TextBuilder.italic: (value?: boolean | null) -> TextBuilder
+        #| property TextBuilder.italic: (value: {boolean | null}?) -> TextBuilder
         #| Sets the `italic` property of this builder and returns self.
         #| If a boolean is passed the property is set. If null it passed it is cleared.
         italic: (value = true) -> {
@@ -109,7 +119,7 @@ function makeBuilder(type, content, settings = {}) {
             italic = value;
             return object;
         },
-        #| value TextBuilder.obfuscated: (value?: boolean | null) -> TextBuilder
+        #| property TextBuilder.obfuscated: (value: {boolean | null}?) -> TextBuilder
         #| Sets the `obfuscated` property of this builder and returns self.
         #| If a boolean is passed the property is set. If null it passed it is cleared.
         obfuscated: (value = true) -> {
@@ -117,7 +127,7 @@ function makeBuilder(type, content, settings = {}) {
             obfuscated = value;
             return object;
         },
-        #| value TextBuilder.underlined: (value?: boolean | null) -> TextBuilder
+        #| property TextBuilder.underlined: (value: {boolean | null}?) -> TextBuilder
         #| Sets the `underlined` property of this builder and returns self.
         #| If a boolean is passed the property is set. If null it passed it is cleared.
         underlined: (value = true) -> {
@@ -125,7 +135,7 @@ function makeBuilder(type, content, settings = {}) {
             underlined = value;
             return object;
         },
-        #| value TextBuilder.strikethrough: (value?: boolean | null) -> TextBuilder
+        #| property TextBuilder.strikethrough: (value: {boolean | null}?) -> TextBuilder
         #| Sets the `strikethrough` property of this builder and returns self.
         #| If a boolean is passed the property is set. If null it passed it is cleared.
         strikethrough: (value = true) -> {
@@ -133,7 +143,7 @@ function makeBuilder(type, content, settings = {}) {
             strikethrough = value;
             return object;
         },
-        #| value TextBuilder.font: (value: string | null) -> TextBuilder
+        #| property TextBuilder.font: (value: string | null) -> TextBuilder
         #| Sets the font of this builder and returns self.
         #| The font should be a valid identifier or null to clear it.
         font: (value) -> {
@@ -141,7 +151,7 @@ function makeBuilder(type, content, settings = {}) {
             font = value;
             return object;
         },
-        #| value TextBuilder.color: (value: string | null) -> TextBuilder
+        #| property TextBuilder.color: (value: string | null) -> TextBuilder
         #| Sets the color of this builder and returns self.
         #| The font should be a color string, a hex color with a prefix of `#`, or null to clear it.
         color: (value) -> {
@@ -149,7 +159,7 @@ function makeBuilder(type, content, settings = {}) {
             color = value;
             return object;
         },
-        #| value TextBuilder.insertion: (value: string | null) -> TextBuilder
+        #| property TextBuilder.insertion: (value: string | null) -> TextBuilder
         #| Sets the insertion of this builder and returns self.
         #| The allows for inserting text into the chat field from some contexts.
         #| Pass in `null` to clear.
@@ -158,7 +168,7 @@ function makeBuilder(type, content, settings = {}) {
             insertion = value;
             return object;
         },
-        #| value TextBuilder.append: (children*: TextBuilder) -> TextBuilder
+        #| property TextBuilder.append: (children: TextBuilder*) -> TextBuilder
         #| Adds children to this builder and returns self.
         #| The children must also be text builders.
         append: (newChildren*) -> {
@@ -168,7 +178,7 @@ function makeBuilder(type, content, settings = {}) {
             }
             return object;
         },
-        #| value TextBuilder.clickEvent: (action: string, value: string) -> TextBuilder
+        #| property TextBuilder.clickEvent: (action: string, value: string) -> TextBuilder
         #| Sets the click event of this builder and returns self. See the minecraft wiki page for more details.
         clickEvent: (action, value) -> {
             debug.assert(action in ["open_url", "open_file", "run_command", "suggest_command", "change_page", "copy_to_clipboard"], "Unexpected clickEvent action");
@@ -176,7 +186,7 @@ function makeBuilder(type, content, settings = {}) {
             clickEvent = {action: action, value: value};
             return object;
         },
-        #| value TextBuilder.hoverEvent: (action: string, contents: any) -> TextBuilder
+        #| property TextBuilder.hoverEvent: (action: string, contents: any) -> TextBuilder
         #| Sets the hover event of this builder and returns self. See the minecraft wiki page for more details.
         hoverEvent: (action, contents) -> {
             debug.assert(action in ["show_text", "show_item", "show_entity"], "Unexpected hoverEvent action");
@@ -196,21 +206,21 @@ function makeBuilder(type, content, settings = {}) {
     return object;
 }
 
-#| value text.literal: (text: string) -> TextBuilder
+#| property text.literal: (text: string) -> TextBuilder
 #| Creates a text builder with literal contents.
 $literal = (text) -> {
     debug.assert(text is string, "Literal text must be string");
     return makeBuilder("text", text);
 };
 
-#| value text.translatable: (key: string, args*: TextBuilder) -> TextBuilder
+#| property text.translatable: (key: string, args: TextBuilder*) -> TextBuilder
 #| Creates a text builder with translatable content.
 $translatable = (key, args*) -> {
     debug.assert(key is string, "Translation key must be string");
     return makeBuilder("translate", {translate: key, with: args});
 };
 
-#| value text.translatableWithFallback: (key: string, fallback: string, args*: TextBuilder) -> TextBuilder
+#| property text.translatableWithFallback: (key: string, fallback: string, args: TextBuilder*) -> TextBuilder
 #| Creates a text builder with translatable content and fallback text for when the key isn't present.
 $translatableWithFallback = (key, fallback, args*) -> {
     debug.assert(key is string, "Translation key must be string");
@@ -218,7 +228,7 @@ $translatableWithFallback = (key, fallback, args*) -> {
     return makeBuilder("translate", {translate: key, fallback: fallback, with: args});
 };
 
-#| value text.score: (name: string, objective: string) -> TextBuilder
+#| property text.score: (name: string, objective: string) -> TextBuilder
 #| Creates a text builder with scoreboard value contents.
 $score = (name, objective) -> {
     debug.assert(name is string, "Scoreboard name must be string");
@@ -226,7 +236,7 @@ $score = (name, objective) -> {
     return makeBuilder("score", {name: name, objective: objective});
 };
 
-#| value text.selector: (selector: string, separator?: TextBuilder | null) -> TextBuilder
+#| property text.selector: (selector: string, separator: {TextBuilder | null}?) -> TextBuilder
 #| Creates a text that displays selected entity names.
 $selector = (selector, separator = null) -> {
     debug.assert(selector is string, "Selector must be string");
@@ -236,27 +246,32 @@ $selector = (selector, separator = null) -> {
     return makeBuilder("selector", content);
 };
 
-#| value text.keybind: (key: string) -> TextBuilder
+#| property text.keybind: (key: string) -> TextBuilder
 #| Creates a text that displays the value of an active keybind.
 $keybind = (key) -> {
     debug.assert(key is string, "Key must be string");
     return makeBuilder("keybind", key);
 };
 
-#| value text.nbt: function
+#| property text.nbt: function
 #| *Nbt text is currently not supported due to its complexity, please manually build it and use the `parse` function.* 
 $nbt = (args*) -> {
     debug.throw("Constructing nbt isn't supported yet. Please use the parse function instead.");
 };
 
-#| value text.parse: (text: string | array | object) -> TextBuilder
+#| property text.parse: (text: string | array | object) -> TextBuilder
 #| Parses json text into a text builder for convenient editing.
 $parse = (value) -> {
     if (value is string) {
         return $literal(value);
     } else if (value is array) {
-        return makeBuilder("none", null).children(value.map($parse));
+        val builder = makeBuilder("none", null);
+        foreach (child in value) {
+            builder.append(child);
+        }
+        return builder;
     } else if (value is object) {
+        # @@type string | null
         var type = null;
         if ("type" in value) {
             type = value.type;

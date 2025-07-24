@@ -1,5 +1,5 @@
 @version "2";
-@target "minecraft:recipes/golden_apple.json";
-@priority -1;
+@target "minecraft:recipe/golden_apple.json";
+@priority 1;
 
 $result.id = "minecraft:golden_carrot";

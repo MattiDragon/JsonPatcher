@@ -30,3 +30,12 @@ metapatch.addFile("minecraft:recipe/test.json", {
 });
 
 metapatch.addFile("minecraft:loot_table/blocks/andesite.json", metapatch.getFile("minecraft:loot_table/blocks/stone.json"));
+
+val f = metapatch.searchFiles({
+  "namespace": "minecraft",
+  "path": {
+    "start": "loot_table/chests/village/village",
+    "end": "house.json"
+  }
+});
+debug.log(objects.keys(f));
