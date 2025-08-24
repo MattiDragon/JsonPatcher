@@ -15,7 +15,7 @@ on:
 
 jobs:
   publish:
-    uses: MattiDragon/MattiDragon/.github/workflows/publish-mc-mod.yaml@00051ad2ae1350c882ab08a382d4dda38eff121b
+    uses: MattiDragon/MattiDragon/.github/workflows/publish-mc-mod.yaml@542c3c5094509110cdc70c163f0430ceb9bb09a0
     with:
       version-type: ${{ inputs.version-type }}
       minecraft-versions: ${{ inputs.minecraft-versions }}
