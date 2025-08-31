@@ -166,7 +166,8 @@ public class GlobalDirSetup {
                 @Override
                 public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) throws IOException {
                     var relativePath = internalDocsPath.get().relativize(file);
-                    var targetPath = modDir.resolve(relativePath);
+                    // Relative paths cannot be used across filesystems, so we must convert to string first
+                    var targetPath = modDir.resolve(relativePath.toString());
                     Files.createDirectories(targetPath.getParent());
                     Files.copy(file, targetPath, StandardCopyOption.REPLACE_EXISTING);
                     return FileVisitResult.CONTINUE;
