@@ -9,8 +9,9 @@ This is primarily useful for mod developers and pack makers, but can also be use
 
 ## V2 Disclaimer
 JsonPatcher v2 is currently in beta. V2 introduces a bunch of new features including global patches for mods and modpacks.
-There's currently no documentation available for v2 as it had to be rushed out for BlanketCon '25. Parts of the v1 docs
-may be correct, but expect things not to work perfectly.
+Documentation for v2 is available at [jsonpatcher-docs.mattidragon.dev](https://jsonpatcher-docs.mattidragon.dev/).
+The documentation is however quite incomplete and partially outdated. 
+For some cases it might be best to consult the old wiki instead.
 
 ## Usage
 <details>

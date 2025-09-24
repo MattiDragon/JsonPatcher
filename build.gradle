@@ -75,16 +75,16 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
-    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Runtime:$lang_version"))
-    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Compiler:$lang_version"))
-    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Parser:$lang_version"))
-    langInclude(implementation("com.github.mattidragon.JsonPatcherLang:JsonPatcherLang-Stdlib:$lang_version"))
+    langInclude(implementation("dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Runtime:$lang_version"))
+    langInclude(implementation("dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Compiler:$lang_version"))
+    langInclude(implementation("dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Parser:$lang_version"))
+    langInclude(implementation("dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Stdlib:$lang_version"))
 
     include(implementation("net.fabricmc:mapping-io:$mapping_io_version"))
 
     // Config
-    modImplementation include("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
-    annotationProcessor clientAnnotationProcessor("com.github.mattidragon:ConfigToolkit:$configtoolkit_version")
+    modImplementation include("dev.mattidragon:ConfigToolkit:$configtoolkit_version")
+    annotationProcessor clientAnnotationProcessor("dev.mattidragon:ConfigToolkit:$configtoolkit_version")
     modCompileOnly(modLocalRuntime("com.terraformersmc:modmenu:$modmenu_version"))
 
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")
