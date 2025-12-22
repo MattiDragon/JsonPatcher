@@ -1,6 +1,7 @@
 package dev.mattidragon.jsonpatcher.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.metapatch.MetapatchResourcePack;
 import dev.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
 import dev.mattidragon.jsonpatcher.patch.PatchingContext;
@@ -16,7 +17,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-@Mixin(LifecycledResourceManagerImpl.class)
+@Mixin(value = LifecycledResourceManagerImpl.class, priority = 500)
 public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     @Unique
     private MetapatchResourcePack jsonpatcher$metaPatchPack;
@@ -46,6 +47,11 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
         if (jsonpatcher$metaPatchPack.isDeleted(id)) {
             return new ArrayList<>();
         }
+        if (!jsonpatcher$context.loaded()) {
+            var message = "Loading unmodified resource \""+id.toString()+"\" before PatchingContext could be loaded";
+            JsonPatcher.RELOAD_LOGGER.warn(message);
+            return original;
+        }
         var list = new ArrayList<>(original);
         var metaResource = jsonpatcher$metaPatchPack.makeResource(id);
         if (metaResource != null) list.add(metaResource);
@@ -57,6 +63,11 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     private Optional<Resource> injectResourcesIntoGet(Optional<Resource> original, Identifier id) {
         if (jsonpatcher$metaPatchPack.isDeleted(id)) {
             return Optional.empty();
+        }
+        if (!jsonpatcher$context.loaded()) {
+            var message = "Loading unmodified resource \""+id.toString()+"\" before PatchingContext could be loaded";
+            JsonPatcher.RELOAD_LOGGER.warn(message);
+            return original;
         }
         return Optional.ofNullable(jsonpatcher$metaPatchPack.makeResource(id))
                 .or(() -> original)
@@ -70,6 +81,11 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     private Map<Identifier, Resource> injectResourcesIntoFind(Map<Identifier, Resource> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
         map.putAll(jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate));
         map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
+        if (!jsonpatcher$context.loaded()) {
+            var message = "Loading unmodified resources from \""+startingPath+"\" before PatchingContext could be loaded";
+            JsonPatcher.RELOAD_LOGGER.warn(message);
+            return map;
+        }
         map.forEach(jsonpatcher$context::patchResource);
         return map;
     }
@@ -79,6 +95,11 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
         jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate)
                 .forEach((id, resource) -> map.computeIfAbsent(id, i -> new ArrayList<>()).add(resource));
         map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
+        if (!jsonpatcher$context.loaded()) {
+            var message = "Loading unmodified resources from \""+startingPath+"\" before PatchingContext could be loaded";
+            JsonPatcher.RELOAD_LOGGER.warn(message);
+            return map;
+        }
         map.forEach((id, resources) -> resources.forEach(resource -> jsonpatcher$context.patchResource(id, resource)));
         return map;
     }

@@ -37,6 +37,10 @@ public class PatchingContext {
         loaded = true;
     }
 
+    public boolean loaded() {
+        return loaded;
+    }
+
     public void patchResource(Identifier id, Resource resource) {
         if (!id.getPath().endsWith(".json")) return;
         if (DISABLED.get() != null) return;
