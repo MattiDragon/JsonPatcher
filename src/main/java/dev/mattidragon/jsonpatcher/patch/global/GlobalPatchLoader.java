@@ -3,6 +3,7 @@ package dev.mattidragon.jsonpatcher.patch.global;
 import com.google.common.base.Suppliers;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
+import dev.mattidragon.jsonpatcher.events.EventsLibrary;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
 import dev.mattidragon.jsonpatcher.lang.error.Diagnostic;
@@ -17,6 +18,7 @@ import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironmen
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.Library;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.LibraryGroup;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.ProgramData;
+import dev.mattidragon.jsonpatcher.lang.runtime.lib.builder.LibraryBuilder;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import dev.mattidragon.jsonpatcher.patch.PatchLoader;
 import dev.mattidragon.jsonpatcher.patch.PatchLoaderDiagnostic;
@@ -63,6 +65,12 @@ public class GlobalPatchLoader {
         }
         environment.enableLogging(v -> JsonPatcher.RELOAD_LOGGER.debug("Debug from global patch: {}", v));
         environment.bootstrap();
+
+        environment.addLibrary(new Library(
+                LibraryGroup.REFLECTION,
+                "events",
+                Suppliers.memoize(() -> new LibraryBuilder(EventsLibrary.class).build())
+        ));
 
         for (var source : findSources()) {
             globalPatches.addAll(loadPatchDir(source, environment));

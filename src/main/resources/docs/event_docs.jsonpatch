@@ -1,0 +1,27 @@
+#| library events.lib at "events"
+#| This library contains functionality for subscribing to various gameplay events.
+#| To use events, begin by obtaining an event container with a unique name:
+#| ```jsonpatcher
+#| import "events";
+#|
+#| val container = events.container("my-event-container");
+#| ```
+#| You can then use various methods on the container to listen to events.
+#| @requires all(libgroup("jsonpatcher:reflection"), libgroup("+jsonpatcher:global_scripts"))
+
+#| property events.lib.container: (name: string) -> events.Container
+#| Used to obtain an event container. The passed name can be any string, but should be the same between executions.
+#| This allows for hotswapping, when newer executions replace handlers from previous ones.
+
+#| type events.Container: object
+#| Holds event handlers for events.
+
+#| property events.Container.registerFabric: (class: string, field: string, handler: function) -> null
+#| Registers a listener to a Fabric API event. The event may also be defined by other mods.
+#|
+#| The `class` and `field` parameters specify the field holding the event. These must be passed as strings.
+#| In order for registration to succeed, the field must be of type `net.fabricmc.fabric.api.event.Event` and have a properly defined generic parameter.
+#| <br>The `handler` parameter accepts a function, which is converted into the appropriate handler type for the event.
+#|
+#| Registering to the same event twice will override the first handler with the second.
+#| This only happens if the `hotswap_events` config option is enabled, as allowing hotswapping leads to worse performance at runtime.

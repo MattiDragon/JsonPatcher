@@ -3,4 +3,4 @@
 
 $testFunc = () -> {
     return 100;
-}
+};
