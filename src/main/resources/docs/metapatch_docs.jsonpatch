@@ -1,25 +1,27 @@
-#| library metapatch.lib at "metapatch"
+# @@doc_namespace metapatch
+
+#| library lib at "metapatch"
 #| A special library available to metapatch patches.
 #| Provides tools to create, query and remove files on a higher level.
 
-#| property metapatch.lib.addFile: (path: string, content: object) -> null
+#| property lib.addFile: (path: string, content: object) -> null
 #| Creates a file at the specified path with the specified content, converted to json.
 
-#| property metapatch.lib.deleteFile: (path: string) -> null
+#| property lib.deleteFile: (path: string) -> null
 #| Deletes the file at the specified path.
 
-#| property metapatch.lib.deleteFiles: (target: patch.PatchTarget) -> null
+#| property lib.deleteFiles: (target: patch.PatchTarget) -> null
 #| Deletes files matching the specified target selector.
 #| The syntax of the selector is the same as is used in the `@target` metadata, except that only one target is supported.
 
-#| property metapatch.lib.getFile: (path: string) -> object
+#| property lib.getFile: (path: string) -> object
 #| Reads the file at the specified path and returns its content as json.
 
-#| property metapatch.lib.getFiles: (path: string) -> object[]
+#| property lib.getFiles: (path: string) -> object[]
 #| Reads the file at the specified path as well as all overriden versions,
 #| and returns their contents as json.
 
-#| property metapatch.lib.searchFiles: (target: patch.PatchTarget) -> object{}
+#| property lib.searchFiles: (target: patch.PatchTarget) -> object{}
 #| Searches for files matching the specified target selector.
 #| The syntax of the selector is the same as is used in the `@target` metadata, except that only one target is supported.
 #|
@@ -28,8 +30,8 @@
 #| This method is most performant when the target has a path specified, 
 #| as it allows minecraft to skip ahead when looking for files.
 
-#| metadata metapatch.metapatch: null
+#| metadata metapatch: null
 #| Turns the current script into a metapatch script.
 #| This allows the script to create, query and remove files on a higher level
 #| trough the `"metapatch"` library. The library must be imported, unlike on older versions.
-#| @requires any(libgroup("+minecraft-data"), libgroup("+minecraft-assets"))
+#| @requires any(libgroup("jsonpatcher:minecraft_data"), libgroup("jsonpatcher:minecraft_assets"))

@@ -87,12 +87,12 @@ public class GlobalDirSetup {
         var readme = """
                 # JsonPatcher global patches
                 This directory is intended as a convenient place for modpack developers to place patches.
-                Patches from here are automatically loaded together with patches from data- and resourcepacks.
-                Scripts are loaded straight from the `data` and `assets` subdirectories,
+                Programs from here are automatically loaded together with patches from data- and resourcepacks.
+                They're loaded straight from the `data` and `assets` subdirectories,
                 for datapack and resourcepack patching respectively.
                 
-                Scripts here have modpack level trust, so they get access to reflection by default.
-                Be careful not to make permanent changes to the game state however, as these scripts will run on every
+                The patches here have modpack level trust, so they get access to reflection by default.
+                Be careful not to make permanent changes to the game state however, as they will run on every
                 reload like normal patches.
                 """;
         Files.writeString(dir.resolve("README.md"), readme);
@@ -103,7 +103,7 @@ public class GlobalDirSetup {
                   "$schema": "https://raw.githubusercontent.com/MattiDragon/JsonPatcherLang/refs/heads/2.0/tools/lang-server/jsonpatcher-workspace.schema.json",
                   "schema_version": 1,
                   "lang_version": [2, 0, 0],
-                  "allowed_library_groups": ["default", "jsonpatcher:reflection", "+minecraft-data"]
+                  "allowed_library_groups": ["default", "jsonpatcher:reflection", "+jsonpatcher:minecraft_data"]
                 }
                 """;
         Files.writeString(dir.resolve("data").resolve("jsonpatcher-workspace.json"), dataWorkspaceJson);
@@ -114,7 +114,7 @@ public class GlobalDirSetup {
                   "$schema": "https://raw.githubusercontent.com/MattiDragon/JsonPatcherLang/refs/heads/2.0/tools/lang-server/jsonpatcher-workspace.schema.json",
                   "schema_version": 1,
                   "lang_version": [2, 0, 0],
-                  "allowed_library_groups": ["default", "jsonpatcher:reflection", "+minecraft-assets"]
+                  "allowed_library_groups": ["default", "jsonpatcher:reflection", "+jsonpatcher:minecraft_assets"]
                 }
                 """;
         Files.writeString(dir.resolve("assets").resolve("jsonpatcher-workspace.json"), assetsWorkspaceJson);

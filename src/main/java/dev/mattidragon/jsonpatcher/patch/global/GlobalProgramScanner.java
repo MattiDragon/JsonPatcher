@@ -12,10 +12,10 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GlobalPatchScanner {
+public class GlobalProgramScanner {
     public static final Path BASE_DIR = JsonPatcher.DATA_DIR.resolve("global_patches");
 
-    private GlobalPatchScanner() {
+    private GlobalProgramScanner() {
     }
 
     public static Map<Identifier, InputSupplier<InputStream>> scan(ResourceType type) {

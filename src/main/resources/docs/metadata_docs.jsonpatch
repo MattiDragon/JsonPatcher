@@ -1,16 +1,41 @@
-#| metadata script.priority: number
-#| Specifies in which order scripts are loaded.
-#| Scripts with higher priority run after scripts with lower priority.
+#| metadata program.priority: number
+#| Specifies order in which programs are loaded.
+#| Programs with higher priority run after programs with lower priority.
 #| The default priority is 0.
 #|
 #| Note that priority only applies between scripts that are ran for the same reason.
 #| For example, you cannot change the ordering between a `"client"` init script and a `"main"` init script.
 
-
-#| metadata script.enabled: boolean
+#| metadata program.enabled: boolean
 #| The `@enabled` metadata tag can be used to disable scripts.
 #| When set to `false`, the script will not run at all and in some cases not even parsed.
 #| This is useful for debugging, providing an alternative to commenting out code.
+
+#| metadata program.library: null | script.LibraryMetadata
+#| Makes a program available to others as a library that can be imported.
+#| When imported, the program will be executed with an empty root object,
+#| which will then be provided to the importing program.
+#|
+#| If the program is loaded from the `jsonpatcher/scripts` folder within the minecraft instance folder,
+#| the library location gains the `scripts:global:` prefix. If the script is loaded from within a mod,
+#| it gains the `mod:MOD_ID:` prefix, where `MOD_ID` is the mod's id. For example `mod:jsonpatcher:example`.
+#|
+#| If the program is loaded from a resource file, the library location will be equal to the namespaced file location of the program.
+#|
+#| Unless the [`shared`](#property:program.LibraryMetadata.shared) option is specified,
+#| each caller gets their own copy of this library.
+
+#| type program.LibraryMetadata: object
+#| Optional options for describing how a library should behave.
+
+#| property program.LibraryMetadata.shared: boolean
+#| If specified, this option make all users share a single copy of a library.
+#|
+#| Care should be taken to ensure the thread safety of shared libraries,
+#| as multiple programs will be able to access shared libraries in parallel.
+#| JsonPatcher objects and arrays are **not** thread safe and must be externally synchronized.
+#| Any exposed objects should be frozen whenever possible.
+#| @optional
 
 
 #| metadata patch.target: patch.PatchTarget | patch.PatchTarget[]
@@ -20,7 +45,7 @@
 #|
 #| Can either be set to a single target, or an array of targets.
 #| When set to an array, files are patched when any of the targets match.
-#| @requires any(libgroup("+minecraft-data"), libgroup("+minecraft-assets"))
+#| @requires any(libgroup("+jsonpatcher:minecraft_data"), libgroup("+jsonpatcher:minecraft_assets"))
 
 #| typealias patch.PatchTarget: string | ObjectTarget
 #| A single target can be a string or an object.
@@ -67,21 +92,3 @@
 #| - `"client"`: Causes the script to run during client init.
 #| - *Any other value is considered invalid*
 #| @requires libgroup("+jsonpatcher:global_scripts")
-
-
-#| metadata script.library: null | script.LibraryMetadata
-#| Makes a global script available as a library to other global scripts as well as regular patches.
-#|
-#| If the global script is loaded from the `jsonpatcher/scripts` folder within the minecraftinstance folder,
-#| the library location gains the `scripts:global:` prefix. If the script is loaded from within a mod, 
-#| it gains the `mod:MOD_ID:` prefix, where `MOD_ID` is the mod's id. For example `mod:jsonpatcher:example`.
-#| 
-#| This is not applicable to, and won't do anything for, regular patches.
-#| They are already always available as libraries to each other.
-#| @requires libgroup("+jsonpatcher:global_scripts")
-
-#| type script.LibraryMetadata: object
-
-#| property script.LibraryMetadata.shared: boolean
-#| @optional
-

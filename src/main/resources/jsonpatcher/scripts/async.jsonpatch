@@ -1,0 +1,93 @@
+@version "2";
+@library {"shared": true};
+
+# @@doc_namespace async
+
+#| library lib at "mod:jsonpatcher:async"
+#| Provides locking utilities for asynchronous code, primarily intended for shared libraries.
+
+import "reflection";
+
+val ReentrantLock = reflection.findClass("java.util.concurrent.locks.ReentrantLock");
+val ReentrantReadWriteLock = reflection.findClass("java.util.concurrent.locks.ReentrantReadWriteLock");
+
+val runWithFinally = reflection.findClass("dev.mattidragon.jsonpatcher.misc.ModInternals").runWithFinally;
+
+#| property lib.mutex: (value: any) -> jsonpatcher.async.Mutex
+#| Creates a mutex around a provided value. The mutex ensures that the value is only available to one thread at a time,
+#| unless it is smuggled out of the mutex.
+function mutex(value) {
+    val lock = ReentrantLock();
+
+    #| type Mutex: object
+    #| A mutex that provides access to a value. The mutex ensures that the value is only available to one thread at a time.
+    #| Mutex objects are always frozen.
+    return values.freeze({
+        #| property jsonpatcher.async.Mutex.use: <$T>(callback: (unknown) -> $T) -> $T
+        #| Locks the mutex and provides the value to the callback function.
+        #| The mutex stays locked for the duration of the callback function.
+        #| The return value of the callback is returned by this function.
+        #| If an exception is thrown in the callback, the mutex is still properly unlocked.
+        use: (callback) -> {
+            var locked = false;
+            runWithFinally(() -> {
+                lock.lock();
+                locked = true;
+                return callback(value);
+            }, () -> {
+                if (locked) {
+                    lock.unlock();
+                }
+            });
+        }
+    });
+}
+$mutex = mutex;
+
+#| property lib.rwLock: () -> jsonpatcher.async.RWLock
+#| Creates a read-write lock. This lock only provides a locking mechanism and does not protect any value.
+#| It is up to the user to ensure that the lock is used correctly.
+function rwLock() {
+    val lock = ReentrantReadWriteLock();
+
+    #| type RWLock: object
+    #| A read-write lock. This lock only provides a locking mechanism and does not protect any value.
+    #| It is up to the user to ensure that the lock is used correctly.
+    #| If the read lock is held by one or more threads, the write lock is not available.
+    #| If the write lock is held by a thread, neither the read nor write lock are available.
+    return values.freeze({
+        #| property RWLock.read: <$T>(callback: () -> $T) -> $T
+        #| Locks the lock for reading and executes the callback.
+        #| If the lock isn't available for reading, the current thread is blocked until it becomes available.
+        #| The return value of the callback is returned by this function.
+        read: (callback) -> {
+            var locked = false;
+            runWithFinally(() -> {
+                lock.readLock().lock();
+                locked = true;
+                return callback();
+            }, () -> {
+                if (locked) {
+                    lock.readLock().unlock();
+                }
+            });
+        },
+        #| property RWLock.write: <$T>(callback: () -> $T) -> $T
+        #| Locks the lock for writing and executes the callback.
+        #| If the lock isn't available for writing, the current thread is blocked until it becomes available.
+        #| The return value of the callback is returned by this function.
+        write: (callback) -> {
+            var locked = false;
+            runWithFinally(() -> {
+                lock.writeLock().lock();
+                locked = true;
+                return callback();
+            }, () -> {
+                if (locked) {
+                    lock.writeLock().unlock();
+                }
+            });
+        }
+    });
+}
+$rwLock = rwLock;

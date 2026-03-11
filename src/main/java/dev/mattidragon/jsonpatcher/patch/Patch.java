@@ -13,7 +13,7 @@ public record Patch(
         double priority,
         boolean isMeta,
         TrustLevel trustLevel
-) implements BasePatch {
+) implements LoadedProgram {
     @Override
     public String name() {
         return id.toString();

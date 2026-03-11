@@ -4,7 +4,7 @@ import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.patch.ErrorLogger;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalDirSetup;
-import dev.mattidragon.jsonpatcher.patch.global.GlobalPatch;
+import dev.mattidragon.jsonpatcher.patch.global.GlobalProgram;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
 import dev.mattidragon.jsonpatcher.remap.MappingsLoader;
 import net.fabricmc.api.ModInitializer;
@@ -56,7 +56,7 @@ public class JsonPatcher implements ModInitializer {
 
         GlobalDirSetup.setupDirs();
         GlobalPatchLoader.loadGlobalPatches();
-        GlobalPatchLoader.runEntrypoint(GlobalPatch.Entrypoint.MAIN);
+        GlobalPatchLoader.runEntrypoint(GlobalProgram.Entrypoint.MAIN);
     }
 
     /**

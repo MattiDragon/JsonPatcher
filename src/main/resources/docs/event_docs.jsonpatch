@@ -1,4 +1,6 @@
-#| library events.lib at "events"
+# @@doc_namespace events
+
+#| library lib at "events"
 #| This library contains functionality for subscribing to various gameplay events.
 #| To use events, begin by obtaining an event container with a unique name:
 #| ```jsonpatcher
@@ -9,14 +11,14 @@
 #| You can then use various methods on the container to listen to events.
 #| @requires all(libgroup("jsonpatcher:reflection"), libgroup("+jsonpatcher:global_scripts"))
 
-#| property events.lib.container: (name: string) -> events.Container
+#| property lib.container: (name: string) -> events.Container
 #| Used to obtain an event container. The passed name can be any string, but should be the same between executions.
 #| This allows for hotswapping, when newer executions replace handlers from previous ones.
 
-#| type events.Container: object
+#| type Container: object
 #| Holds event handlers for events.
 
-#| property events.Container.registerFabric: (class: string, field: string, handler: function) -> null
+#| property Container.registerFabric: (class: string, field: string, handler: function) -> null
 #| Registers a listener to a Fabric API event. The event may also be defined by other mods.
 #|
 #| The `class` and `field` parameters specify the field holding the event. These must be passed as strings.

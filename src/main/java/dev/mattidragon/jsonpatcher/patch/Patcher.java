@@ -78,7 +78,7 @@ public class Patcher {
      * @param root The root object for the patch context, will be modified
      * @return {@code true} if the patch completed successfully. If {@code false} the {@code errorConsumer} should have received an error.
      */
-    public static boolean runPatch(BasePatch patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root) {
+    public static boolean runPatch(LoadedProgram patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root) {
         try {
             CompletableFuture.runAsync(() -> patch.program().run(root), executor)
                     .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);

@@ -37,17 +37,17 @@ import java.util.stream.Collectors;
 
 public class GlobalPatchLoader {
     private static List<Library> globalLibs = new ArrayList<>();
-    private static List<GlobalPatch> globalPatches = new ArrayList<>();
+    private static List<GlobalProgram> globalPrograms = new ArrayList<>();
     private static final AtomicInteger errorCount = new AtomicInteger();
     private static final AtomicInteger warnCount = new AtomicInteger();
 
-    private static List<GlobalPatchSource> findSources() {
-        var sources = new ArrayList<GlobalPatchSource>();
-        sources.add(new GlobalPatchSource("scripts:global", JsonPatcher.DATA_DIR.resolve("scripts"), TrustLevel.MODPACK));
+    private static List<GlobalProgramSource> findSources() {
+        var sources = new ArrayList<GlobalProgramSource>();
+        sources.add(new GlobalProgramSource("scripts:global", JsonPatcher.DATA_DIR.resolve("scripts"), TrustLevel.MODPACK));
         for (var mod : FabricLoader.getInstance().getAllMods()) {
             mod.findPath("jsonpatcher/scripts")
                     .ifPresent(path ->
-                            sources.add(new GlobalPatchSource("mod:" + mod.getMetadata().getId(), path, TrustLevel.MOD)));
+                            sources.add(new GlobalProgramSource("mod:" + mod.getMetadata().getId(), path, TrustLevel.MOD)));
         }
         return sources;
     }
@@ -55,7 +55,7 @@ public class GlobalPatchLoader {
     public static synchronized void loadGlobalPatches() {
         // Allocating new lists keeps previous ones valid. This prevents threading issues
         globalLibs = new ArrayList<>();
-        globalPatches = new ArrayList<>();
+        globalPrograms = new ArrayList<>();
         warnCount.set(0);
         errorCount.set(0);
 
@@ -73,10 +73,10 @@ public class GlobalPatchLoader {
         ));
 
         for (var source : findSources()) {
-            globalPatches.addAll(loadPatchDir(source, environment));
+            globalPrograms.addAll(loadPrograms(source, environment));
         }
 
-        JsonPatcher.RELOAD_LOGGER.info("Loaded {} global patches. ({} libraries)", globalPatches.size(), getGlobalLibs().size());
+        JsonPatcher.RELOAD_LOGGER.info("Loaded {} global patches. ({} libraries)", globalPrograms.size(), getGlobalLibs().size());
         if (warnCount.get() > 0) {
             JsonPatcher.RELOAD_LOGGER.warn("Encountered {} warnings while loading global patches. See jsonpatcher/jsonpatcher.log for details.", warnCount.get());
         }
@@ -91,11 +91,11 @@ public class GlobalPatchLoader {
     }
 
     // Synchronized to block access while reloading
-    public static void runEntrypoint(GlobalPatch.Entrypoint entrypoint) {
-        List<GlobalPatch> toRun;
+    public static void runEntrypoint(GlobalProgram.Entrypoint entrypoint) {
+        List<GlobalProgram> toRun;
         synchronized (GlobalPatchLoader.class) {
-            toRun = globalPatches.stream()
-                    .filter(globalPatch -> globalPatch.entrypoint() == entrypoint)
+            toRun = globalPrograms.stream()
+                    .filter(globalProgram -> globalProgram.entrypoint() == entrypoint)
                     .toList();
         }
 
@@ -118,8 +118,8 @@ public class GlobalPatchLoader {
         }
     }
 
-    private static List<GlobalPatch> loadPatchDir(GlobalPatchSource source, EvaluationEnvironment environment) {
-        var patches = new ArrayList<GlobalPatch>();
+    private static List<GlobalProgram> loadPrograms(GlobalProgramSource source, EvaluationEnvironment environment) {
+        var patches = new ArrayList<GlobalProgram>();
         try (var stream = Files.walk(source.path())) {
             var files = stream.filter(Files::isRegularFile).toList();
             for (var file : files) {
@@ -133,7 +133,7 @@ public class GlobalPatchLoader {
                         .replace(file.getFileSystem().getSeparator(), "/")
                         .replaceFirst("^\\./", "");
                 var code = Files.readString(file);
-                var patch = loadPatch(id, code, source.trustLevel(), environment);
+                var patch = loadProgram(id, code, source.trustLevel(), environment);
                 if (patch == null) continue;
                 patches.add(patch);
             }
@@ -143,7 +143,7 @@ public class GlobalPatchLoader {
         return patches;
     }
 
-    private static @Nullable GlobalPatch loadPatch(String id, String code, TrustLevel trust, EvaluationEnvironment environment) {
+    private static @Nullable GlobalProgram loadProgram(String id, String code, TrustLevel trust, EvaluationEnvironment environment) {
         var diagnosticsBuilder = new DiagnosticsBuilder();
 
         var lexResult = Lexer.lex(code, id, diagnosticsBuilder);
@@ -221,10 +221,10 @@ public class GlobalPatchLoader {
             environment.addLibrary(lib);
         }
 
-        return new GlobalPatch(added, id, priority, trust, entrypoint);
+        return new GlobalProgram(added, id, priority, trust, entrypoint);
     }
 
-    private static @Nullable GlobalPatch.Entrypoint getEntrypointMeta(PatchMetadata meta, TreeMetadata treeMeta, DiagnosticsBuilder diagnosticsBuilder, Set<String> roles) {
+    private static @Nullable GlobalProgram.Entrypoint getEntrypointMeta(PatchMetadata meta, TreeMetadata treeMeta, DiagnosticsBuilder diagnosticsBuilder, Set<String> roles) {
         if (!meta.has("init")) return null;
 
         roles.add("init");
@@ -240,8 +240,8 @@ public class GlobalPatchLoader {
         }
 
         return switch (string) {
-            case "main" -> GlobalPatch.Entrypoint.MAIN;
-            case "client" -> GlobalPatch.Entrypoint.CLIENT;
+            case "main" -> GlobalProgram.Entrypoint.MAIN;
+            case "client" -> GlobalProgram.Entrypoint.CLIENT;
             default -> {
                 diagnosticsBuilder.addDiagnostic(new PatchLoaderDiagnostic(
                         treeMeta.get(meta.get("init"), MetadataKey.MAIN_POS).orElse(null),

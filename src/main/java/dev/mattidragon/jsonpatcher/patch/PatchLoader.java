@@ -25,7 +25,7 @@ import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.misc.MetadataOps;
 import dev.mattidragon.jsonpatcher.misc.ModLibraryGroups;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
-import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchScanner;
+import dev.mattidragon.jsonpatcher.patch.global.GlobalProgramScanner;
 import dev.mattidragon.jsonpatcher.trust.TrustChecker;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
 import net.minecraft.resource.InputSupplier;
@@ -83,7 +83,7 @@ public class PatchLoader {
                 }
             }, executor));
         }
-        for (var entry : GlobalPatchScanner.scan(resourceType).entrySet()) {
+        for (var entry : GlobalProgramScanner.scan(resourceType).entrySet()) {
             futures.add(CompletableFuture.runAsync(() -> {
                 var patch = loadPatch(entry.getKey().withPath(path -> "/" + path.substring(path.indexOf('/', 1) + 1)), entry.getKey(), entry.getValue(), environment, errorCount, warnCount, TrustLevel.MODPACK);
                 if (patch != null) {
