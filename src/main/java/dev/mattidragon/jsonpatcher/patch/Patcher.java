@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
+import dev.mattidragon.jsonpatcher.context.ProgramContext;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Patcher {
     public static final ExecutorService PATCH_RUNNER = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("JsonPatcher-Patch-Runner").factory());
@@ -47,7 +49,7 @@ public class Patcher {
             for (var patch : patches.getPatches(id)) {
                 var root = GsonConverter.fromGson(activeJson.getValue());
                 var timeBeforePatch = System.nanoTime();
-                var success = runPatch(patch, PATCH_RUNNER, errors::add, root);
+                var success = runPatch(patch, PATCH_RUNNER, errors::add, root, () -> new ProgramContext.TargetContext("patch", id.toString()));
                 var timeAfterPatch = System.nanoTime();
                 JsonPatcher.RELOAD_LOGGER.debug("Patched {} with {} in {}ms", id, patch.id(), (timeAfterPatch - timeBeforePatch) / 1e6);
                 if (success) {
@@ -78,10 +80,13 @@ public class Patcher {
      * @param root The root object for the patch context, will be modified
      * @return {@code true} if the patch completed successfully. If {@code false} the {@code errorConsumer} should have received an error.
      */
-    public static boolean runPatch(LoadedProgram patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root) {
+    public static boolean runPatch(LoadedProgram patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root, Supplier<ProgramContext.RoleContext> contextSupplier) {
         try {
-            CompletableFuture.runAsync(() -> patch.program().run(root), executor)
-                    .get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
+            CompletableFuture.runAsync(() -> {
+                        try (var ignored = contextSupplier.get()) {
+                            patch.program().run(root);
+                        }
+                    }, executor).get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
             return true;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof RuntimeException cause) {
@@ -98,20 +103,6 @@ public class Patcher {
         }
         return false;
     }
-
-/*    private static EvaluationContext buildContext(Identifier patchId, EvaluationContext.LibraryLocator libraryLocator, Value.ObjectValue root, Settings settings) {
-        var builder = EvaluationContext.builder(ConfigProvider.INSTANCE);
-        builder.root(root);
-        builder.libraryLocator(libraryLocator);
-        builder.debugConsumer(value -> JsonPatcher.RELOAD_LOGGER.info("Debug from {}: {}", patchId, value));
-        builder.variable("_isLibrary", settings.isLibrary());
-        builder.variable("_target", settings.targetAsValue());
-        builder.variable("_isMetapatch", settings.isMetaPatch());
-        if (settings.isMetaPatch()) {
-            builder.variable("metapatch", new LibraryBuilder(MetapatchLibrary.class, settings.metaPatchLibrary).build());
-        }
-        return builder.build();
-    }*/
 
     public InputSupplier<InputStream> patchInputStream(Identifier id, InputSupplier<InputStream> stream) {
         if (!hasPatches(id)) return stream;
@@ -155,7 +146,7 @@ public class Patcher {
         try {
             for (var patch : metaPatches) {
                 var timeBeforePatch = System.nanoTime();
-                runPatch(patch, executor, errors::add, new Value.ObjectValue());
+                runPatch(patch, executor, errors::add, new Value.ObjectValue(), () -> new ProgramContext.RoleContext("metapatch"));
                 var timeAfterPatch = System.nanoTime();
                 JsonPatcher.RELOAD_LOGGER.debug("Ran meta patch {} in {}ms", patch.id(), (timeAfterPatch - timeBeforePatch) / 1e6);
             }

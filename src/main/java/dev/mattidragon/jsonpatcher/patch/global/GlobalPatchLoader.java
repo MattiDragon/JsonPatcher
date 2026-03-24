@@ -3,6 +3,7 @@ package dev.mattidragon.jsonpatcher.patch.global;
 import com.google.common.base.Suppliers;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
+import dev.mattidragon.jsonpatcher.context.ProgramContext;
 import dev.mattidragon.jsonpatcher.events.EventsLibrary;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
@@ -103,7 +104,7 @@ public class GlobalPatchLoader {
 
         try (var executor = Executors.newSingleThreadExecutor()) {
             for (var patch : toRun) {
-                Patcher.runPatch(patch, executor, errors::add, new Value.ObjectValue());
+                Patcher.runPatch(patch, executor, errors::add, new Value.ObjectValue(), () -> new ProgramContext.RoleContext("init"));
             }
         }
 
@@ -206,7 +207,9 @@ public class GlobalPatchLoader {
             var finalAdded = added;
             Supplier<Value.ObjectValue> supplier = () -> {
                 var obj = new Value.ObjectValue();
-                finalAdded.run(obj);
+                try (var ignored = new ProgramContext.RoleContext("library")) {
+                    finalAdded.run(obj);
+                }
                 return obj;
             };
             if (libraryMetadata.shared()) {

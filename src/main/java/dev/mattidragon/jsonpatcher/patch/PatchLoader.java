@@ -3,6 +3,7 @@ package dev.mattidragon.jsonpatcher.patch;
 import com.google.common.base.Suppliers;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
+import dev.mattidragon.jsonpatcher.context.ProgramContext;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
 import dev.mattidragon.jsonpatcher.lang.error.Diagnostic;
@@ -205,7 +206,9 @@ public class PatchLoader {
         if (libraryMetadata != null) {
             Supplier<Value.ObjectValue> supplier = () -> {
                 var obj = new Value.ObjectValue();
-                added.run(obj);
+                try (var ignored = new ProgramContext.RoleContext("library")) {
+                    added.run(obj);
+                }
                 return obj;
             };
             if (libraryMetadata.shared()) {

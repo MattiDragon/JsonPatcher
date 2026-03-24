@@ -1,0 +1,33 @@
+# @@doc_namespace context
+
+#| global library ctx
+#| This global provides context to programs.
+#| The available fields vary depending on the type of program.
+
+#| property ctx.target: () -> string
+#| Returns the file currently being modified, only available for regular patches.
+#| @requires metadata(target)
+
+#| property ctx.role: () -> {string | null}
+#| Returns a string describing the role of the current program.
+#| Possible values include: `patch`, `library`, `metapatch`, `init`
+
+#| property ctx.loadedMods: ModInfo{}
+#| A object mapping mod ids to information about all loaded mods.
+#| This allows patches to adapt to the mods they are running alongside.
+
+#| type ModInfo: object
+#| A structure containing infomation about an installed mod.
+
+#| property ModInfo.id: string
+#| The mod id of the mod, same as the key used in [`loadedMods`](#property:context.ctx.loadedMods)
+
+#| property ModInfo.version: string
+#| The version of the mod, as specified by its authors.
+
+#| property ModInfo.name: string
+#| The human readable name of the mod, as specified by its authors.
+
+#| property ModInfo.description: string
+#| A description of the mod, as specified by its authors.
+#| Can contain multiple lines.
