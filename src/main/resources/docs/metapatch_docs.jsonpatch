@@ -3,6 +3,7 @@
 #| library lib at "metapatch"
 #| A special library available to metapatch patches.
 #| Provides tools to create, query and remove files on a higher level.
+#| @requires metadata(metapatch)
 
 #| property lib.addFile: (path: string, content: object) -> null
 #| Creates a file at the specified path with the specified content, converted to json.

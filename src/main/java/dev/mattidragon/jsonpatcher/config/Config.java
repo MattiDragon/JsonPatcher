@@ -17,7 +17,7 @@ public record Config(
         boolean hotswapEvents
 ) implements MutableConfig.Source {
     private static final Config DEFAULT = new Config(
-            100,
+            500,
             true,
             false,
             false,
