@@ -5,10 +5,16 @@ import com.google.gson.JsonObject;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
 import dev.mattidragon.jsonpatcher.trust.TrustProvider;
 import net.minecraft.SharedConstants;
-import net.minecraft.resource.*;
-import net.minecraft.resource.metadata.ResourceMetadataReader;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.PackLocationInfo;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.server.packs.resources.IoSupplier;
+import net.minecraft.server.packs.resources.Resource;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
@@ -18,15 +24,15 @@ import java.io.OutputStreamWriter;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class MetapatchResourcePack implements ResourcePack, TrustProvider {
+public class MetapatchResourcePack implements PackResources, TrustProvider {
     public static final Gson GSON = new Gson();
 
-    public final ResourceType type;
-    private final Map<Identifier, JsonObject> files = new HashMap<>();
+    public final PackType type;
+    private final Map<ResourceLocation, JsonObject> files = new HashMap<>();
     private final List<FileFilter> filters = new ArrayList<>();
     private final Set<String> namespaces = new HashSet<>();
 
-    public MetapatchResourcePack(ResourceType type) {
+    public MetapatchResourcePack(PackType type) {
         this.type = type;
     }
 
@@ -36,7 +42,7 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
         namespaces.clear();
     }
 
-    public void set(Map<Identifier, JsonObject> files, List<FileFilter> deletedFiles) {
+    public void set(Map<ResourceLocation, JsonObject> files, List<FileFilter> deletedFiles) {
         this.files.clear();
         this.files.putAll(files);
         this.filters.clear();
@@ -45,7 +51,7 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
         files.keySet().forEach(id -> namespaces.add(id.getNamespace()));
     }
 
-    public boolean isDeleted(Identifier id) {
+    public boolean isDeleted(ResourceLocation id) {
         // The last filter added will get priority
         for (var filter : filters.reversed()) {
             if (filter.target().test(id)) {
@@ -55,8 +61,8 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
         return false;
     }
 
-    public Map<Identifier, Resource> findResources(String startingPath, Predicate<Identifier> allowedPathPredicate) {
-        var map = new HashMap<Identifier, Resource>();
+    public Map<ResourceLocation, Resource> findResources(String startingPath, Predicate<ResourceLocation> allowedPathPredicate) {
+        var map = new HashMap<ResourceLocation, Resource>();
         files.forEach((id, file) -> {
             if (id.getPath().startsWith(startingPath) && allowedPathPredicate.test(id)) {
                 map.put(id, makeResource(id));
@@ -67,13 +73,13 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
 
     @Nullable
     @Override
-    public InputSupplier<InputStream> openRoot(String... segments) {
+    public IoSupplier<InputStream> getRootResource(String... segments) {
         return null;
     }
 
     @Nullable
     @Override
-    public InputSupplier<InputStream> open(ResourceType type, Identifier id) {
+    public IoSupplier<InputStream> getResource(PackType type, ResourceLocation id) {
         if (type != this.type) return null;
         var file = files.get(id);
         if (file == null) return null;
@@ -88,35 +94,35 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
     }
 
     @Override
-    public void findResources(ResourceType type, String namespace, String prefix, ResultConsumer consumer) {
+    public void listResources(PackType type, String namespace, String prefix, ResourceOutput consumer) {
         if (type != this.type) return;
 
         files.forEach((id, file) -> {
             if (id.getNamespace().equals(namespace) && id.getPath().startsWith(prefix)) {
-                consumer.accept(id, open(type, id));
+                consumer.accept(id, getResource(type, id));
             }
         });
     }
 
     @Override
-    public Set<String> getNamespaces(ResourceType type) {
+    public Set<String> getNamespaces(PackType type) {
         return namespaces;
     }
 
     @Nullable
     @Override
-    public <T> T parseMetadata(ResourceMetadataReader<T> metaReader) {
+    public <T> T getMetadataSection(MetadataSectionSerializer<T> metaReader) {
         var metadata = getMetadata(type);
         var stream = new ByteArrayInputStream(metadata.getBytes());
 
-        return AbstractFileResourcePack.parseMetadata(metaReader, stream);
+        return AbstractPackResources.getMetadataFromStream(metaReader, stream);
     }
 
     @Override
-    public ResourcePackInfo getInfo() {
-        return new ResourcePackInfo("jsonpatcher:meta_patch", 
-                Text.literal("JsonPatcher MetaPatch Resource Pack"), 
-                ResourcePackSource.BUILTIN, 
+    public PackLocationInfo location() {
+        return new PackLocationInfo("jsonpatcher:meta_patch", 
+                Component.literal("JsonPatcher MetaPatch Resource Pack"), 
+                PackSource.BUILT_IN, 
                 Optional.empty());
     }
 
@@ -125,7 +131,7 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
 
     }
 
-    private static String getMetadata(ResourceType type) {
+    private static String getMetadata(PackType type) {
         return """
             {
               "pack": {
@@ -133,12 +139,12 @@ public class MetapatchResourcePack implements ResourcePack, TrustProvider {
                 "description": "JsonPatcher MetaPatch Resource Pack"
               }
             }
-            """.formatted(SharedConstants.getGameVersion().getResourceVersion(type));
+            """.formatted(SharedConstants.getCurrentVersion().getPackVersion(type));
     }
 
     @Nullable
-    public Resource makeResource(Identifier id) {
-        var supplier = open(type, id);
+    public Resource makeResource(ResourceLocation id) {
+        var supplier = getResource(type, id);
         if (supplier != null) {
             return new Resource(this, supplier);
         }

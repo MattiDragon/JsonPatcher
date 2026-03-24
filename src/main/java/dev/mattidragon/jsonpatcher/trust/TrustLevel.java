@@ -1,11 +1,10 @@
 package dev.mattidragon.jsonpatcher.trust;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.util.StringIdentifiable;
-
 import java.util.Locale;
+import net.minecraft.util.StringRepresentable;
 
-public enum TrustLevel implements StringIdentifiable {
+public enum TrustLevel implements StringRepresentable {
     /**
      * Any remote resources or otherwise untrusted resources
      */
@@ -26,10 +25,10 @@ public enum TrustLevel implements StringIdentifiable {
      */
     MOD;
 
-    public static final Codec<TrustLevel> CODEC = StringIdentifiable.createCodec(TrustLevel::values);
+    public static final Codec<TrustLevel> CODEC = StringRepresentable.fromEnum(TrustLevel::values);
 
     @Override
-    public String asString() {
+    public String getSerializedName() {
         return name().toLowerCase(Locale.ROOT);
     }
 }

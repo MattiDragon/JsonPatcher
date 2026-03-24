@@ -3,12 +3,12 @@ package dev.mattidragon.jsonpatcher.mixin.trust;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.mattidragon.jsonpatcher.trust.MutableTrustProvider;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import net.minecraft.resource.ZipResourcePack;
+import net.minecraft.server.packs.FilePackResources;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin(ZipResourcePack.ZipBackedFactory.class)
+@Mixin(FilePackResources.FileResourcesSupplier.class)
 public class ZipResourcePackFactoryMixin implements MutableTrustProvider {
     @Unique
     private TrustLevel jsonpatcher$trustLevel = TrustLevel.UNTRUSTED;
@@ -24,12 +24,12 @@ public class ZipResourcePackFactoryMixin implements MutableTrustProvider {
     }
 
     @ModifyExpressionValue(
-            method = {"open", "openWithOverlays"},
+            method = {"openPrimary", "openFull"},
             at = @At(
                     value = "NEW",
-                    target = "(Lnet/minecraft/resource/ResourcePackInfo;Lnet/minecraft/resource/ZipResourcePack$ZipFileWrapper;Ljava/lang/String;)Lnet/minecraft/resource/ZipResourcePack;")
+                    target = "(Lnet/minecraft/server/packs/PackLocationInfo;Lnet/minecraft/server/packs/FilePackResources$SharedZipFileAccess;Ljava/lang/String;)Lnet/minecraft/server/packs/FilePackResources;")
     )
-    private ZipResourcePack injectTrust(ZipResourcePack original) {
+    private FilePackResources injectTrust(FilePackResources original) {
         ((MutableTrustProvider)original).jsonpatcher$setTrustLevel(jsonpatcher$trustLevel);
         return original;
     }

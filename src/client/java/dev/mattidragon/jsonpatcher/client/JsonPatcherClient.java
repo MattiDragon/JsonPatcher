@@ -12,7 +12,7 @@ public class JsonPatcherClient implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> ErrorLogger.CURRENT.set(error -> {
             var player = client.player;
             if (player != null) {
-                player.sendMessage(error);
+                player.sendSystemMessage(error);
             }
         }));
         GlobalPatchLoader.runEntrypoint(GlobalProgram.Entrypoint.CLIENT);

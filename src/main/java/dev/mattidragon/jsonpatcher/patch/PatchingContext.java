@@ -3,20 +3,20 @@ package dev.mattidragon.jsonpatcher.patch;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.misc.ResourceAccess;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Unit;
 
 public class PatchingContext {
     private static final ThreadLocal<Unit> DISABLED = new ThreadLocal<>();
 
-    private final ResourceType resourceType;
+    private final PackType resourceType;
     private boolean loaded = false;
     private Patcher patcher = null;
 
-    public PatchingContext(ResourceType resourceType) {
+    public PatchingContext(PackType resourceType) {
         this.resourceType = resourceType;
     }
 
@@ -37,7 +37,7 @@ public class PatchingContext {
         loaded = true;
     }
 
-    public void patchResource(Identifier id, Resource resource) {
+    public void patchResource(ResourceLocation id, Resource resource) {
         if (!id.getPath().endsWith(".json")) return;
         if (DISABLED.get() != null) return;
         

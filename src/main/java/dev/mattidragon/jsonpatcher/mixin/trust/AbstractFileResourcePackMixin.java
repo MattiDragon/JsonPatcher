@@ -2,11 +2,11 @@ package dev.mattidragon.jsonpatcher.mixin.trust;
 
 import dev.mattidragon.jsonpatcher.trust.MutableTrustProvider;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import net.minecraft.resource.AbstractFileResourcePack;
+import net.minecraft.server.packs.AbstractPackResources;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin(AbstractFileResourcePack.class)
+@Mixin(AbstractPackResources.class)
 public class AbstractFileResourcePackMixin implements MutableTrustProvider {
     @Unique
     private TrustLevel jsonpatcher$trustLevel = TrustLevel.UNTRUSTED;

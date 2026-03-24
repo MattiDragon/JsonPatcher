@@ -10,19 +10,18 @@ import dev.mattidragon.jsonpatcher.misc.GsonConverter;
 import dev.mattidragon.jsonpatcher.misc.ValueOps;
 import dev.mattidragon.jsonpatcher.patch.PatchTarget;
 import dev.mattidragon.jsonpatcher.patch.PatchingContext;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 @SuppressWarnings("unused")
 public class MetapatchLibrary {
     @DontBind
-    private final Map<Identifier, JsonObject> addedFiles = new HashMap<>();
+    private final Map<ResourceLocation, JsonObject> addedFiles = new HashMap<>();
     @DontBind
     private final List<FileFilter> filters = new ArrayList<>();
     @DontBind
@@ -44,7 +43,7 @@ public class MetapatchLibrary {
     }
 
     @DontBind
-    private boolean isDeleted(Identifier id) {
+    private boolean isDeleted(ResourceLocation id) {
         // The last filter added will get priority
         for (var filter : filters.reversed()) {
             if (filter.target().test(id)) {
@@ -56,11 +55,11 @@ public class MetapatchLibrary {
 
     @DontBind
     private static Value.ObjectValue valueFromResource(Resource resource) throws IOException {
-        return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.getInputStream()), JsonObject.class));
+        return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.open()), JsonObject.class));
     }
 
     public void addFile(EvaluationContext context, Value.StringValue idString, Value.ObjectValue file) {
-        var id = Identifier.of(idString.value());
+        var id = ResourceLocation.parse(idString.value());
 
         // Add filter to undo deletion if necessary
         if (isDeleted(id)) {
@@ -75,7 +74,7 @@ public class MetapatchLibrary {
     }
 
     public void deleteFile(EvaluationContext context, Value.StringValue idString) {
-        var id = Identifier.of(idString.value());
+        var id = ResourceLocation.parse(idString.value());
 
         filters.add(new FileFilter(
                 new PatchTarget(
@@ -93,7 +92,7 @@ public class MetapatchLibrary {
     }
 
     public Value getFile(EvaluationContext context, Value.StringValue idString) {
-        var id = Identifier.of(idString.value());
+        var id = ResourceLocation.parse(idString.value());
 
         try (var __ = PatchingContext.disablePatching()) {
             var resource = resourceManager.getResource(id);
@@ -108,11 +107,11 @@ public class MetapatchLibrary {
     }
 
     public Value getFiles(EvaluationContext context, Value.StringValue idString) {
-        var id = Identifier.of(idString.value());
+        var id = ResourceLocation.parse(idString.value());
 
         var array = new Value.ArrayValue();
         try (var __ = PatchingContext.disablePatching()) {
-            var resources = resourceManager.getAllResources(id);
+            var resources = resourceManager.getResourceStack(id);
             for (var resource : resources) {
                 array.value().add(valueFromResource(resource));
             }
@@ -143,7 +142,7 @@ public class MetapatchLibrary {
 
         var out = new Value.ObjectValue();
         try (var __ = PatchingContext.disablePatching()) {
-            var found = resourceManager.findResources(startingPath, target);
+            var found = resourceManager.listResources(startingPath, target);
             for (var entry : found.entrySet()) {
                 var id = entry.getKey();
                 var resource = entry.getValue();

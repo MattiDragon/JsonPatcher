@@ -3,12 +3,12 @@ package dev.mattidragon.jsonpatcher.mixin.trust;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.mattidragon.jsonpatcher.trust.MutableTrustProvider;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import net.minecraft.resource.DirectoryResourcePack;
+import net.minecraft.server.packs.PathPackResources;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin(DirectoryResourcePack.DirectoryBackedFactory.class)
+@Mixin(PathPackResources.PathResourcesSupplier.class)
 public class DirectoryResourcePackFactoryMixin implements MutableTrustProvider {
     @Unique
     private TrustLevel jsonpatcher$trustLevel = TrustLevel.UNTRUSTED;
@@ -24,12 +24,12 @@ public class DirectoryResourcePackFactoryMixin implements MutableTrustProvider {
     }
 
     @ModifyExpressionValue(
-            method = {"open", "openWithOverlays"},
+            method = {"openPrimary", "openFull"},
             at = @At(
                     value = "NEW",
-                    target = "(Lnet/minecraft/resource/ResourcePackInfo;Ljava/nio/file/Path;)Lnet/minecraft/resource/DirectoryResourcePack;")
+                    target = "(Lnet/minecraft/server/packs/PackLocationInfo;Ljava/nio/file/Path;)Lnet/minecraft/server/packs/PathPackResources;")
     )
-    private DirectoryResourcePack injectTrust(DirectoryResourcePack original) {
+    private PathPackResources injectTrust(PathPackResources original) {
         ((MutableTrustProvider)original).jsonpatcher$setTrustLevel(jsonpatcher$trustLevel);
         return original;
     }

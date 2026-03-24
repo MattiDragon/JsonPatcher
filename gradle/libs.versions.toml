@@ -1,0 +1,30 @@
+[versions]
+minecraft = "1.21.1"
+yarn = "1.21.1+build.3"
+
+fabric-loom = "1.15-SNAPSHOT"
+fabric-loader = "0.16.10"
+fabric-api = "0.115.1+1.21.1"
+
+modmenu = "11.0.1"
+config-toolkit = "1.1.2"
+
+lang = "8ecb9078"
+mapping-io = "0.7.1"
+
+[libraries]
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+
+config-toolkit = { module = "dev.mattidragon:ConfigToolkit", version.ref = "config-toolkit" }
+modmenu = { module = "com.terraformersmc:modmenu", version.ref = "modmenu" }
+mapping-io = { module = "net.fabricmc:mapping-io", version.ref = "mapping-io" }
+
+lang-runtime = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Runtime", version.ref = "lang" }
+lang-compiler = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Compiler", version.ref = "lang" }
+lang-parser = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Parser", version.ref = "lang" }
+lang-stdlib = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Stdlib", version.ref = "lang" }
+
+[plugins]
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom" }

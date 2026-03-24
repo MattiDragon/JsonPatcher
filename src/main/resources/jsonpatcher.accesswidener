@@ -1,2 +1,2 @@
 accessWidener v2 named
-accessible class net/minecraft/resource/SimpleResourceReload$Factory
+accessible class net/minecraft/server/packs/resources/SimpleReloadInstance$StateFactory

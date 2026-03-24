@@ -4,9 +4,8 @@ import dev.mattidragon.jsonpatcher.lang.runtime.lib.reflection.remap.Remapper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.MappingResolver;
 import net.fabricmc.mappingio.tree.MappingTree;
-import net.minecraft.util.annotation.FieldsAreNonnullByDefault;
-import net.minecraft.util.annotation.MethodsReturnNonnullByDefault;
-
+import net.minecraft.FieldsAreNonnullByDefault;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @FieldsAreNonnullByDefault

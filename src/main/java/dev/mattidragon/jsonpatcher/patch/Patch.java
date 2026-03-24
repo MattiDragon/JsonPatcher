@@ -2,13 +2,12 @@ package dev.mattidragon.jsonpatcher.patch;
 
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironment;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import net.minecraft.util.Identifier;
-
 import java.util.List;
+import net.minecraft.resources.ResourceLocation;
 
 public record Patch(
         EvaluationEnvironment.AddedProgram program,
-        Identifier id,
+        ResourceLocation id,
         List<PatchTarget> target,
         double priority,
         boolean isMeta,

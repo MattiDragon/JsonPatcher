@@ -9,8 +9,7 @@ import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.proguard.ProGuardFileReader;
 import net.fabricmc.mappingio.format.tiny.Tiny2FileReader;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
-import net.minecraft.MinecraftVersion;
-
+import net.minecraft.DetectedVersion;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -42,9 +41,9 @@ public class MappingsLoader {
 
     public static void init() {
         var mojmapPath = MOJMAP_DIR.resolve("%s_%s.txt".formatted(
-                MinecraftVersion.CURRENT.getName(), FabricLoader.getInstance().getEnvironmentType().name().toLowerCase(Locale.ROOT)
+                DetectedVersion.BUILT_IN.getName(), FabricLoader.getInstance().getEnvironmentType().name().toLowerCase(Locale.ROOT)
         ));
-        var intermediaryPath = INTERMEDIARY_DIR.resolve(MinecraftVersion.CURRENT.getName() + ".tiny");
+        var intermediaryPath = INTERMEDIARY_DIR.resolve(DetectedVersion.BUILT_IN.getName() + ".tiny");
 
         try {
             // TODO: download off thread
@@ -138,7 +137,7 @@ public class MappingsLoader {
             }
             reader.endObject();
 
-            if (id != null && url != null && id.equals(MinecraftVersion.CURRENT.getName())) {
+            if (id != null && url != null && id.equals(DetectedVersion.BUILT_IN.getName())) {
                 return new URI(url);
             }
         }
@@ -171,7 +170,7 @@ public class MappingsLoader {
     private static void downloadIntermediary(Path path) {
         try (var httpClient = HttpClient.newHttpClient()) {
             Files.createDirectories(path.getParent());
-            var versionName = MinecraftVersion.CURRENT.getName();
+            var versionName = DetectedVersion.BUILT_IN.getName();
             var url = new URI("https://maven.fabricmc.net/net/fabricmc/intermediary/%s/intermediary-%s-v2.jar".formatted(versionName, versionName));
 
             var jarResponse = httpClient.send(
