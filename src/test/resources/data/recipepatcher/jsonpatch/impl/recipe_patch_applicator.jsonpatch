@@ -1,0 +1,113 @@
+@version "2";
+@target {
+    "path": {
+        "start": "recipe/",
+        "end": ".json"
+    }
+};
+
+import "recipepatcher:recipepatcher" as recipepatcher;
+import "recipepatcher:templates" as templates;
+
+# @@type recipepatcher.Template | null
+val template = templates.getTemplate($type);
+if (template == null) return;
+
+# @@arg path {string | number}[]
+# @@arg value any
+function set(path, value) {
+    # @@type object | array
+    var current = $;
+    for (var i = 0; i < path.length - 1; i++) {
+        current = current[path[i]];
+    }
+    current[path[-1]] = value;
+}
+
+
+val ingredients = [];
+val results = [];
+val fields = {};
+
+# @@type recipepatcher.TemplateCollector
+val collector = values.freeze({
+    addIngredient: (path, ingredient) -> ingredients.push({path: path, ingredient: ingredient}),
+    addResult: (path, stack) -> results.push({path: path, stack: stack}),
+    addValue: (name, path, value) -> {
+        if (!(name in fields)) {
+            fields[name] = [];
+        }
+        fields[name].push({path: path, value: value});
+    }
+});
+
+
+template(collector, [], $);
+
+
+recipepatcher._internal_use((state) -> {
+    foreach (ingredient in ingredients) {
+        var changed = false;
+        var current = ingredient.ingredient;
+
+        # TODO: apply replacements
+
+        foreach (transform in state.ingredientTransforms) {
+            val transformed = transform(current);
+            if (transformed != null) {
+                current = transformed;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            set(ingredient.path, current);
+        }
+    }
+
+    foreach (result in results) {
+        var changed = false;
+        var current = result.stack;
+
+        # TODO: apply replacements
+
+        foreach (transform in state.outputTransforms) {
+            val transformed = transform(current);
+            if (transformed != null) {
+                current = transformed;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            set(changed.path, current);
+        }
+    }
+
+    foreach (key in objects.keys(state.fieldTransforms)) {
+        if (!(key in fields)) continue;
+
+        foreach (value in fields[key]) {
+            var changed = false;
+            var current = value.value;
+
+            foreach (transform in state.fieldTransforms[key]) {
+                val transformed = transform(current);
+                if (transformed != null) {
+                    current = transformed;
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                set(value.path, current);
+            }
+        }
+    }
+
+    if ($type in state.recipeTransforms) {
+        foreach (recipeTransform in state.recipeTransforms[$type]) {
+            recipeTransform($);
+        }
+    }
+});

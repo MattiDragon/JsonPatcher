@@ -1,0 +1,64 @@
+@version "2";
+@metapatch;
+@priority -100;
+
+import "recipepatcher:templates" as t;
+
+$'minecraft:crafting_shapeless' = t.object(
+    {
+        "ingredients": t.array(t.ingredient()),
+        "result": t.resultStack()
+    }
+);
+
+$'minecraft:crafting_shaped' = t.object(
+    {
+        "key": t.map(t.ingredient()),
+        "result": t.resultStack()
+    }
+);
+
+# TODO: other crafting recipe types
+
+val cooking = t.object(
+    {
+        "ingredient": t.ingredient(),
+        "result": t.resultStack(),
+        "experience": t.option("minecraft:cooking@experience"),
+        "cookingtime": t.option("minecraft:cooking@cookingtime")
+    }
+);
+$'minecraft:smelting' = cooking;
+$'minecraft:blasting' = cooking;
+$'minecraft:smoking' = cooking;
+$'minecraft:campfire_cooking' = cooking;
+
+$'minecraft:stonecutting' = t.object(
+    {
+        "ingredient": t.ingredient(),
+        "result": t.resultStack(),
+        "experience": t.option("minecraft:cooking@experience"),
+        "cookingtime": t.option("minecraft:cooking@cookingtime")
+    }
+);
+
+$'minecraft:smithing_transform' = t.object(
+    {
+        "template": t.ingredient(),
+        "base": t.ingredient(),
+        "addition": t.ingredient(),
+        "result": t.resultStack()
+    }
+);
+
+$'minecraft:smithing_trim' = t.object(
+    {
+        "template": t.ingredient(),
+        "base": t.ingredient(),
+        "addition": t.ingredient()
+    }
+);
+
+foreach (key in objects.keys($)) {
+    t.register(key, $[key]);
+}

@@ -1,5 +1,5 @@
 @version "2";
-@target "minecraft:recipes/diamond_pickaxe.json";
+@target "minecraft:recipe/diamond_pickaxe.json";
 @enabled false;
 
 if ($type != "minecraft:crafting_shaped") return;

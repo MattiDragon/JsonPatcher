@@ -1,0 +1,79 @@
+@version "2";
+@library {
+    "shared": true
+};
+
+import "mod:jsonpatcher:async" as async;
+
+# @@doc_namespace recipepatcher
+
+#| library recipepatcher at "recipepatcher:recipepatcher"
+
+#| typealias Ingredient: string | string[] | object
+
+#| typealias ItemStack: string | recipepatcher.ItemStackObject
+
+#| type ItemStackObject: object
+
+#| property ItemStackObject.id: string
+
+#| property ItemStackObject.count: number
+#| @optional
+
+#| property ItemStackObject.components: object
+#| @optional
+
+val lock = async.rwLock();
+
+val ingredientReplacements = {};
+val ingredientTransforms = [];
+val outputReplacements = {};
+val outputTransforms = [];
+val fieldTransforms = {};
+val recipeTransforms = {};
+
+val state = values.freeze({
+    ingredientReplacements: ingredientReplacements,
+    ingredientTransforms: ingredientTransforms,
+    outputReplacements: outputReplacements,
+    outputTransforms: outputTransforms,
+    fieldTransforms: fieldTransforms,
+    recipeTransforms: recipeTransforms
+});
+
+#| property recipepatcher.replaceIngredient: (from: string, to: string) -> null
+$replaceIngredient = (from, to) -> lock.write(() -> ingredientReplacements[from] = to);
+
+#| property recipepatcher.transformIngredients: (transform: (ingredient: recipepatcher.Ingredient) -> recipepatcher.Ingredient | null) -> null
+# @@suppress TYPE-0
+$transformIngredients = (transform) -> lock.write(() -> ingredientTransforms.push(transform));
+
+#| property recipepatcher.replaceOutput: (from: string, to: string) -> null
+$replaceOutput = (from, to) -> lock.write(() -> outputReplacements[from] = to);
+
+#| property recipepatcher.transformOutput: (transform: (output: recipepatcher.ItemStack) -> recipepatcher.ItemStack | null) -> null
+# @@suppress TYPE-0
+$transformOutput = (transform) -> lock.write(() -> outputTransforms.push(transform));
+
+#| property recipepatcher.transformField: (field: string, transform: (value: unknown) -> unknown | null) -> null
+# @@suppress TYPE-0
+$transformField = (field, transform) -> lock.write(() -> {
+    if (!(field in fieldTransforms)) {
+        fieldTransforms[field] = [];
+    }
+    fieldTransforms[field].push(transform);
+});
+
+#| property recipepatcher.transformRecipes: (type: string, transform: (recipe: object) -> object | null) -> null
+# @@suppress TYPE-0
+$transformRecipes = (type, transform) -> lock.write(() -> {
+    if (!(type in recipeTransforms)) {
+        recipeTransforms[type] = [];
+    }
+    recipeTransforms[type].push(transform);
+});
+
+#| property recipepatcher._internal_use: (callback: (state: object) -> null) -> null
+$_internal_use = (callback) -> {
+    lock.read(() -> callback(state));
+};

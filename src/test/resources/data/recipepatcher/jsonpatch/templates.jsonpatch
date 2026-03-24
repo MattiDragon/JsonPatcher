@@ -1,0 +1,85 @@
+@version "2";
+@library {
+    "shared": true
+};
+
+import "mod:jsonpatcher:async" as async;
+
+# @@doc_namespace recipepatcher
+
+#| type TemplateCollector: object
+
+#| property TemplateCollector.addIngredient: (path: {string | number}[], ingredient: object) -> null
+
+#| property TemplateCollector.addResult: (path: {string | number}[], stack: object) -> null
+
+#| property TemplateCollector.addValue: (name: string, path: {string | number}[], value: any) -> null
+
+
+#| typealias Template: (recipepatcher.TemplateCollector, path: {string | number}[], value: any) -> null
+
+#| library templates at "recipepatcher:templates"
+
+#| property templates.array: (param: recipepatcher.Template) -> recipepatcher.Template
+$array = (param) -> (collector, path, value) -> {
+    debug.assert(value is array, "Expected array at path " + strings.asString(path));
+    for (var i = 0; i < value.length; i++) {
+        val subPath = path.slice(0) + [i];
+        param(collector, subPath, value[i]);
+    }
+};
+
+#| property templates.object: (param: recipepatcher.Template{}) -> recipepatcher.Template
+$object = (param) -> (collector, path, value) -> {
+    debug.assert(value is object, "Expected object at path " + strings.asString(path));
+    foreach (key in objects.keys(param)) {
+        if (key in value) {
+            val subPath = path.slice(0) + [key];
+            param[key](collector, subPath, value[key]);
+        }
+    }
+};
+
+#| property templates.map: (param: recipepatcher.Template) -> recipepatcher.Template
+$map = (param) -> (collector, path, value) -> {
+    debug.assert(value is object, "Expected object at path " + strings.asString(path));
+    foreach (key in objects.keys(value)) {
+        val subPath = path.slice(0) + [key];
+        param(collector, subPath, value[key]);
+    }
+};
+
+#| property templates.ingredient: () -> recipepatcher.Template
+$ingredient = () -> (collector, path, value) -> collector.addIngredient(path, value);
+
+#| property templates.resultStack: () -> recipepatcher.Template
+$resultStack = () -> (collector, path, value) -> collector.addResult(path, value);
+
+#| property templates.option: (name: string) -> recipepatcher.Template
+$option = (name) -> (collector, path, value) -> collector.addValue(name, path, value);
+
+# @@type recipepatcher.Template{}
+val registered = {};
+val lock = async.rwLock();
+
+#| property templates.register: (recipeType: string, template: recipepatcher.Template) -> null
+$register = (recipeType, template) -> {
+    debug.assert(recipeType is string, "Expected string for recipeType");
+
+    # @@suppress TYPE-0
+    lock.write(() -> {
+        registered[recipeType] = template;
+    });
+};
+
+#| property templates.getTemplate: (recipeType: string) -> recipepatcher.Template | null
+$getTemplate = (recipeType) -> {
+    # @@suppress TYPE-0
+    return lock.read(() -> {
+        if (recipeType in registered) {
+            return registered[recipeType];
+        } else {
+            return null;
+        }
+    });
+};
