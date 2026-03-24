@@ -32,7 +32,7 @@ public class MetapatchLibrary {
     }
 
     @DontBind
-    public void apply(MetapatchResourcePack metaPack) {
+    public void apply(MetapatchPackResources metaPack) {
         metaPack.set(addedFiles, filters);
     }
 
@@ -55,7 +55,7 @@ public class MetapatchLibrary {
 
     @DontBind
     private static Value.ObjectValue valueFromResource(Resource resource) throws IOException {
-        return GsonConverter.fromGson(MetapatchResourcePack.GSON.fromJson(new InputStreamReader(resource.open()), JsonObject.class));
+        return GsonConverter.fromGson(MetapatchPackResources.GSON.fromJson(new InputStreamReader(resource.open()), JsonObject.class));
     }
 
     public void addFile(EvaluationContext context, Value.StringValue idString, Value.ObjectValue file) {

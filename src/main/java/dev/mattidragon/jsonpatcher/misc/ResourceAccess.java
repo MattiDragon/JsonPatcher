@@ -6,5 +6,5 @@ import net.minecraft.server.packs.resources.IoSupplier;
 
 public interface ResourceAccess {
     void jsonpatcher$disableKnowPack();
-    void jsonpatcher$modifyInputStreamSupplier(UnaryOperator<IoSupplier<InputStream>> operator);
+    void jsonpatcher$modifyStreamSupplier(UnaryOperator<IoSupplier<InputStream>> operator);
 }

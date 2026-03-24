@@ -24,7 +24,7 @@ import java.io.OutputStreamWriter;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class MetapatchResourcePack implements PackResources, TrustProvider {
+public class MetapatchPackResources implements PackResources, TrustProvider {
     public static final Gson GSON = new Gson();
 
     public final PackType type;
@@ -32,7 +32,7 @@ public class MetapatchResourcePack implements PackResources, TrustProvider {
     private final List<FileFilter> filters = new ArrayList<>();
     private final Set<String> namespaces = new HashSet<>();
 
-    public MetapatchResourcePack(PackType type) {
+    public MetapatchPackResources(PackType type) {
         this.type = type;
     }
 

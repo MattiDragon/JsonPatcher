@@ -54,14 +54,14 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public class PatchLoader {
     private static final FileToIdConverter FINDER = new FileToIdConverter("jsonpatch", ".jsonpatch");
 
-    public static PatchStorage loadPatches(Executor executor, ResourceManager manager, PackType resourceType) {
+    public static PatchStorage loadPatches(Executor executor, ResourceManager manager, PackType packType) {
         var files = FINDER.listMatchingResources(manager);
         var futures = new ArrayList<CompletableFuture<Void>>();
         var patches = Collections.synchronizedList(new ArrayList<Patch>());
 
         var environment = new EvaluationEnvironment(CompilerOptions.DEFAULT); // TODO: offer config
         if (Config.MANAGER.get().dumpCompiledPatches()) {
-            environment.enableDumping(DumpManager.getDumpPath("classes/" + resourceType.getDirectory()));
+            environment.enableDumping(DumpManager.getDumpPath("classes/" + packType.getDirectory()));
         }
         environment.enableLogging(value -> JsonPatcher.RELOAD_LOGGER.info("Debug message from patch: {}", value));
         environment.bootstrap();
@@ -84,7 +84,7 @@ public class PatchLoader {
                 }
             }, executor));
         }
-        for (var entry : GlobalProgramScanner.scan(resourceType).entrySet()) {
+        for (var entry : GlobalProgramScanner.scan(packType).entrySet()) {
             futures.add(CompletableFuture.runAsync(() -> {
                 var patch = loadPatch(entry.getKey().withPath(path -> "/" + path.substring(path.indexOf('/', 1) + 1)), entry.getKey(), entry.getValue(), environment, errorCount, warnCount, TrustLevel.MODPACK);
                 if (patch != null) {

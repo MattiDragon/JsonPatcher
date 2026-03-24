@@ -30,11 +30,11 @@ import net.minecraft.util.GsonHelper;
 public class Patcher {
     public static final ExecutorService PATCH_RUNNER = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("JsonPatcher-Patch-Runner").factory());
     private static final Gson GSON = new Gson();
-    private final PackType resourceType;
+    private final PackType packType;
     private final PatchStorage patches;
 
-    public Patcher(PackType resourceType, PatchStorage patches) {
-        this.resourceType = resourceType;
+    public Patcher(PackType packType, PatchStorage patches) {
+        this.packType = packType;
         this.patches = patches;
     }
 
@@ -117,7 +117,7 @@ public class Patcher {
             GSON.toJson(json, new JsonWriter(writer));
             writer.close();
 
-            DumpManager.dumpIfEnabled(id, resourceType, json);
+            DumpManager.dumpIfEnabled(id, packType, json);
             return () -> new ByteArrayInputStream(out.toByteArray());
         } catch (JsonParseException | IOException e) {
             if (Config.MANAGER.get().throwOnFailure()) {

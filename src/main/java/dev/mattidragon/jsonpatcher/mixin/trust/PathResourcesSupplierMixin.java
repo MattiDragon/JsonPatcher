@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(PathPackResources.PathResourcesSupplier.class)
-public class DirectoryResourcePackFactoryMixin implements MutableTrustProvider {
+public class PathResourcesSupplierMixin implements MutableTrustProvider {
     @Unique
     private TrustLevel jsonpatcher$trustLevel = TrustLevel.UNTRUSTED;
 

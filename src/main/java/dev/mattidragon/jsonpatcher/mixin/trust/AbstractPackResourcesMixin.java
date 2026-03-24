@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(AbstractPackResources.class)
-public class AbstractFileResourcePackMixin implements MutableTrustProvider {
+public class AbstractPackResourcesMixin implements MutableTrustProvider {
     @Unique
     private TrustLevel jsonpatcher$trustLevel = TrustLevel.UNTRUSTED;
 

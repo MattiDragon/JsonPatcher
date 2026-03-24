@@ -20,10 +20,10 @@ import java.util.Comparator;
 public class DumpManager {
     private static final Gson DUMP_GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-    public static void dumpIfEnabled(ResourceLocation id, PackType resourceType, JsonElement patchedData) {
+    public static void dumpIfEnabled(ResourceLocation id, PackType packType, JsonElement patchedData) {
         if (Config.MANAGER.get().dumpPatchedFiles()) {
             try {
-                var file = getDumpPath(resourceType.getDirectory())
+                var file = getDumpPath(packType.getDirectory())
                         .resolve(Path.of(id.getNamespace(), id.getPath().split("/")));
                 Files.createDirectories(file.getParent());
                 try (var writer = new OutputStreamWriter(Files.newOutputStream(file))) {

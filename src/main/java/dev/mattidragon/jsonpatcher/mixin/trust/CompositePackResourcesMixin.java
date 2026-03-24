@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(CompositePackResources.class)
-public class OverlayResourcePackMixin implements TrustProvider {
+public class CompositePackResourcesMixin implements TrustProvider {
     @Shadow @Final private PackResources primaryPackResources;
 
     @Override

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(RegistryDataLoader.class)
-public abstract class RegistryLoaderMixin {
+public abstract class RegistryDataLoaderMixin {
     @WrapOperation(method = "load(Ljava/util/Map;Lnet/minecraft/server/packs/resources/ResourceProvider;Lnet/minecraft/core/RegistryAccess;Ljava/util/List;)Lnet/minecraft/core/RegistryAccess$Frozen;", 
             at = @At(value = "INVOKE", target = "Lnet/minecraft/resources/RegistryDataLoader;load(Lnet/minecraft/resources/RegistryDataLoader$LoadingFunction;Lnet/minecraft/core/RegistryAccess;Ljava/util/List;)Lnet/minecraft/core/RegistryAccess$Frozen;"))
     private static RegistryAccess.Frozen disablePatchingForNetworkRegistries(@Coerce Object loadable,

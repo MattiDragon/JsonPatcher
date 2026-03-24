@@ -1,7 +1,7 @@
 package dev.mattidragon.jsonpatcher.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import dev.mattidragon.jsonpatcher.metapatch.MetapatchResourcePack;
+import dev.mattidragon.jsonpatcher.metapatch.MetapatchPackResources;
 import dev.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
 import dev.mattidragon.jsonpatcher.patch.PatchingContext;
 import net.minecraft.resources.ResourceLocation;
@@ -21,15 +21,15 @@ import java.util.function.Predicate;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Mixin(MultiPackResourceManager.class)
-public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
+public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     @Unique
-    private MetapatchResourcePack jsonpatcher$metaPatchPack;
+    private MetapatchPackResources jsonpatcher$metaPatchPack;
     @Unique
     private PatchingContext jsonpatcher$context;
 
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/lang/Object;<init>()V", shift = At.Shift.AFTER, remap = false))
     private void init(PackType type, List<PackResources> packs, CallbackInfo ci) {
-        jsonpatcher$metaPatchPack = new MetapatchResourcePack(type);
+        jsonpatcher$metaPatchPack = new MetapatchPackResources(type);
         jsonpatcher$context = new PatchingContext(type);
     }
     
@@ -88,7 +88,7 @@ public class LifecycledResourceManagerImplMixin implements MetaPatchPackAccess {
     }
 
     @Override
-    public MetapatchResourcePack jsonpatcher$getMetaPatchPack() {
+    public MetapatchPackResources jsonpatcher$getMetaPatchPack() {
         return jsonpatcher$metaPatchPack;
     }
 }

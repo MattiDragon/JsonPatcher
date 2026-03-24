@@ -28,7 +28,7 @@ public class ResourceMixin implements ResourceAccess {
     }
 
     @Override
-    public void jsonpatcher$modifyInputStreamSupplier(UnaryOperator<IoSupplier<InputStream>> operator) {
+    public void jsonpatcher$modifyStreamSupplier(UnaryOperator<IoSupplier<InputStream>> operator) {
         streamSupplier = operator.apply(streamSupplier);
     }
 

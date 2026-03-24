@@ -12,12 +12,12 @@ import net.minecraft.util.Unit;
 public class PatchingContext {
     private static final ThreadLocal<Unit> DISABLED = new ThreadLocal<>();
 
-    private final PackType resourceType;
+    private final PackType packType;
     private boolean loaded = false;
     private Patcher patcher = null;
 
-    public PatchingContext(PackType resourceType) {
-        this.resourceType = resourceType;
+    public PatchingContext(PackType packType) {
+        this.packType = packType;
     }
 
     public static Enabler disablePatching() {
@@ -27,12 +27,12 @@ public class PatchingContext {
     public void load(ResourceManager manager) {
         if (loaded) throw new IllegalStateException("Already loaded");
 
-        var patches = PatchLoader.loadPatches(Patcher.PATCH_RUNNER, manager, resourceType);
-        DumpManager.cleanDump(resourceType.getDirectory());
+        var patches = PatchLoader.loadPatches(Patcher.PATCH_RUNNER, manager, packType);
+        DumpManager.cleanDump(packType.getDirectory());
 
-        JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload {}", patches.size(), resourceType.name());
+        JsonPatcher.RELOAD_LOGGER.info("Loaded {} patches for reload {}", patches.size(), packType.name());
 
-        patcher = new Patcher(resourceType, patches);
+        patcher = new Patcher(packType, patches);
         patcher.runMetaPatches(manager, Patcher.PATCH_RUNNER);
         loaded = true;
     }
@@ -44,7 +44,7 @@ public class PatchingContext {
         if (!loaded) throw new IllegalStateException("Context not loaded");
         if (patcher.hasPatches(id)) {
             ((ResourceAccess) resource).jsonpatcher$disableKnowPack();
-            ((ResourceAccess) resource).jsonpatcher$modifyInputStreamSupplier(stream -> patcher.patchInputStream(id, stream));
+            ((ResourceAccess) resource).jsonpatcher$modifyStreamSupplier(stream -> patcher.patchInputStream(id, stream));
         }
     }
 

@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(FilePackResources.FileResourcesSupplier.class)
-public class ZipResourcePackFactoryMixin implements MutableTrustProvider {
+public class FileResourcesSupplierMixin implements MutableTrustProvider {
     @Unique
     private TrustLevel jsonpatcher$trustLevel = TrustLevel.UNTRUSTED;
 
