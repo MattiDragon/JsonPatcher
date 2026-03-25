@@ -3,7 +3,7 @@ package dev.mattidragon.jsonpatcher.patch.global;
 import dev.mattidragon.jsonpatcher.lang.runtime.environment.EvaluationEnvironment;
 import dev.mattidragon.jsonpatcher.patch.LoadedProgram;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record GlobalProgram(
         EvaluationEnvironment.AddedProgram program,

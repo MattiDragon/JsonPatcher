@@ -4,11 +4,10 @@
 };
 
 function modifyKey($, result) {
-    $'#' = {
-        tag: "minecraft:coals"
-    };
+    $'#' = "#minecraft:coals";
 
-    if (result.id == "minecraft:arrow") delete $X;
+    if (result.id == "minecraft:arrow")
+        delete $X;
 }
 
 # Skip the tipped arrow recipe

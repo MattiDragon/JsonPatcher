@@ -4,7 +4,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import dev.mattidragon.jsonpatcher.metapatch.MetapatchPackResources;
 import dev.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
 import dev.mattidragon.jsonpatcher.patch.PatchingContext;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.*;
 import java.util.function.Predicate;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "NotNullFieldNotInitialized"})
 @Mixin(MultiPackResourceManager.class)
 public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     @Unique
@@ -46,7 +46,7 @@ public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     }
     
     @ModifyReturnValue(method = "getResourceStack", at = @At("RETURN"))
-    private List<Resource> injectResourcesIntoGetAll(List<Resource> original, ResourceLocation id) {
+    private List<Resource> injectResourcesIntoGetAll(List<Resource> original, Identifier id) {
         if (jsonpatcher$metaPatchPack.isDeleted(id)) {
             return new ArrayList<>();
         }
@@ -58,7 +58,7 @@ public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     }
     
     @ModifyReturnValue(method = "getResource", at = @At("RETURN"))
-    private Optional<Resource> injectResourcesIntoGet(Optional<Resource> original, ResourceLocation id) {
+    private Optional<Resource> injectResourcesIntoGet(Optional<Resource> original, Identifier id) {
         if (jsonpatcher$metaPatchPack.isDeleted(id)) {
             return Optional.empty();
         }
@@ -71,7 +71,7 @@ public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     }
 
     @ModifyReturnValue(method = "listResources", at = @At("RETURN"))
-    private Map<ResourceLocation, Resource> injectResourcesIntoFind(Map<ResourceLocation, Resource> map, String startingPath, Predicate<ResourceLocation> allowedPathPredicate) {
+    private Map<Identifier, Resource> injectResourcesIntoFind(Map<Identifier, Resource> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
         map.putAll(jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate));
         map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
         map.forEach(jsonpatcher$context::patchResource);
@@ -79,9 +79,9 @@ public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     }
 
     @ModifyReturnValue(method = "listResourceStacks", at = @At("RETURN"))
-    private Map<ResourceLocation, List<Resource>> injectResourcesIntoFindAll(Map<ResourceLocation, List<Resource>> map, String startingPath, Predicate<ResourceLocation> allowedPathPredicate) {
+    private Map<Identifier, List<Resource>> injectResourcesIntoFindAll(Map<Identifier, List<Resource>> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
         jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate)
-                .forEach((id, resource) -> map.computeIfAbsent(id, i -> new ArrayList<>()).add(resource));
+                .forEach((id, resource) -> map.computeIfAbsent(id, _ -> new ArrayList<>()).add(resource));
         map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
         map.forEach((id, resources) -> resources.forEach(resource -> jsonpatcher$context.patchResource(id, resource)));
         return map;

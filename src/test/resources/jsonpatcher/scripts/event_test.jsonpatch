@@ -4,12 +4,12 @@
 import "reflection";
 import "events";
 
-val TypedActionResult = reflection.findClass("net.minecraft.world.InteractionResultHolder");
+val InteractionResult = reflection.findClass("net.minecraft.world.InteractionResult");
 val ItemStack = reflection.findClass("net.minecraft.world.item.ItemStack");
 
 val eventContainer = events.container("test");
 
 eventContainer.registerFabric("net.fabricmc.fabric.api.event.player.UseItemCallback", "EVENT", (player, level, hand) -> {
     debug.log(player);
-    return TypedActionResult.pass(ItemStack.EMPTY);
+    return InteractionResult.Pass();
 });

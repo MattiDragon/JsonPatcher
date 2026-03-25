@@ -29,7 +29,14 @@ import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalProgramScanner;
 import dev.mattidragon.jsonpatcher.trust.TrustChecker;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.IoSupplier;
+import net.minecraft.server.packs.resources.ResourceManager;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,13 +50,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.IoSupplier;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 public class PatchLoader {
     private static final FileToIdConverter FINDER = new FileToIdConverter("jsonpatch", ".jsonpatch");
@@ -111,7 +111,7 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch loadPatch(ResourceLocation id, ResourceLocation location, IoSupplier<InputStream> streamSupplier, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount, TrustLevel trust) {
+    private static Patch loadPatch(Identifier id, Identifier location, IoSupplier<InputStream> streamSupplier, EvaluationEnvironment environment, AtomicInteger errorCount, AtomicInteger warnCount, TrustLevel trust) {
         try {
             var code = new String(streamSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
             var diagnosticsBuilder = new DiagnosticsBuilder();
@@ -154,7 +154,7 @@ public class PatchLoader {
     }
 
     @Nullable
-    private static Patch validateAndBuild(ResourceLocation id, Parser.Result result, EvaluationEnvironment environment, DiagnosticsBuilder diagnosticsBuilder, TrustLevel trust) {
+    private static Patch validateAndBuild(Identifier id, Parser.Result result, EvaluationEnvironment environment, DiagnosticsBuilder diagnosticsBuilder, TrustLevel trust) {
         var roles = new HashSet<String>();
 
         var treeMeta = result.treeMetadata();

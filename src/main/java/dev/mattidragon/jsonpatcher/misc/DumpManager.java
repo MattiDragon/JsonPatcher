@@ -6,9 +6,8 @@ import com.google.gson.JsonElement;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -20,7 +19,7 @@ import java.util.Comparator;
 public class DumpManager {
     private static final Gson DUMP_GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-    public static void dumpIfEnabled(ResourceLocation id, PackType packType, JsonElement patchedData) {
+    public static void dumpIfEnabled(Identifier id, PackType packType, JsonElement patchedData) {
         if (Config.MANAGER.get().dumpPatchedFiles()) {
             try {
                 var file = getDumpPath(packType.getDirectory())
@@ -35,9 +34,7 @@ public class DumpManager {
         }
     }
 
-    public static void cleanDump(@Nullable String dumpLocation) {
-        if (dumpLocation == null) return;
-
+    public static void cleanDump(String dumpLocation) {
         var file = getDumpPath(dumpLocation);
         if (Files.exists(file)) {
             var errors = new ArrayList<IOException>();

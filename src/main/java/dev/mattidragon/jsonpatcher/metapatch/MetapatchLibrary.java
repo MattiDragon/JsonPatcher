@@ -10,18 +10,19 @@ import dev.mattidragon.jsonpatcher.misc.GsonConverter;
 import dev.mattidragon.jsonpatcher.misc.ValueOps;
 import dev.mattidragon.jsonpatcher.patch.PatchTarget;
 import dev.mattidragon.jsonpatcher.patch.PatchingContext;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 @SuppressWarnings("unused")
 public class MetapatchLibrary {
     @DontBind
-    private final Map<ResourceLocation, JsonObject> addedFiles = new HashMap<>();
+    private final Map<Identifier, JsonObject> addedFiles = new HashMap<>();
     @DontBind
     private final List<FileFilter> filters = new ArrayList<>();
     @DontBind
@@ -43,7 +44,7 @@ public class MetapatchLibrary {
     }
 
     @DontBind
-    private boolean isDeleted(ResourceLocation id) {
+    private boolean isDeleted(Identifier id) {
         // The last filter added will get priority
         for (var filter : filters.reversed()) {
             if (filter.target().test(id)) {
@@ -59,7 +60,7 @@ public class MetapatchLibrary {
     }
 
     public void addFile(EvaluationContext context, Value.StringValue idString, Value.ObjectValue file) {
-        var id = ResourceLocation.parse(idString.value());
+        var id = Identifier.parse(idString.value());
 
         // Add filter to undo deletion if necessary
         if (isDeleted(id)) {
@@ -74,7 +75,7 @@ public class MetapatchLibrary {
     }
 
     public void deleteFile(EvaluationContext context, Value.StringValue idString) {
-        var id = ResourceLocation.parse(idString.value());
+        var id = Identifier.parse(idString.value());
 
         filters.add(new FileFilter(
                 new PatchTarget(
@@ -92,7 +93,7 @@ public class MetapatchLibrary {
     }
 
     public Value getFile(EvaluationContext context, Value.StringValue idString) {
-        var id = ResourceLocation.parse(idString.value());
+        var id = Identifier.parse(idString.value());
 
         try (var __ = PatchingContext.disablePatching()) {
             var resource = resourceManager.getResource(id);
@@ -107,7 +108,7 @@ public class MetapatchLibrary {
     }
 
     public Value getFiles(EvaluationContext context, Value.StringValue idString) {
-        var id = ResourceLocation.parse(idString.value());
+        var id = Identifier.parse(idString.value());
 
         var array = new Value.ArrayValue();
         try (var __ = PatchingContext.disablePatching()) {

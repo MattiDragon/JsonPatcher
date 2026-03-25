@@ -59,7 +59,7 @@ public class GsonConverter {
                 case JsonPrimitive primitive when primitive.isBoolean() -> Value.BooleanValue.of(primitive.getAsBoolean());
                 case JsonPrimitive primitive when primitive.isNumber() -> new Value.NumberValue(primitive.getAsNumber().doubleValue());
                 case JsonPrimitive primitive when primitive.isString() -> new Value.StringValue(primitive.getAsString());
-                case JsonNull jsonNull -> Value.NullValue.NULL;
+                case JsonNull _ -> Value.NullValue.NULL;
                 case null, default -> throw new IllegalStateException("Can't convert %s to value".formatted(json));
             };
         } finally {

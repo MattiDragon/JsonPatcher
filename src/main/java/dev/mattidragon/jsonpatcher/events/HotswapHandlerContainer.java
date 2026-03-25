@@ -14,8 +14,8 @@ public class HotswapHandlerContainer implements HandlerContainer {
 
     @Override
     public void registerHandler(Event<?> event, Value.FunctionValue handler, Class<?> handlerType, EvaluationContext context) {
-        var cell = handlers.computeIfAbsent(event, e -> {
-            var handlerCell = new HandlerCell();
+        var cell = handlers.computeIfAbsent(event, _ -> {
+            var handlerCell = new HandlerCell(handler);
             var wrappedFunction = new Value.FunctionValue((PatchFunction.BuiltInPatchFunction) (ctx, args) -> ctx.execute(handlerCell.handler.function(), args));
             var convertedHandler = LambdaBridgeGenerator.createLambdaBridge(handlerType, context, wrappedFunction);
             register(event, convertedHandler);
@@ -27,6 +27,10 @@ public class HotswapHandlerContainer implements HandlerContainer {
 
     private static class HandlerCell {
         private Value.FunctionValue handler;
+
+        public HandlerCell(Value.FunctionValue handler) {
+            this.handler = handler;
+        }
     }
 
     @SuppressWarnings("unchecked")

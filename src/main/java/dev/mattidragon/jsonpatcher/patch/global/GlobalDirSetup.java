@@ -4,7 +4,6 @@ import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.lang.stdlib.Stdlib;
 import net.fabricmc.loader.api.FabricLoader;
 import org.intellij.lang.annotations.Language;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -67,10 +66,10 @@ public class GlobalDirSetup {
                 
                 import "reflection";
                 
-                val ResourceLocation = reflection.findClass("net.minecraft.resources.ResourceLocation");
+                val Identifier = reflection.findClass("net.minecraft.resources.Identifier");
                 
-                val id1 = ResourceLocation.withDefaultNamespace("test_id");
-                val id2 = ResourceLocation.fromNamespaceAndPath("minecraft", "test_id");
+                val id1 = Identifier.withDefaultNamespace("test_id");
+                val id2 = Identifier.fromNamespaceAndPath("minecraft", "test_id");
                 
                 debug.assert(id1.equals(id2));
                 debug.log("Logging from example global script: " + strings.asString(id1));
@@ -164,7 +163,7 @@ public class GlobalDirSetup {
         if (internalDocsPath.isPresent()) {
             Files.walkFileTree(internalDocsPath.get(), new SimpleFileVisitor<>() {
                 @Override
-                public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     var relativePath = internalDocsPath.get().relativize(file);
                     // Relative paths cannot be used across filesystems, so we must convert to string first
                     var targetPath = modDir.resolve(relativePath.toString());

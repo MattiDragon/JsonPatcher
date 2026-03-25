@@ -16,12 +16,9 @@ base {
 }
 
 repositories {
-    maven {
-        name = "JitPack"
-        url = uri("https://jitpack.io")
-    }
-    maven { url = uri("https://maven.isxander.dev/releases") }
-    maven { url = uri("https://maven.terraformersmc.com") }
+    maven("https://jitpack.io")
+    maven("https://maven.isxander.dev/releases")
+    maven("https://maven.terraformersmc.com")
     mavenLocal()
 }
 
@@ -84,10 +81,9 @@ testSourceSet.configure {
 
 dependencies {
     minecraft(libs.minecraft)
-    mappings(loom.officialMojangMappings())
-    modImplementation(libs.fabric.loader)
+    implementation(libs.fabric.loader)
 
-    modImplementation(libs.fabric.api)
+    implementation(libs.fabric.api)
 
     implementation(libs.lang.runtime)
     implementation(libs.lang.compiler)
@@ -102,14 +98,12 @@ dependencies {
     include(libs.mapping.io)
 
     // Config
-    modImplementation(libs.config.toolkit)
+    implementation(libs.config.toolkit)
     include(libs.config.toolkit)
     annotationProcessor(libs.config.toolkit)
     "clientAnnotationProcessor"(libs.config.toolkit)
-    modCompileOnly(libs.modmenu)
-    "modLocalRuntime"(libs.modmenu)
-
-    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+    compileOnly(libs.modmenu)
+    "localRuntime"(libs.modmenu)
 
     // Make testmod depend on the client source set. Main is handled by gradle automatically.
     testImplementation(clientSourceSet.get().output)
@@ -125,9 +119,7 @@ tasks.withType<ProcessResources>().configureEach {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(21)
-    sourceCompatibility = JavaVersion.VERSION_21.toString()
-    targetCompatibility = JavaVersion.VERSION_21.toString()
+    options.release.set(25)
 }
 
 java {
@@ -140,18 +132,14 @@ tasks.named<Jar>("jar") {
     }
 }
 
+// Hack to JiJ transitively: we make a configuration with our JiJ mods and the internal loom configuration,
+// and then we make the task process the combined configuration.
+// This works around some access control issues.
+val allInclude by configurations.creating {
+    extendsFrom(configurations["langInclude"], configurations["includeInternal"])
+}
 tasks.named<NestableJarGenerationTask>("processIncludeJars") {
-    // For some reason 'from' overwrites the jar ids instead of adding the them
-    // so we have to make a backup and restore old ones
-    val jarIdsProperty = run {
-        val getter = NestableJarGenerationTask::class.java.getDeclaredMethod("getJarIds")
-        getter.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        getter.invoke(this) as MapProperty<String, String>
-    }
-    val oldIds = jarIdsProperty.get()
-    from(configurations["langInclude"])
-    jarIdsProperty.putAll(oldIds)
+    from(allInclude)
 }
 
 publishing {

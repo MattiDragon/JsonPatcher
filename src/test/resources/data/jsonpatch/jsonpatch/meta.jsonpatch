@@ -16,12 +16,8 @@ metapatch.addFile("minecraft:recipe/test.json", {
         "###"
     ],
     key: {
-        '#': {
-            item: "minecraft:oak_planks"
-        },
-        'X': {
-            item: "minecraft:stick"
-        }
+        '#': "minecraft:oak_planks",
+        'X': "minecraft:stick"
     },
     result: {
         id: "minecraft:stick",

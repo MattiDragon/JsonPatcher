@@ -1,8 +1,9 @@
 package dev.mattidragon.jsonpatcher.trust;
 
 import com.mojang.serialization.Codec;
-import java.util.Locale;
 import net.minecraft.util.StringRepresentable;
+
+import java.util.Locale;
 
 public enum TrustLevel implements StringRepresentable {
     /**

@@ -1,5 +1,5 @@
 @version "2";
-@target "minecraft:recipes/oak_planks.json";
+@target "minecraft:recipe/oak_planks.json";
 
 # Example usage of library
 import "jsonpatch:lib" as test;
@@ -8,4 +8,4 @@ import "mod:jsonpatcher_testmod:global_test" as globalTest;
 $.result.count = test.test()[5];
 debug.log(test.test());
 
-debug.assertEqual(globalTest.testFunc(), 100);
+debug.assertEquals(globalTest.testFunc(), 100);

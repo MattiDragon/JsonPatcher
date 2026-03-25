@@ -1,12 +1,11 @@
 [versions]
-minecraft = "1.21.1"
-yarn = "1.21.1+build.3"
+minecraft = "26.1"
 
 fabric-loom = "1.15-SNAPSHOT"
-fabric-loader = "0.16.10"
-fabric-api = "0.115.1+1.21.1"
+fabric-loader = "0.18.4"
+fabric-api = "0.144.0+26.1"
 
-modmenu = "11.0.1"
+modmenu = "18.0.0-alpha.6"
 config-toolkit = "1.1.2"
 
 lang = "8ecb9078"
@@ -27,4 +26,4 @@ lang-parser = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Parser
 lang-stdlib = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Stdlib", version.ref = "lang" }
 
 [plugins]
-fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom" }
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }

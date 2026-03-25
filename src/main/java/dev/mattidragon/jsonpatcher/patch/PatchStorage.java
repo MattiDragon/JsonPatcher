@@ -3,8 +3,9 @@ package dev.mattidragon.jsonpatcher.patch;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import dev.mattidragon.jsonpatcher.metapatch.MetapatchLibrary;
+import net.minecraft.resources.Identifier;
+
 import java.util.*;
-import net.minecraft.resources.ResourceLocation;
 
 public final class PatchStorage {
     private final Multimap<String, Patch> namespacePatches = LinkedHashMultimap.create();
@@ -12,11 +13,11 @@ public final class PatchStorage {
 
     private final Multimap<String, Patch> namespaceFilteredPatches = LinkedHashMultimap.create();
 
-    private final Multimap<ResourceLocation, Patch> directIdPatches = LinkedHashMultimap.create();
+    private final Multimap<Identifier, Patch> directIdPatches = LinkedHashMultimap.create();
     private final List<Patch> nonTrivialPatches = new ArrayList<>();
     private final List<Patch> alwaysActivePatches = new ArrayList<>();
 
-    private final Map<ResourceLocation, Patch> libraries = new HashMap<>();
+    private final Map<Identifier, Patch> libraries = new HashMap<>();
     private final List<Patch> metaPatches = new ArrayList<>();
     private final MetapatchLibrary metapatchLibrary;
 
@@ -57,7 +58,7 @@ public final class PatchStorage {
 
                 // Full id patches will be somewhat common and thus receive their own bucket
                 if (target.namespace().isPresent() && simplePath.isPresent()) {
-                    var id = ResourceLocation.tryParse(target.namespace().get() + ":" + simplePath.get());
+                    var id = Identifier.tryParse(target.namespace().get() + ":" + simplePath.get());
                     if (id == null) return; // Invalid id, can't match anything
 
                     directIdPatches.put(id, patch);
@@ -80,7 +81,7 @@ public final class PatchStorage {
         }
     }
 
-    public boolean hasPatches(ResourceLocation id) {
+    public boolean hasPatches(Identifier id) {
         if (!alwaysActivePatches.isEmpty()) return true;
         if (namespacePatches.containsKey(id.getNamespace())) return true;
         if (pathPatches.containsKey(id.getPath())) return true;
@@ -89,7 +90,7 @@ public final class PatchStorage {
         return nonTrivialPatches.stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.test(id)));
     }
 
-    public Collection<Patch> getPatches(ResourceLocation id) {
+    public Collection<Patch> getPatches(Identifier id) {
         // Use a set to avoid duplicates from patches with multiple targets. Also allows us to not store which target put a patch in a bucket
         var patchSet = new HashSet<>(alwaysActivePatches);
         namespacePatches.entries().stream().filter(entry -> entry.getKey().equals(id.getNamespace())).map(Map.Entry::getValue).forEach(patchSet::add);

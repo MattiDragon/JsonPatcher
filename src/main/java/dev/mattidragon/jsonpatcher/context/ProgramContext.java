@@ -3,17 +3,19 @@ package dev.mattidragon.jsonpatcher.context;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.PatchFunction;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import net.fabricmc.loader.api.FabricLoader;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
+// TODO: actually implement the global
 public class ProgramContext {
     public static final Value.ObjectValue OBJECT;
 
     private static final ThreadLocal<Deque<String>> ROLES = ThreadLocal.withInitial(ArrayDeque::new);
-    private static final ThreadLocal<String> TARGET = new ThreadLocal<>();
+    private static final ThreadLocal<@Nullable String> TARGET = new ThreadLocal<>();
 
     static {
         var loadedMods = new HashMap<String, Value>();
@@ -27,7 +29,7 @@ public class ProgramContext {
             ), true));
         }
 
-        PatchFunction.BuiltInPatchFunction role = (context, args) -> {
+        PatchFunction.BuiltInPatchFunction role = (_, args) -> {
             if (!args.isEmpty()) {
                 throw new IllegalArgumentException("role function does not take any arguments");
             }
@@ -35,7 +37,7 @@ public class ProgramContext {
             return roles.isEmpty() ? Value.NullValue.NULL : new Value.StringValue(roles.peek());
         };
 
-        PatchFunction.BuiltInPatchFunction target = (context, args) -> {
+        PatchFunction.BuiltInPatchFunction target = (_, args) -> {
             if (!args.isEmpty()) {
                 throw new IllegalArgumentException("target function does not take any arguments");
             }

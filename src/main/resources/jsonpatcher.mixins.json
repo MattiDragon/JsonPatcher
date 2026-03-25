@@ -8,11 +8,11 @@
     "RegistryDataLoaderMixin",
     "ResourceMixin",
     "trust.AbstractPackResourcesMixin",
-    "trust.PathResourcesSupplierMixin",
-    "trust.ModResourcePackMixin",
     "trust.CompositePackResourcesMixin",
+    "trust.FileResourcesSupplierMixin",
+    "trust.ModPackResourcesMixin",
     "trust.PackResourcesMixin",
-    "trust.FileResourcesSupplierMixin"
+    "trust.PathResourcesSupplierMixin"
   ],
   "injectors": {
     "defaultRequire": 1

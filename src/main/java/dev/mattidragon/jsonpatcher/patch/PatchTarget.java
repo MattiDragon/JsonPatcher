@@ -5,19 +5,20 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.Identifier;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import net.minecraft.resources.ResourceLocation;
 
 public record PatchTarget(
         Optional<String> namespace,
         Optional<Path> path,
-        Optional<String> regex) implements Predicate<ResourceLocation> {
-    private static final Codec<PatchTarget> ID_CODEC = ResourceLocation.CODEC
+        Optional<String> regex) implements Predicate<Identifier> {
+    private static final Codec<PatchTarget> ID_CODEC = Identifier.CODEC
             .flatComapMap(id -> new PatchTarget(Optional.of(id.getNamespace()), Optional.of(new Path(Either.left(id.getPath()))), Optional.empty()),
                     target -> {
                         if (target.regex.isPresent())
@@ -27,8 +28,8 @@ public record PatchTarget(
                         if (target.path.isEmpty())
                             return DataResult.error(() -> "Can't serialize to id form without path");
 
-                        var checkedPath = target.path.get().path.map(DataResult::success, pair -> DataResult.<String>error(() -> "Can't serialize split path to id form"));
-                        return checkedPath.map(path -> ResourceLocation.fromNamespaceAndPath(target.namespace.get(), path));
+                        var checkedPath = target.path.get().path.map(DataResult::success, _ -> DataResult.<String>error(() -> "Can't serialize split path to id form"));
+                        return checkedPath.map(path -> Identifier.fromNamespaceAndPath(target.namespace.get(), path));
                     });
 
     private static final Codec<PatchTarget> SPLIT_CODEC = RecordCodecBuilder.<PatchTarget>create(instance -> instance.group(
@@ -55,7 +56,7 @@ public record PatchTarget(
             list -> list.size() == 1 ? Either.right(list.getFirst()) : Either.left(list));
 
     @Override
-    public boolean test(ResourceLocation identifier) {
+    public boolean test(Identifier identifier) {
         return namespace.map(identifier.getNamespace()::equals).orElse(true)
                 && path.map(path -> path.test(identifier.getPath())).orElse(true)
                 && regex.map(identifier.toString()::matches).orElse(true);

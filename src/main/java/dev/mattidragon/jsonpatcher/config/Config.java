@@ -2,10 +2,10 @@ package dev.mattidragon.jsonpatcher.config;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.mattidragon.jsonpatcher.trust.TrustLevel;
 import io.github.mattidragon.configloader.api.AlwaysSerializedOptionalFieldCodec;
 import io.github.mattidragon.configloader.api.ConfigManager;
 import io.github.mattidragon.configloader.api.GenerateMutable;
-import dev.mattidragon.jsonpatcher.trust.TrustLevel;
 
 @GenerateMutable
 public record Config(

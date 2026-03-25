@@ -3,18 +3,19 @@ package dev.mattidragon.jsonpatcher.patch;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.misc.ResourceAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Unit;
+import org.jspecify.annotations.Nullable;
 
 public class PatchingContext {
-    private static final ThreadLocal<Unit> DISABLED = new ThreadLocal<>();
+    private static final ThreadLocal<@Nullable Unit> DISABLED = new ThreadLocal<>();
 
     private final PackType packType;
     private boolean loaded = false;
-    private Patcher patcher = null;
+    private @Nullable Patcher patcher;
 
     public PatchingContext(PackType packType) {
         this.packType = packType;
@@ -37,11 +38,11 @@ public class PatchingContext {
         loaded = true;
     }
 
-    public void patchResource(ResourceLocation id, Resource resource) {
+    public void patchResource(Identifier id, Resource resource) {
         if (!id.getPath().endsWith(".json")) return;
         if (DISABLED.get() != null) return;
         
-        if (!loaded) throw new IllegalStateException("Context not loaded");
+        if (!loaded || patcher == null) throw new IllegalStateException("Context not loaded");
         if (patcher.hasPatches(id)) {
             ((ResourceAccess) resource).jsonpatcher$disableKnowPack();
             ((ResourceAccess) resource).jsonpatcher$modifyStreamSupplier(stream -> patcher.patchInputStream(id, stream));

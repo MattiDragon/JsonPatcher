@@ -26,7 +26,7 @@ import dev.mattidragon.jsonpatcher.patch.PatchLoaderDiagnostic;
 import dev.mattidragon.jsonpatcher.patch.Patcher;
 import dev.mattidragon.jsonpatcher.trust.TrustLevel;
 import net.fabricmc.loader.api.FabricLoader;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -227,7 +227,7 @@ public class GlobalPatchLoader {
         return new GlobalProgram(added, id, priority, trust, entrypoint);
     }
 
-    private static @Nullable GlobalProgram.Entrypoint getEntrypointMeta(PatchMetadata meta, TreeMetadata treeMeta, DiagnosticsBuilder diagnosticsBuilder, Set<String> roles) {
+    private static GlobalProgram.@Nullable Entrypoint getEntrypointMeta(PatchMetadata meta, TreeMetadata treeMeta, DiagnosticsBuilder diagnosticsBuilder, Set<String> roles) {
         if (!meta.has("init")) return null;
 
         roles.add("init");

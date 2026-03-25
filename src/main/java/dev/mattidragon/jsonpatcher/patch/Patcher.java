@@ -4,13 +4,20 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonWriter;
-import dev.mattidragon.jsonpatcher.context.ProgramContext;
-import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
+import dev.mattidragon.jsonpatcher.context.ProgramContext;
+import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.misc.GsonConverter;
 import dev.mattidragon.jsonpatcher.misc.MetaPatchPackAccess;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.IoSupplier;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.GsonHelper;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.io.*;
@@ -19,13 +26,6 @@ import java.util.Comparator;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.IoSupplier;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.GsonHelper;
 
 public class Patcher {
     public static final ExecutorService PATCH_RUNNER = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("JsonPatcher-Patch-Runner").factory());
@@ -38,16 +38,16 @@ public class Patcher {
         this.patches = patches;
     }
 
-    public boolean hasPatches(ResourceLocation id) {
+    public boolean hasPatches(Identifier id) {
         return patches.hasPatches(id);
     }
 
-    private JsonElement applyPatches(JsonElement json, ResourceLocation id) {
+    private JsonElement applyPatches(JsonElement json, Identifier id) {
         var errors = new ArrayList<Exception>();
         var activeJson = new MutableObject<>(GsonHelper.convertToJsonObject(json, "patched file"));
         try {
             for (var patch : patches.getPatches(id)) {
-                var root = GsonConverter.fromGson(activeJson.getValue());
+                var root = GsonConverter.fromGson(activeJson.get());
                 var timeBeforePatch = System.nanoTime();
                 var success = runPatch(patch, PATCH_RUNNER, errors::add, root, () -> new ProgramContext.TargetContext("patch", id.toString()));
                 var timeAfterPatch = System.nanoTime();
@@ -69,7 +69,7 @@ public class Patcher {
                 JsonPatcher.MAIN_LOGGER.error(message);
             }
         }
-        return activeJson.getValue();
+        return activeJson.get();
     }
 
     /**
@@ -104,7 +104,7 @@ public class Patcher {
         return false;
     }
 
-    public IoSupplier<InputStream> patchInputStream(ResourceLocation id, IoSupplier<InputStream> stream) {
+    public IoSupplier<InputStream> patchInputStream(Identifier id, IoSupplier<InputStream> stream) {
         if (!hasPatches(id)) return stream;
 
         try {

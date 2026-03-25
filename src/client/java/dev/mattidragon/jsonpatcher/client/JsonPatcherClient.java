@@ -1,8 +1,8 @@
 package dev.mattidragon.jsonpatcher.client;
 
 import dev.mattidragon.jsonpatcher.patch.ErrorLogger;
-import dev.mattidragon.jsonpatcher.patch.global.GlobalProgram;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
+import dev.mattidragon.jsonpatcher.patch.global.GlobalProgram;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 

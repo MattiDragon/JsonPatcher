@@ -4,7 +4,7 @@
 import "recipepatcher:recipepatcher" as recipepatcher;
 
 recipepatcher.transformIngredients((ingredient) -> {
-    if ("item" in ingredient && ingredient.item == "minecraft:stick") {
-        return {item: "minecraft:blaze_rod"};
+    if (ingredient == "minecraft:stick") {
+        return "minecraft:blaze_rod";
     }
 });

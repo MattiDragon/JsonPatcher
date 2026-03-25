@@ -4,13 +4,12 @@ import dev.mattidragon.jsonpatcher.config.Config;
 import dev.mattidragon.jsonpatcher.misc.DumpManager;
 import dev.mattidragon.jsonpatcher.patch.ErrorLogger;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalDirSetup;
-import dev.mattidragon.jsonpatcher.patch.global.GlobalProgram;
 import dev.mattidragon.jsonpatcher.patch.global.GlobalPatchLoader;
-import dev.mattidragon.jsonpatcher.remap.MappingsLoader;
+import dev.mattidragon.jsonpatcher.patch.global.GlobalProgram;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.appender.RandomAccessFileAppender;
@@ -34,25 +33,25 @@ public class JsonPatcher implements ModInitializer {
         hackLog4j();
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 
     @Override
     public void onInitialize() {
-        MappingsLoader.init();
+//        MappingsLoader.init();
         Config.MANAGER.get();
         DumpManager.cleanDump("");
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> ErrorLogger.CURRENT.set(error -> {
             var manager = server.getPlayerList();
             for (var player : manager.getPlayers()) {
-                if (manager.isOp(player.getGameProfile())) {
+                if (manager.isOp(player.nameAndId())) {
                     player.sendSystemMessage(error);
                 }
             }
         }));
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ErrorLogger.CURRENT.remove());
+        ServerLifecycleEvents.SERVER_STOPPED.register(_ -> ErrorLogger.CURRENT.remove());
 
         GlobalDirSetup.setupDirs();
         GlobalPatchLoader.loadGlobalPatches();
