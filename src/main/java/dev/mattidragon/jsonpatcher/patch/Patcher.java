@@ -82,11 +82,19 @@ public class Patcher {
      */
     public static boolean runPatch(LoadedProgram patch, Executor executor, Consumer<RuntimeException> errorConsumer, Value.ObjectValue root, Supplier<ProgramContext.RoleContext> contextSupplier) {
         try {
-            CompletableFuture.runAsync(() -> {
-                        try (var ignored = contextSupplier.get()) {
-                            patch.program().run(root);
-                        }
-                    }, executor).get(Config.MANAGER.get().patchTimeoutMillis(), TimeUnit.MILLISECONDS);
+            var timeout = Config.MANAGER.get().patchTimeoutMillis();
+            var future = CompletableFuture.runAsync(() -> {
+                try (var ignored = contextSupplier.get()) {
+                    patch.program().run(root);
+                }
+            }, executor);
+
+            if (timeout >= 0) {
+                future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+
             return true;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof RuntimeException cause) {
