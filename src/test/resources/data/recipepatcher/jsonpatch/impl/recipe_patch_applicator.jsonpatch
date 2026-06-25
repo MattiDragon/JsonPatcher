@@ -31,8 +31,16 @@ val fields = {};
 
 # @@type recipepatcher.TemplateCollector
 val collector = values.freeze({
-    addIngredient: (path, ingredient) -> ingredients.push({path: path, ingredient: ingredient}),
-    addResult: (path, stack) -> results.push({path: path, stack: stack}),
+    addIngredient: (path, ingredient) -> {
+        if (ingredient is object && "fabric:type" in ingredient) {
+            templates.getIngredientTemplate(ingredient.'fabric:type')(collector);
+        } else {
+            ingredients.push({path: path, ingredient: ingredient});
+        }
+    },
+    addResult: (path, stack) -> {
+        results.push({path: path, stack: stack});
+    },
     addValue: (name, path, value) -> {
         if (!(name in fields)) {
             fields[name] = [];
@@ -105,8 +113,10 @@ recipepatcher._internal_use((state) -> {
         }
     }
 
-    if ($type in state.recipeTransforms) {
-        foreach (recipeTransform in state.recipeTransforms[$type]) {
+    val type = $type.contains(":") ? $type : "minecraft:" + $type;
+
+    if (type in state.recipeTransforms) {
+        foreach (recipeTransform in state.recipeTransforms[type]) {
             recipeTransform($);
         }
     }

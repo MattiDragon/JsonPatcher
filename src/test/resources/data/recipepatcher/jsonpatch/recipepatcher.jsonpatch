@@ -5,22 +5,40 @@
 
 import "mod:jsonpatcher:async" as async;
 
+#| namespace recipepatcher
+#| The RecipePatcher system allows easy bulk-modification of recipes in an extensible way.
+#| The `recipepatcher:recipepatcher` library allows registering transformations to recipes,
+#| while the `recipepatcher:templates` library allows integrating new recipe types.
+#| 
+#| RecipePatcher works by matching each recipe against a template, selected based on the `type` field.
+#| The template picks out notable fields in the recipe, which then get transformed.
+#| Patching is performed from a regular patch with priority -100,
+#| which means that most patches will run after RecipePatcher.
+
 # @@doc_namespace recipepatcher
 
 #| library recipepatcher at "recipepatcher:recipepatcher"
+#| Core API for registering recipe transforms and replacements.
+#| This library should be used from within a metapatch.
 
 #| typealias Ingredient: string | string[] | object
+#| A recipe ingredient value as used by vanilla JSON recipes.
 
 #| typealias ItemStack: string | recipepatcher.ItemStackObject
+#| An item stack reference in recipe output fields.
 
 #| type ItemStackObject: object
+#| Object form of an item stack with id, count, and components.
 
 #| property ItemStackObject.id: string
+#| Item identifier, usually a namespaced id like `minecraft:stick`.
 
 #| property ItemStackObject.count: number
+#| Number of items in the stack.
 #| @optional
 
 #| property ItemStackObject.components: object
+#| Optional components payload for the stack.
 #| @optional
 
 val lock = async.rwLock();
@@ -42,38 +60,78 @@ val state = values.freeze({
 });
 
 #| property recipepatcher.replaceIngredient: (from: string, to: string) -> null
-$replaceIngredient = (from, to) -> lock.write(() -> ingredientReplacements[from] = to);
+#| Register a simple ingredient replacement by string id.
+#| Both item ids and #-prefixed tag ids are supported.
+function replaceIngredient(from, to) {
+    return lock.write(() -> ingredientReplacements[from] = to);
+}
+$replaceIngredient = replaceIngredient;
 
 #| property recipepatcher.transformIngredients: (transform: (ingredient: recipepatcher.Ingredient) -> recipepatcher.Ingredient | null) -> null
-# @@suppress TYPE-0
-$transformIngredients = (transform) -> lock.write(() -> ingredientTransforms.push(transform));
+#| Register a transform that can rewrite ingredients.
+#| Multiple transforms get applied in sequence.
+#| If a transformer returns null the previous ingredient is kept.
+function transformIngredients(transform) {
+    # @@suppress TYPE-0
+    return lock.write(() -> ingredientTransforms.push(transform));
+}
+$transformIngredients = transformIngredients;
 
 #| property recipepatcher.replaceOutput: (from: string, to: string) -> null
-$replaceOutput = (from, to) -> lock.write(() -> outputReplacements[from] = to);
+#| Register a simple output replacement by item id.
+function replaceOutput(from, to) {
+    return lock.write(() -> outputReplacements[from] = to);
+}
+$replaceOutput = replaceOutput;
 
 #| property recipepatcher.transformOutput: (transform: (output: recipepatcher.ItemStack) -> recipepatcher.ItemStack | null) -> null
-# @@suppress TYPE-0
-$transformOutput = (transform) -> lock.write(() -> outputTransforms.push(transform));
+#| Register a transform that can rewrite output stacks.
+#| Multiple transforms get applied in sequence.
+#| If a transformer returns null the previous output is kept.
+function transformOutput(transform) {
+    # @@suppress TYPE-0
+    return lock.write(() -> outputTransforms.push(transform));
+}
+$transformOutput = transformOutput;
 
 #| property recipepatcher.transformField: (field: string, transform: (value: unknown) -> unknown | null) -> null
-# @@suppress TYPE-0
-$transformField = (field, transform) -> lock.write(() -> {
-    if (!(field in fieldTransforms)) {
-        fieldTransforms[field] = [];
-    }
-    fieldTransforms[field].push(transform);
-});
+#| Register a transform for a named recipe field collected by templates.
+#| Named fields represent things like cooking time.
+#| The first argument is the name of the field as registered by templates.
+function transformField(field, transform) {
+    # @@suppress TYPE-0
+    lock.write(() -> {
+        if (!(field in fieldTransforms)) {
+            fieldTransforms[field] = [];
+        }
+        fieldTransforms[field].push(transform);
+    });
+}
+$transformField = transformField;
 
 #| property recipepatcher.transformRecipes: (type: string, transform: (recipe: object) -> object | null) -> null
-# @@suppress TYPE-0
-$transformRecipes = (type, transform) -> lock.write(() -> {
-    if (!(type in recipeTransforms)) {
-        recipeTransforms[type] = [];
+#| Register a transform that can mutate whole recipes of a given type.
+#| Multiple transforms get applied in sequence.
+#| If a transformer returns null the previous recipe is kept.
+#| The first argument is the recipe type id to match against, such as `minecraft:crafting_shaped`.
+function transformRecipes(type, transform) {
+    if (!type.contains(":")) {
+        type = "minecraft:" + type;
     }
-    recipeTransforms[type].push(transform);
-});
+
+    # @@suppress TYPE-0
+    lock.write(() -> {
+        if (!(type in recipeTransforms)) {
+            recipeTransforms[type] = [];
+        }
+        recipeTransforms[type].push(transform);
+    });
+}
+$transformRecipes = transformRecipes;
 
 #| property recipepatcher._internal_use: (callback: (state: object) -> null) -> null
-$_internal_use = (callback) -> {
+#| Internal hook used by recipe patch applicators to read state.
+function _internal_use(callback) {
     lock.read(() -> callback(state));
-};
+}
+$_internal_use = _internal_use;

@@ -8,72 +8,140 @@ import "mod:jsonpatcher:async" as async;
 # @@doc_namespace recipepatcher
 
 #| type TemplateCollector: object
+#| Collector passed to templates for recording ingredient, result, and field paths.
 
 #| property TemplateCollector.addIngredient: (path: {string | number}[], ingredient: object) -> null
+#| Record an ingredient value at the given JSON path.
 
 #| property TemplateCollector.addResult: (path: {string | number}[], stack: object) -> null
+#| Record an output stack at the given JSON path.
 
 #| property TemplateCollector.addValue: (name: string, path: {string | number}[], value: any) -> null
+#| Record a named field value at the given JSON path.
 
 
 #| typealias Template: (recipepatcher.TemplateCollector, path: {string | number}[], value: any) -> null
+#| Function that walks a recipe value and records relevant paths with a collector.
+
 
 #| library templates at "recipepatcher:templates"
+#| A library managing templates for use in recipe patching.
+#| Contains functions for composing templates as well as registering them.
 
 #| property templates.array: (param: recipepatcher.Template) -> recipepatcher.Template
-$array = (param) -> (collector, path, value) -> {
-    debug.assert(value is array, "Expected array at path " + strings.asString(path));
-    for (var i = 0; i < value.length; i++) {
-        val subPath = path.slice(0) + [i];
-        param(collector, subPath, value[i]);
-    }
-};
+#| Build a template that applies another template to each element of an array.
+function array(param) {
+    return (collector, path, value) -> {
+        debug.assert(value is array, "Expected array at path " + strings.asString(path));
+        for (var i = 0; i < value.length; i++) {
+            val subPath = path.slice(0) + [i];
+            param(collector, subPath, value[i]);
+        }
+    };
+}
+$array = array;
 
 #| property templates.object: (param: recipepatcher.Template{}) -> recipepatcher.Template
-$object = (param) -> (collector, path, value) -> {
-    debug.assert(value is object, "Expected object at path " + strings.asString(path));
-    foreach (key in objects.keys(param)) {
-        if (key in value) {
-            val subPath = path.slice(0) + [key];
-            param[key](collector, subPath, value[key]);
+#| Build a template that applies named templates to matching object keys.
+function object(param) {
+    return (collector, path, value) -> {
+        debug.assert(value is object, "Expected object at path " + strings.asString(path));
+        foreach (key in objects.keys(param)) {
+            if (key in value) {
+                val subPath = path.slice(0) + [key];
+                param[key](collector, subPath, value[key]);
+            }
         }
-    }
-};
+    };
+}
+$object = object;
 
 #| property templates.map: (param: recipepatcher.Template) -> recipepatcher.Template
-$map = (param) -> (collector, path, value) -> {
-    debug.assert(value is object, "Expected object at path " + strings.asString(path));
-    foreach (key in objects.keys(value)) {
-        val subPath = path.slice(0) + [key];
-        param(collector, subPath, value[key]);
-    }
-};
+#| Build a template that applies another template to each object value.
+function map(param) {
+    return (collector, path, value) -> {
+        debug.assert(value is object, "Expected object at path " + strings.asString(path));
+        foreach (key in objects.keys(value)) {
+            val subPath = path.slice(0) + [key];
+            param(collector, subPath, value[key]);
+        }
+    };
+}
+$map = map;
 
 #| property templates.ingredient: () -> recipepatcher.Template
-$ingredient = () -> (collector, path, value) -> collector.addIngredient(path, value);
+#| Build a template that records an ingredient at the current path.
+function ingredient() {
+    return (collector, path, value) -> collector.addIngredient(path, value);
+}
+$ingredient = ingredient;
 
 #| property templates.resultStack: () -> recipepatcher.Template
-$resultStack = () -> (collector, path, value) -> collector.addResult(path, value);
+#| Build a template that records an output stack at the current path.
+function resultStack() {
+    return (collector, path, value) -> collector.addResult(path, value);
+}
+$resultStack = resultStack;
 
-#| property templates.option: (name: string) -> recipepatcher.Template
-$option = (name) -> (collector, path, value) -> collector.addValue(name, path, value);
+#| property templates.field: (name: string) -> recipepatcher.Template
+#| Build a template that records a named field at the current path.
+function field(name) {
+    return (collector, path, value) -> collector.addValue(name, path, value);
+}
+$field = field;
+
+#| property templates.simpleRecipe: (ingredients: string*) -> recipepatcher.Template
+#| Build a template for recipes with ingredient keys and a `result` field.
+#| This is a useful shorthand for many specialized recipe types.
+function simpleRecipe(ingredients*) {
+    val o = {};
+    foreach (i in ingredients) {
+        o[i] = ingredient();
+    }
+    o.result = resultStack();
+    return object(o);
+}
+$simpleRecipe = simpleRecipe;
 
 # @@type recipepatcher.Template{}
 val registered = {};
+# @@type recipepatcher.Template{}
+val ingredientTemplates = {};
 val lock = async.rwLock();
 
 #| property templates.register: (recipeType: string, template: recipepatcher.Template) -> null
-$register = (recipeType, template) -> {
+#| Register a template for a recipe type id. The id must be in its full form, including a colon.
+function register(recipeType, template) {
     debug.assert(recipeType is string, "Expected string for recipeType");
+    debug.assert(recipeType.contains(":"), "Expected recipeType to contain namespace");
 
     # @@suppress TYPE-0
     lock.write(() -> {
         registered[recipeType] = template;
     });
-};
+}
+$register = register;
+
+#| property templates.registerIngredientTemplate: (name: string, template: recipepatcher.Template) -> null
+#| Register a template for recognizing nested ingredients from custom ingredients
+function registerIngredientTemplate(name, template) {
+    debug.assert(name is string, "Expected string for name");
+    debug.assert(!name.contains(":"), "Expected name to not contain namespace");
+
+    # @@suppress TYPE-0
+    lock.write(() -> {
+        ingredientTemplates[name] = template;
+    });
+}
+$registerIngredientTemplate = registerIngredientTemplate;
 
 #| property templates.getTemplate: (recipeType: string) -> recipepatcher.Template | null
-$getTemplate = (recipeType) -> {
+#| Look up a template by recipe type id, returning null when not found.
+function getTemplate(recipeType) {
+    if (!recipeType.contains(":")) {
+        recipeType = "minecraft:" + recipeType;
+    }
+
     # @@suppress TYPE-0
     return lock.read(() -> {
         if (recipeType in registered) {
@@ -82,4 +150,19 @@ $getTemplate = (recipeType) -> {
             return null;
         }
     });
-};
+}
+$getTemplate = getTemplate;
+
+#| property templates.getIngredientTemplate: (name: string) -> recipepatcher.Template | null
+#| Look up an ingredient template by name, returning null when not found.
+function getIngredientTemplate(name) {
+    # @@suppress TYPE-0
+    return lock.read(() -> {
+        if (name in ingredientTemplates) {
+            return ingredientTemplates[name];
+        } else {
+            return null;
+        }
+    });
+}
+$getIngredientTemplate = getIngredientTemplate;

@@ -6,26 +6,37 @@ import "recipepatcher:templates" as t;
 
 $'minecraft:crafting_shapeless' = t.object(
     {
-        "ingredients": t.array(t.ingredient()),
-        "result": t.resultStack()
+        ingredients: t.array(t.ingredient()),
+        result: t.resultStack()
     }
 );
 
 $'minecraft:crafting_shaped' = t.object(
     {
-        "key": t.map(t.ingredient()),
-        "result": t.resultStack()
+        key: t.map(t.ingredient()),
+        result: t.resultStack()
     }
 );
 
-# TODO: other crafting recipe types
+$'minecraft:crafting_dye' = t.simpleRecipe("target", "dye");
+$'minecraft:crafting_imbue' = t.simpleRecipe("source", "material");
+$'minecraft:crafting_transmute' = t.simpleRecipe("input", "material");
+$'minecraft:crafting_decorated_pot' = t.simpleRecipe("back", "left", "right", "front");
+$'minecraft:crafting_special_bookcloning' = t.simpleRecipe("source", "material");
+$'minecraft:crafting_special_mapextending' = t.simpleRecipe("map", "material");
+$'minecraft:crafting_special_firework_rocket' = t.simpleRecipe("shell", "fuel", "star");
+$'minecraft:crafting_special_firework_star' = t.simpleRecipe("trail", "twinkle", "fuel", "dye");
+$'minecraft:crafting_special_firework_star_fade' = t.simpleRecipe("target", "dye");
+$'minecraft:crafting_special_bannerduplicate' = t.simpleRecipe("banner");
+$'minecraft:crafting_special_shielddecoration' = t.simpleRecipe("banner", "target");
+$'minecraft:crafting_special_repairitem' = t.object({});
 
 val cooking = t.object(
     {
-        "ingredient": t.ingredient(),
-        "result": t.resultStack(),
-        "experience": t.option("minecraft:cooking@experience"),
-        "cookingtime": t.option("minecraft:cooking@cookingtime")
+        ingredient: t.ingredient(),
+        result: t.resultStack(),
+        experience: t.field("minecraft:cooking@experience"),
+        cookingtime: t.field("minecraft:cooking@cookingtime")
     }
 );
 $'minecraft:smelting' = cooking;
@@ -33,32 +44,39 @@ $'minecraft:blasting' = cooking;
 $'minecraft:smoking' = cooking;
 $'minecraft:campfire_cooking' = cooking;
 
-$'minecraft:stonecutting' = t.object(
-    {
-        "ingredient": t.ingredient(),
-        "result": t.resultStack(),
-        "experience": t.option("minecraft:cooking@experience"),
-        "cookingtime": t.option("minecraft:cooking@cookingtime")
-    }
-);
+$'minecraft:stonecutting' = t.simpleRecipe("ingredient");
 
-$'minecraft:smithing_transform' = t.object(
-    {
-        "template": t.ingredient(),
-        "base": t.ingredient(),
-        "addition": t.ingredient(),
-        "result": t.resultStack()
-    }
-);
+$'minecraft:smithing_transform' = t.simpleRecipe("template", "base", "addition");
 
 $'minecraft:smithing_trim' = t.object(
     {
-        "template": t.ingredient(),
-        "base": t.ingredient(),
-        "addition": t.ingredient()
+        template: t.ingredient(),
+        base: t.ingredient(),
+        addition: t.ingredient()
     }
 );
 
 foreach (key in objects.keys($)) {
     t.register(key, $[key]);
 }
+
+t.registerIngredientTemplate("fabric:all", t.object({
+    ingredients: t.array(t.ingredient())
+}));
+
+t.registerIngredientTemplate("fabric:any", t.object({
+    ingredients: t.array(t.ingredient())
+}));
+
+t.registerIngredientTemplate("fabric:difference", t.object({
+    base: t.ingredient(),
+    subtracted: t.ingredient()
+}));
+
+t.registerIngredientTemplate("fabric:components", t.object({
+    base: t.ingredient()
+}));
+
+t.registerIngredientTemplate("fabric:custom_data", t.object({
+    base: t.ingredient()
+}));

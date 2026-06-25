@@ -95,12 +95,12 @@ public class MetapatchPackResources implements PackResources, TrustProvider {
     }
 
     @Override
-    public void listResources(PackType type, String namespace, String prefix, ResourceOutput consumer) {
+    public void listResources(PackType type, String namespace, String prefix, ResourceOutput output) {
         if (type != this.type) return;
 
         files.forEach((id, _) -> {
             if (id.getNamespace().equals(namespace) && id.getPath().startsWith(prefix)) {
-                consumer.accept(id, Objects.requireNonNull(getResource(type, id), "this should exist"));
+                output.accept(id, Objects.requireNonNull(getResource(type, id), "this should exist"));
             }
         });
     }
