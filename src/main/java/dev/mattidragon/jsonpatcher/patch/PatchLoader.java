@@ -3,6 +3,7 @@ package dev.mattidragon.jsonpatcher.patch;
 import com.google.common.base.Suppliers;
 import dev.mattidragon.jsonpatcher.JsonPatcher;
 import dev.mattidragon.jsonpatcher.config.Config;
+import dev.mattidragon.jsonpatcher.config.FeatureFlag;
 import dev.mattidragon.jsonpatcher.context.ProgramContext;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.MetadataKey;
 import dev.mattidragon.jsonpatcher.lang.ast.meta.TreeMetadata;
@@ -65,6 +66,7 @@ public class PatchLoader {
         }
         environment.enableLogging(value -> JsonPatcher.RELOAD_LOGGER.info("Debug message from patch: {}", value));
         environment.bootstrap();
+        environment.addGlobal("ctx", ProgramContext.OBJECT);
         var metapatchLibrary = new MetapatchLibrary(manager);
         environment.addLibrary(new Library(
                 ModLibraryGroups.METAPATCH,
@@ -118,6 +120,13 @@ public class PatchLoader {
 
             var lexResult = Lexer.lex(code, id.toString(), diagnosticsBuilder);
             var parseResult = Parser.parse(lexResult.tokens(), diagnosticsBuilder);
+
+            if (parseResult.metadata().has("feature_flag")) {
+                var flag = Identifier.parse(parseResult.metadata().getString("feature_flag"));
+                if (!Config.MANAGER.get().featureFlags().isEnabled(FeatureFlag.byId(flag))) {
+                    return null;
+                }
+            }
             
             var built = validateAndBuild(id, parseResult, environment, diagnosticsBuilder, trust);
 

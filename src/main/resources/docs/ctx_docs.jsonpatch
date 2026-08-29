@@ -16,6 +16,12 @@
 #| A object mapping mod ids to information about all loaded mods.
 #| This allows patches to adapt to the mods they are running alongside.
 
+#| property ctx.enabledFeatureFlags: string[]
+#| A list of currently enabled JsonPatcher feature flags.
+#| Allows for providing nice error messages in case important ones are missing.
+#| Note that patches with `@feature_flag` won't be loaded at all if their flags aren't enabled.
+
+
 #| type ModInfo: object
 #| A structure containing infomation about an installed mod.
 

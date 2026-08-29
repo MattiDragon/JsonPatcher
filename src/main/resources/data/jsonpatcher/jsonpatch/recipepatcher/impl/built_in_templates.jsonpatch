@@ -1,8 +1,9 @@
 @version "2";
 @metapatch;
 @priority -100;
+@feature_flag "jsonpatcher:recipepatcher";
 
-import "recipepatcher:templates" as t;
+import "jsonpatcher:recipepatcher/templates" as t;
 
 $'minecraft:crafting_shapeless' = t.object(
     {

@@ -5,9 +5,10 @@
         "end": ".json"
     }
 };
+@feature_flag "jsonpatcher:recipepatcher";
 
-import "recipepatcher:recipepatcher" as recipepatcher;
-import "recipepatcher:templates" as templates;
+import "jsonpatcher:recipepatcher" as recipepatcher;
+import "jsonpatcher:recipepatcher/templates" as templates;
 
 # @@type recipepatcher.Template | null
 val template = templates.getTemplate($type);
@@ -24,6 +25,10 @@ function set(path, value) {
     current[path[-1]] = value;
 }
 
+# @@arg id string
+function normalizeId(id) {
+    return id.contains(":") ? id : "minecraft:\{id}";
+}
 
 val ingredients = [];
 val results = [];
@@ -33,7 +38,7 @@ val fields = {};
 val collector = values.freeze({
     addIngredient: (path, ingredient) -> {
         if (ingredient is object && "fabric:type" in ingredient) {
-            templates.getIngredientTemplate(ingredient.'fabric:type')(collector);
+            templates.getIngredientTemplate(normalizeId(ingredient.'fabric:type'))(collector, path, ingredient);
         } else {
             ingredients.push({path: path, ingredient: ingredient});
         }
@@ -52,13 +57,24 @@ val collector = values.freeze({
 
 template(collector, [], $);
 
-
 recipepatcher._internal_use((state) -> {
     foreach (ingredient in ingredients) {
         var changed = false;
+        # @@type recipepatcher.Ingredient
         var current = ingredient.ingredient;
 
-        # TODO: apply replacements
+        if (current is string && current in state.ingredientReplacements) {
+            current = state.ingredientReplacements[current];
+            changed = true;
+        } else if (current is array) {
+            for (var i = 0; i < current.length; i++) {
+                # TODO: shallow copy array here to avoid breaking things weirdly
+                if (current[i] in state.ingredientReplacements) {
+                    current[i] = state.ingredientReplacements[current[i]];
+                    changed = true;
+                }
+            }
+        }
 
         foreach (transform in state.ingredientTransforms) {
             val transformed = transform(current);
@@ -75,9 +91,17 @@ recipepatcher._internal_use((state) -> {
 
     foreach (result in results) {
         var changed = false;
+        # @@type recipepatcher.ItemStack
         var current = result.stack;
 
-        # TODO: apply replacements
+        if (current is string && current in state.outputReplacements) {
+            current = state.outputReplacements[current];
+            changed = true;
+        } else if (current.id in state.outputReplacements) {
+            # TODO: shallow copy array here to avoid breaking things weirdly
+            current.id = state.outputReplacements[current.id];
+            changed = true;
+        }
 
         foreach (transform in state.outputTransforms) {
             val transformed = transform(current);
@@ -88,7 +112,7 @@ recipepatcher._internal_use((state) -> {
         }
 
         if (changed) {
-            set(changed.path, current);
+            set(result.path, current);
         }
     }
 
@@ -113,7 +137,7 @@ recipepatcher._internal_use((state) -> {
         }
     }
 
-    val type = $type.contains(":") ? $type : "minecraft:" + $type;
+    val type = normalizeId($type);
 
     if (type in state.recipeTransforms) {
         foreach (recipeTransform in state.recipeTransforms[type]) {

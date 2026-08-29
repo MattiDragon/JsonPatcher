@@ -5,21 +5,26 @@
 
 import "mod:jsonpatcher:async" as async;
 
+debug.assert("jsonpatcher:recipepatcher" in ctx.enabledFeatureFlags, "The jsonpatcher:recipepatcher feature flag is disabled. RecipePatcher won't function unless it's enabled");
+
 #| namespace recipepatcher
 #| The RecipePatcher system allows easy bulk-modification of recipes in an extensible way.
-#| The `recipepatcher:recipepatcher` library allows registering transformations to recipes,
-#| while the `recipepatcher:templates` library allows integrating new recipe types.
+#| The `jsonpatcher:recipepatcher` library allows registering transformations to recipes,
+#| while the `jsonpatcher:recipepatcher/templates` library allows integrating new recipe types.
 #| 
 #| RecipePatcher works by matching each recipe against a template, selected based on the `type` field.
 #| The template picks out notable fields in the recipe, which then get transformed.
 #| Patching is performed from a regular patch with priority -100,
 #| which means that most patches will run after RecipePatcher.
+#|
+#| @requires libgroup("%jsonpatcher:recipepatcher")
 
 # @@doc_namespace recipepatcher
 
-#| library recipepatcher at "recipepatcher:recipepatcher"
+#| library recipepatcher at "jsonpatcher:recipepatcher"
 #| Core API for registering recipe transforms and replacements.
 #| This library should be used from within a metapatch.
+#| @requires libgroup("%jsonpatcher:recipepatcher")
 
 #| typealias Ingredient: string | string[] | object
 #| A recipe ingredient value as used by vanilla JSON recipes.
@@ -43,11 +48,17 @@ import "mod:jsonpatcher:async" as async;
 
 val lock = async.rwLock();
 
+# @@type string{}
 val ingredientReplacements = {};
+# @@type {(ingredient: recipepatcher.Ingredient) -> recipepatcher.Ingredient | null}[]
 val ingredientTransforms = [];
+# @@type string{}
 val outputReplacements = {};
+# @@type {(output: recipepatcher.ItemStack) -> recipepatcher.ItemStack | null}[]
 val outputTransforms = [];
+# @@type {(value: unknown) -> unknown | null}[]{}
 val fieldTransforms = {};
+# @@type {(recipe: object) -> object | null}[]{}
 val recipeTransforms = {};
 
 val state = values.freeze({

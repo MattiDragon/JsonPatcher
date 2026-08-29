@@ -1,8 +1,11 @@
 package dev.mattidragon.jsonpatcher.context;
 
+import dev.mattidragon.jsonpatcher.config.Config;
+import dev.mattidragon.jsonpatcher.config.FeatureFlag;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.PatchFunction;
 import dev.mattidragon.jsonpatcher.lang.runtime.value.Value;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -29,6 +32,13 @@ public class ProgramContext {
             ), true));
         }
 
+        var featureFlags = Config.MANAGER.get().featureFlags().enabledFlags()
+                .stream()
+                .map(FeatureFlag::id)
+                .map(Identifier::toString)
+                .<Value>map(Value.StringValue::new)
+                .toList();
+
         PatchFunction.BuiltInPatchFunction role = (_, args) -> {
             if (!args.isEmpty()) {
                 throw new IllegalArgumentException("role function does not take any arguments");
@@ -48,7 +58,8 @@ public class ProgramContext {
         OBJECT = new Value.ObjectValue(Map.of(
                 "loadedMods", new Value.ObjectValue(loadedMods, true),
                 "role", new Value.FunctionValue(role),
-                "target", new Value.FunctionValue(target)
+                "target", new Value.FunctionValue(target),
+                "enabledFeatureFlags", new Value.ArrayValue(featureFlags, true)
         ), true);
     }
 

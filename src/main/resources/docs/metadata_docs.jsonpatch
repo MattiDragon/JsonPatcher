@@ -11,6 +11,13 @@
 #| When set to `false`, the script will not run at all and in some cases not even parsed.
 #| This is useful for debugging, providing an alternative to commenting out code.
 
+#| metadata program.feature_flag: string
+#| Causes a program to only be loaded with the specified feature flag enabled.
+#| This is mostly used for tools bundled with JsonPatcher that could cause unnecessary lag if enabled when unused,
+#| but anyone can use this with their own feature flags.
+#|
+#| See also: [`context.ctx.enabledFeatureFlags`](#property:context.ctx.enabledFeatureFlags), for reading feature flags at runtime
+
 #| metadata program.library: null | script.LibraryMetadata
 #| Makes a program available to others as a library that can be imported.
 #| When imported, the program will be executed with an empty root object,

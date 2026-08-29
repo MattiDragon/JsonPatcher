@@ -1,10 +1,13 @@
 @version "2";
 @metapatch;
 
-import "recipepatcher:recipepatcher" as recipepatcher;
+import "jsonpatcher:recipepatcher" as recipepatcher;
 
-recipepatcher.transformIngredients((ingredient) -> {
-    if (ingredient == "minecraft:stick") {
-        return "minecraft:blaze_rod";
-    }
-});
+recipepatcher.replaceIngredient("minecraft:stick", "minecraft:blaze_rod");
+recipepatcher.replaceOutput("minecraft:stick", "minecraft:blaze_rod");
+
+# recipepatcher.transformIngredients((ingredient) -> {
+#     if (ingredient == "minecraft:stick") {
+#         return "minecraft:blaze_rod";
+#     }
+# });

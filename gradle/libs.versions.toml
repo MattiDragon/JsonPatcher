@@ -8,7 +8,7 @@ fabric-api = "0.144.0+26.1"
 modmenu = "18.0.0-alpha.6"
 config-toolkit = "1.1.2"
 
-lang = "8ecb9078"
+lang = "c8208ebb"
 mapping-io = "0.7.1"
 
 [libraries]

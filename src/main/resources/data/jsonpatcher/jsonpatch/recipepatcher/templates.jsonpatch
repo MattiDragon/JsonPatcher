@@ -5,6 +5,8 @@
 
 import "mod:jsonpatcher:async" as async;
 
+debug.assert("jsonpatcher:recipepatcher" in ctx.enabledFeatureFlags, "The jsonpatcher:recipepatcher feature flag is disabled. RecipePatcher won't function unless it's enabled");
+
 # @@doc_namespace recipepatcher
 
 #| type TemplateCollector: object
@@ -24,9 +26,10 @@ import "mod:jsonpatcher:async" as async;
 #| Function that walks a recipe value and records relevant paths with a collector.
 
 
-#| library templates at "recipepatcher:templates"
+#| library templates at "jsonpatcher:recipepatcher/templates"
 #| A library managing templates for use in recipe patching.
 #| Contains functions for composing templates as well as registering them.
+#| @requires libgroup("%jsonpatcher:recipepatcher")
 
 #| property templates.array: (param: recipepatcher.Template) -> recipepatcher.Template
 #| Build a template that applies another template to each element of an array.
@@ -126,7 +129,7 @@ $register = register;
 #| Register a template for recognizing nested ingredients from custom ingredients
 function registerIngredientTemplate(name, template) {
     debug.assert(name is string, "Expected string for name");
-    debug.assert(!name.contains(":"), "Expected name to not contain namespace");
+    debug.assert(name.contains(":"), "Expected ingredient template name to contain namespace");
 
     # @@suppress TYPE-0
     lock.write(() -> {
