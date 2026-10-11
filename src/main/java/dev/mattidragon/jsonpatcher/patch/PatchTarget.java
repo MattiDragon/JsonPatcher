@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import java.util.regex.PatternSyntaxException;
 public record PatchTarget(
         Optional<String> namespace,
         Optional<Path> path,
-        Optional<String> regex) implements Predicate<Identifier> {
+        Optional<String> regex) implements ResourceManager.Selector {
     private static final Codec<PatchTarget> ID_CODEC = Identifier.CODEC
             .flatComapMap(id -> new PatchTarget(Optional.of(id.getNamespace()), Optional.of(new Path(Either.left(id.getPath()))), Optional.empty()),
                     target -> {
@@ -56,7 +57,7 @@ public record PatchTarget(
             list -> list.size() == 1 ? Either.right(list.getFirst()) : Either.left(list));
 
     @Override
-    public boolean test(Identifier identifier) {
+    public boolean isIncluded(Identifier identifier) {
         return namespace.map(identifier.getNamespace()::equals).orElse(true)
                 && path.map(path -> path.test(identifier.getPath())).orElse(true)
                 && regex.map(identifier.toString()::matches).orElse(true);

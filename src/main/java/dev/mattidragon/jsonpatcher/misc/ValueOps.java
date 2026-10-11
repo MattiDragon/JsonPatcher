@@ -21,7 +21,7 @@ public class ValueOps implements DynamicOps<Value> {
     @Override
     public <U> U convertTo(DynamicOps<U> outOps, Value input) {
         return switch (input) {
-            case Value.NullValue nullValue -> outOps.empty();
+            case Value.NullValue _ -> outOps.empty();
             case Value.BooleanValue booleanValue -> outOps.createBoolean(booleanValue.value());
             case Value.NumberValue(var value) -> outOps.createNumeric(value);
             case Value.StringValue(var value) -> outOps.createString(value);
@@ -29,7 +29,7 @@ public class ValueOps implements DynamicOps<Value> {
                     outOps.createList(arrayValue.value().stream().map(value -> convertTo(outOps, value)));
             case Value.ObjectValue objectValue ->
                     outOps.createMap(objectValue.value().entrySet().stream().map(entry -> Pair.of(outOps.createString(entry.getKey()), convertTo(outOps, entry.getValue()))));
-            case Value.FunctionValue functionValue -> throw new IllegalStateException("Cannot convert function value");
+            case Value.FunctionValue _ -> throw new IllegalStateException("Cannot convert function value");
             case null, default -> throw new IllegalStateException("Unknown value type: " + input);
         };
     }
@@ -45,6 +45,19 @@ public class ValueOps implements DynamicOps<Value> {
     @Override
     public Value createNumeric(Number i) {
         return new Value.NumberValue(i.doubleValue());
+    }
+
+    @Override
+    public DataResult<Boolean> getBooleanValue(Value input) {
+        if (input instanceof Value.BooleanValue value) {
+            return DataResult.success(value.asBoolean());
+        }
+        return DataResult.error(() -> "Not a boolean: " + input);
+    }
+
+    @Override
+    public Value createBoolean(boolean value) {
+        return Value.BooleanValue.of(value);
     }
 
     @Override

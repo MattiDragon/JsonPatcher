@@ -24,8 +24,7 @@ public abstract class RegistryDataLoaderMixin {
             List<RegistryDataLoader.RegistryData<?>> registriesToLoad,
             Executor executor,
             Operation<CompletableFuture<RegistryAccess.Frozen>> original) {
-        try (var _ = PatchingContext.disablePatching()) {
-            return original.call(loaderFactory, contextRegistries, registriesToLoad, executor);
-        }
+        return ScopedValue.where(PatchingContext.DISABLED, true)
+                .call(() -> original.call(loaderFactory, contextRegistries, registriesToLoad, executor));
     }
 }

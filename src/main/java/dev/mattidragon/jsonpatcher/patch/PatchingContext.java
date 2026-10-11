@@ -7,11 +7,10 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.Unit;
 import org.jspecify.annotations.Nullable;
 
 public class PatchingContext {
-    private static final ThreadLocal<@Nullable Unit> DISABLED = new ThreadLocal<>();
+    public static final ScopedValue<Boolean> DISABLED = ScopedValue.newInstance();
 
     private final PackType packType;
     private boolean loaded = false;
@@ -19,10 +18,6 @@ public class PatchingContext {
 
     public PatchingContext(PackType packType) {
         this.packType = packType;
-    }
-
-    public static Enabler disablePatching() {
-        return new Enabler();
     }
 
     public void load(ResourceManager manager) {
@@ -40,23 +35,12 @@ public class PatchingContext {
 
     public void patchResource(Identifier id, Resource resource) {
         if (!id.getPath().endsWith(".json")) return;
-        if (DISABLED.get() != null) return;
+        if (DISABLED.orElse(false)) return;
         
         if (!loaded || patcher == null) throw new IllegalStateException("Context not loaded");
         if (patcher.hasPatches(id)) {
             ((ResourceAccess) resource).jsonpatcher$disableKnowPack();
             ((ResourceAccess) resource).jsonpatcher$modifyStreamSupplier(stream -> patcher.patchInputStream(id, stream));
-        }
-    }
-
-    public static class Enabler implements AutoCloseable {
-        private Enabler() {
-            DISABLED.set(Unit.INSTANCE);
-        }
-
-        @Override
-        public void close() {
-            DISABLED.remove();
         }
     }
 }

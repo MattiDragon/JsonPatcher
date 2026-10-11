@@ -14,13 +14,13 @@ import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.IoSupplier;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
 import org.jspecify.annotations.Nullable;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Predicate;
 
 public class MetapatchPackResources implements PackResources, TrustProvider {
     public static final Gson GSON = new Gson();
@@ -55,17 +55,17 @@ public class MetapatchPackResources implements PackResources, TrustProvider {
     public boolean isDeleted(Identifier id) {
         // The last filter added will get priority
         for (var filter : filters.reversed()) {
-            if (filter.target().test(id)) {
+            if (filter.target().isIncluded(id)) {
                 return !filter.allow();
             }
         }
         return false;
     }
 
-    public Map<Identifier, Resource> findResources(String startingPath, Predicate<Identifier> allowedPathPredicate) {
+    public Map<Identifier, Resource> findResources(String directory, ResourceManager.Selector selector) {
         var map = new HashMap<Identifier, Resource>();
         files.forEach((id, _) -> {
-            if (id.getPath().startsWith(startingPath) && allowedPathPredicate.test(id)) {
+            if (id.getPath().startsWith(directory) && selector.isIncluded(id)) {
                 map.put(id, Objects.requireNonNull(makeResource(id), "this should exist"));
             }
         });

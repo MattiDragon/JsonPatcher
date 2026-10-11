@@ -4,8 +4,10 @@
 import "metapatch";
 
 metapatch.deleteFile("minecraft:recipe/diamond_boots.json");
+metapatch.deleteFile("minecraft:advancement/recipes/combat/diamond_boots.json");
 
 metapatch.deleteFiles({namespace: "minecraft", path: {start: "recipe/", end: "_sign.json"}});
+metapatch.deleteFiles({namespace: "minecraft", path: {start: "advancement/recipes/decorations/", end: "_sign.json"}});
 
 metapatch.addFile("minecraft:recipe/test.json", {
     type: "crafting_shaped",

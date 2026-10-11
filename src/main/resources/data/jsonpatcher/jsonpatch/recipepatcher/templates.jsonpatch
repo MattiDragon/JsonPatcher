@@ -86,6 +86,21 @@ function resultStack() {
 }
 $resultStack = resultStack;
 
+#| property templates.transmuteResult: () -> recipepatcher.Template
+#| Build a template that records a transmute result at the current path.
+#|
+#| Transmute results differ from regular results in that they can be defined without an item id.
+#| They are used in recipes where the output item is the same as the input item.
+#| In vanilla this is `minecraft:crafting_transmute` and `minecraft:crafting_special_mapextending`.
+function transmuteResult() {
+    return (collector, path, value) -> {
+        if ("id" in value) {
+            collector.addResult(path, value);
+        }
+    };
+}
+$transmuteResult = transmuteResult;
+
 #| property templates.field: (name: string) -> recipepatcher.Template
 #| Build a template that records a named field at the current path.
 function field(name) {

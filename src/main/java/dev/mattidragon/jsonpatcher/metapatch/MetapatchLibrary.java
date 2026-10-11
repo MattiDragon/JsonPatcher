@@ -47,7 +47,7 @@ public class MetapatchLibrary {
     private boolean isDeleted(Identifier id) {
         // The last filter added will get priority
         for (var filter : filters.reversed()) {
-            if (filter.target().test(id)) {
+            if (filter.target().isIncluded(id)) {
                 return !filter.allow();
             }
         }
@@ -95,30 +95,34 @@ public class MetapatchLibrary {
     public Value getFile(EvaluationContext context, Value.StringValue idString) {
         var id = Identifier.parse(idString.value());
 
-        try (var __ = PatchingContext.disablePatching()) {
-            var resource = resourceManager.getResource(id);
-            if (resource.isPresent()) {
-                return valueFromResource(resource.get());
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
 
-        return Value.NullValue.NULL;
+        return ScopedValue.where(PatchingContext.DISABLED, true).call(() -> {
+            try {
+                var resource = resourceManager.getResource(id);
+                if (resource.isPresent()) {
+                    return valueFromResource(resource.get());
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return Value.NullValue.NULL;
+        });
     }
 
     public Value getFiles(EvaluationContext context, Value.StringValue idString) {
         var id = Identifier.parse(idString.value());
 
         var array = new Value.ArrayValue();
-        try (var __ = PatchingContext.disablePatching()) {
-            var resources = resourceManager.getResourceStack(id);
-            for (var resource : resources) {
-                array.value().add(valueFromResource(resource));
+        ScopedValue.where(PatchingContext.DISABLED, true).run(() -> {
+            try {
+                var resources = resourceManager.getResourceStack(id);
+                for (var resource : resources) {
+                    array.value().add(valueFromResource(resource));
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        });
 
         return array;
     }
@@ -141,17 +145,20 @@ public class MetapatchLibrary {
             startingPath = startingPath.substring(0, slashIndex);
         }
 
+        var finalStartingPath = startingPath;
         var out = new Value.ObjectValue();
-        try (var __ = PatchingContext.disablePatching()) {
-            var found = resourceManager.listResources(startingPath, target);
-            for (var entry : found.entrySet()) {
-                var id = entry.getKey();
-                var resource = entry.getValue();
-                out.value().put(id.toString(), valueFromResource(resource));
+        ScopedValue.where(PatchingContext.DISABLED, true).run(() -> {
+            try {
+                var found = resourceManager.listResources(finalStartingPath, target);
+                for (var entry : found.entrySet()) {
+                    var id = entry.getKey();
+                    var resource = entry.getValue();
+                    out.value().put(id.toString(), valueFromResource(resource));
+                }
+            } catch (Exception e) {
+                throw new UncheckedIOException(new IOException("Failed to search files", e));
             }
-        } catch (Exception e) {
-            throw new UncheckedIOException(new IOException("Failed to search files", e));
-        }
+        });
 
         return out;
     }

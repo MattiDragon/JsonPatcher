@@ -86,8 +86,8 @@ public final class PatchStorage {
         if (namespacePatches.containsKey(id.getNamespace())) return true;
         if (pathPatches.containsKey(id.getPath())) return true;
         if (directIdPatches.containsKey(id)) return true;
-        if (namespaceFilteredPatches.get(id.getNamespace()).stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.test(id)))) return true;
-        return nonTrivialPatches.stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.test(id)));
+        if (namespaceFilteredPatches.get(id.getNamespace()).stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.isIncluded(id)))) return true;
+        return nonTrivialPatches.stream().anyMatch(patch -> patch.target().stream().anyMatch(target -> target.isIncluded(id)));
     }
 
     public Collection<Patch> getPatches(Identifier id) {
@@ -96,9 +96,9 @@ public final class PatchStorage {
         namespacePatches.entries().stream().filter(entry -> entry.getKey().equals(id.getNamespace())).map(Map.Entry::getValue).forEach(patchSet::add);
         pathPatches.entries().stream().filter(entry -> entry.getKey().equals(id.getPath())).map(Map.Entry::getValue).forEach(patchSet::add);
         directIdPatches.entries().stream().filter(entry -> entry.getKey().equals(id)).map(Map.Entry::getValue).forEach(patchSet::add);
-        nonTrivialPatches.stream().filter(patch -> patch.target().stream().anyMatch(target -> target.test(id))).forEach(patchSet::add);
+        nonTrivialPatches.stream().filter(patch -> patch.target().stream().anyMatch(target -> target.isIncluded(id))).forEach(patchSet::add);
         namespaceFilteredPatches.get(id.getNamespace()).stream()
-                .filter(patch -> patch.target().stream().anyMatch(target -> target.test(id)))
+                .filter(patch -> patch.target().stream().anyMatch(target -> target.isIncluded(id)))
                 .forEach(patchSet::add);
 
         // Sort patches

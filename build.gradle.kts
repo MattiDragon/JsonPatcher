@@ -29,18 +29,21 @@ loom {
     runs {
         create("testmodClient") {
             client()
-            name = "Testmod Client"
-            source(sourceSets["test"])
-            runDir("run/test")
+            displayName = "Testmod Client"
+            sourceSet = "test"
+            runDirectory = layout.projectDirectory.dir("run/test_client")
         }
         create("testmodServer") {
             server()
-            name = "Testmod Server"
-            source(sourceSets["test"])
-            runDir("run/test_server")
+            displayName = "Testmod Server"
+            sourceSet = "test"
+            runDirectory = layout.projectDirectory.dir("run/test_server")
         }
         named("server") {
-            runDir("run/server")
+            runDirectory = layout.projectDirectory.dir("run/server")
+        }
+        named("client") {
+            runDirectory = layout.projectDirectory.dir("run/client")
         }
     }
 
@@ -93,9 +96,6 @@ dependencies {
     "langInclude"(libs.lang.compiler)
     "langInclude"(libs.lang.parser)
     "langInclude"(libs.lang.stdlib)
-
-    implementation(libs.mapping.io)
-    include(libs.mapping.io)
 
     // Config
     implementation(libs.config.toolkit)

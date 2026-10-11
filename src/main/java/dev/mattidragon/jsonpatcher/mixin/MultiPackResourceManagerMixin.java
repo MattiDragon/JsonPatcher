@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "NotNullFieldNotInitialized"})
 @Mixin(MultiPackResourceManager.class)
@@ -71,16 +70,16 @@ public class MultiPackResourceManagerMixin implements MetaPatchPackAccess {
     }
 
     @ModifyReturnValue(method = "listResources", at = @At("RETURN"))
-    private Map<Identifier, Resource> injectResourcesIntoFind(Map<Identifier, Resource> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
-        map.putAll(jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate));
+    private Map<Identifier, Resource> injectResourcesIntoFind(Map<Identifier, Resource> map, String directory, ResourceManager.Selector selector) {
+        map.putAll(jsonpatcher$metaPatchPack.findResources(directory, selector));
         map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
         map.forEach(jsonpatcher$context::patchResource);
         return map;
     }
 
     @ModifyReturnValue(method = "listResourceStacks", at = @At("RETURN"))
-    private Map<Identifier, List<Resource>> injectResourcesIntoFindAll(Map<Identifier, List<Resource>> map, String startingPath, Predicate<Identifier> allowedPathPredicate) {
-        jsonpatcher$metaPatchPack.findResources(startingPath, allowedPathPredicate)
+    private Map<Identifier, List<Resource>> injectResourcesIntoFindAll(Map<Identifier, List<Resource>> map, String directory, ResourceManager.Selector selector) {
+        jsonpatcher$metaPatchPack.findResources(directory, selector)
                 .forEach((id, resource) -> map.computeIfAbsent(id, _ -> new ArrayList<>()).add(resource));
         map.keySet().removeIf(jsonpatcher$metaPatchPack::isDeleted);
         map.forEach((id, resources) -> resources.forEach(resource -> jsonpatcher$context.patchResource(id, resource)));

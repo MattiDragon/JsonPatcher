@@ -21,10 +21,22 @@ $'minecraft:crafting_shaped' = t.object(
 
 $'minecraft:crafting_dye' = t.simpleRecipe("target", "dye");
 $'minecraft:crafting_imbue' = t.simpleRecipe("source", "material");
-$'minecraft:crafting_transmute' = t.simpleRecipe("input", "material");
+$'minecraft:crafting_transmute' = t.object(
+    {
+        source: t.ingredient(),
+        target: t.ingredient(),
+        result: t.transmuteResult()
+    }
+);
 $'minecraft:crafting_decorated_pot' = t.simpleRecipe("back", "left", "right", "front");
 $'minecraft:crafting_special_bookcloning' = t.simpleRecipe("source", "material");
-$'minecraft:crafting_special_mapextending' = t.simpleRecipe("map", "material");
+$'minecraft:crafting_special_mapextending' = t.object(
+    {
+        map: t.ingredient(),
+        material: t.ingredient(),
+        result: t.transmuteResult()
+    }
+);
 $'minecraft:crafting_special_firework_rocket' = t.simpleRecipe("shell", "fuel", "star");
 $'minecraft:crafting_special_firework_star' = t.simpleRecipe("trail", "twinkle", "fuel", "dye");
 $'minecraft:crafting_special_firework_star_fade' = t.simpleRecipe("target", "dye");

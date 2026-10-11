@@ -7,12 +7,13 @@
     "MultiPackResourceManagerMixin",
     "RegistryDataLoaderMixin",
     "ResourceMixin",
-    "trust.AbstractPackResourcesMixin",
-    "trust.CompositePackResourcesMixin",
-    "trust.FileResourcesSupplierMixin",
+    "trust.FolderRepositorySourceMixin",
     "trust.ModPackResourcesMixin",
-    "trust.PackResourcesMixin",
-    "trust.PathResourcesSupplierMixin"
+    "trust.OverlayedPackResourcesMixin",
+    "trust.PackMetadataResourcesMixin",
+    "trust.PackMetadataResourcesMultiMixin",
+    "trust.PackResourcesSuppliersMultiMixin",
+    "trust.ServerPacksSourceMixin"
   ],
   "injectors": {
     "defaultRequire": 1

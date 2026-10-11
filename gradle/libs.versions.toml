@@ -1,15 +1,14 @@
 [versions]
-minecraft = "26.1"
+minecraft = "26.3"
 
-fabric-loom = "1.15-SNAPSHOT"
-fabric-loader = "0.18.4"
-fabric-api = "0.144.0+26.1"
+fabric-loom = "1.18-SNAPSHOT"
+fabric-loader = "0.19.5"
+fabric-api = "0.161.0+26.3"
 
-modmenu = "18.0.0-alpha.6"
+modmenu = "21.0.0-beta.1"
 config-toolkit = "1.1.2"
 
 lang = "c8208ebb"
-mapping-io = "0.7.1"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
@@ -18,7 +17,6 @@ fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fab
 
 config-toolkit = { module = "dev.mattidragon:ConfigToolkit", version.ref = "config-toolkit" }
 modmenu = { module = "com.terraformersmc:modmenu", version.ref = "modmenu" }
-mapping-io = { module = "net.fabricmc:mapping-io", version.ref = "mapping-io" }
 
 lang-runtime = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Runtime", version.ref = "lang" }
 lang-compiler = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Compiler", version.ref = "lang" }
