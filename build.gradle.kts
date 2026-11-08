@@ -2,6 +2,7 @@ import net.fabricmc.loom.build.nesting.NestableJarGenerationTask
 
 plugins {
     alias(libs.plugins.fabric.loom)
+    alias(libs.plugins.mod.publish)
     `maven-publish`
 }
 
@@ -149,5 +150,39 @@ publishing {
         }
     }
     repositories {
+    }
+}
+
+publishMods {
+    file.set(tasks.jar.flatMap { it.archiveFile })
+    displayName.set("v$modVersion [${libs.versions.minecraft.get()}]")
+    changelog.set(
+        providers.fileContents(
+            layout.projectDirectory.file("changelog/$modVersion+${libs.versions.minecraft.get()}.md")
+        ).asText
+    )
+    type.set(providers.environmentVariable("RELEASE_TYPE").map { me.modmuss50.mpp.ReleaseType.of(it) })
+    modLoaders.add("fabric")
+    dryRun = providers.gradleProperty("publish_dry_run").isPresent
+
+    modrinth {
+        projectId.set("qlXnlZLG")
+        accessToken.set(providers.environmentVariable("MODRINTH_TOKEN"))
+        minecraftVersions.add(libs.versions.minecraft.get())
+    }
+
+    curseforge {
+        projectId.set("936929")
+        accessToken.set(providers.environmentVariable("CURSEFORGE_TOKEN"))
+        client.set(true)
+        server.set(true)
+        minecraftVersions.add(libs.versions.minecraft.get())
+    }
+
+    github {
+        repository.set("MattiDragon/JsonPatcher")
+        accessToken.set(providers.environmentVariable("GITHUB_TOKEN"))
+        commitish.set(providers.environmentVariable("GITHUB_BRANCH"))
+        tagName.set(version.map { it.replace('+', '-') })
     }
 }

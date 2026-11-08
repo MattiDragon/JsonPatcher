@@ -2,13 +2,13 @@
 minecraft = "26.3"
 
 fabric-loom = "1.18-SNAPSHOT"
-fabric-loader = "0.19.5"
-fabric-api = "0.161.0+26.3"
+fabric-loader = "0.20.1"
+fabric-api = "0.165.2+26.3"
 
 modmenu = "21.0.0-beta.1"
 config-toolkit = "1.1.2"
 
-lang = "c8208ebb"
+lang = "2.0.0-beta.9"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
@@ -25,3 +25,4 @@ lang-stdlib = { module = "dev.mattidragon.JsonPatcherLang:JsonPatcherLang-Stdlib
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }
+mod-publish = { id = "me.modmuss50.mod-publish-plugin", version = "2.2.1" }
