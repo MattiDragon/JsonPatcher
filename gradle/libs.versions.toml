@@ -8,7 +8,7 @@ fabric-api = "0.165.2+26.3"
 modmenu = "21.0.0-beta.1"
 config-toolkit = "1.1.2"
 
-lang = "2.0.0-beta.9"
+lang = "2.0.0-beta.10"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
